@@ -48,14 +48,17 @@ program
       },
       secrets: {
         STRIPE_SECRET_KEY: {
-          real: 'sk_test_live_sample_51M001AcmeProductionSecretKey9900',
+          // The real value is read from this environment variable at load time.
+          realFromEnv: 'STRIPE_SECRET_KEY',
+          real: 'REPLACE_ME_REAL_SECRET',
           phantom: 'ph_sec_stripe_test_8f2a1c',
           allowedHosts: ['localhost', '127.0.0.1', 'api.stripe.com'],
           allowedMethods: ['GET', 'POST'],
           blockedPaths: ['*/refunds*', '*/wipe*', '*/transfers*'],
         },
         ADMIN_AUTH_TOKEN: {
-          real: 'jwt_admin_supersecret_production_session_bearer_token',
+          realFromEnv: 'ADMIN_AUTH_TOKEN',
+          real: 'REPLACE_ME_REAL_SECRET',
           phantom: 'ph_auth_bearer_9901_admin',
           allowedHosts: ['localhost', '127.0.0.1'],
           blockedPaths: ['/api/admin/wipe-data'],
@@ -98,8 +101,8 @@ program
         checkpointsDir: './.airlock/checkpoints',
         maxParallelForks: 5,
       },
+      // signingKey is intentionally left unset; supply it via config or environment (see docs).
       compliance: {
-        signingKey: 'airlock-hmac-master-key-32-chars-long!',
         outputDir: './.airlock/compliance',
         generateHtmlReport: true,
       },

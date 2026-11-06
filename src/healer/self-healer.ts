@@ -138,7 +138,7 @@ export class SelfHealer {
     }
 
     if (bestCandidate && bestCandidate.confidence >= threshold) {
-      logger.moat(2, 'Surgical Self-Healing Triggered', `Repaired broken selector '${expected.css}' -> '${bestCandidate.selector}' (${(bestCandidate.confidence * 100).toFixed(0)}% match)`);
+      logger.stage('Selector healed', `Replaced broken selector '${expected.css}' -> '${bestCandidate.selector}' (${(bestCandidate.confidence * 100).toFixed(0)}% match)`);
 
       // Record mutation tuple to dataset
       this.datasetCollector.recordMutation({
@@ -185,7 +185,7 @@ export class SelfHealer {
       if (content.includes(oldSelector)) {
         const patched = content.split(oldSelector).join(newSelector);
         fs.writeFileSync(filePath, patched, 'utf8');
-        logger.success(`Surgically patched test file: ${filePath}`);
+        logger.success(`Patched test file: ${filePath}`);
       }
     } catch (err) {
       logger.warn(`Could not auto-patch file ${filePath}:`, err);

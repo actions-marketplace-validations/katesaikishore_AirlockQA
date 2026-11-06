@@ -132,7 +132,8 @@ AirlockQA is configured via `airlock.config.json` in the root of your repository
   },
   "secrets": {
     "API_TOKEN": {
-      "real": "sec_live_prod_actual_key_12345",
+      "realFromEnv": "API_TOKEN",
+      "real": "REPLACE_ME_REAL_SECRET",
       "phantom": "ph_sec_test_dummy_token",
       "allowedHosts": ["api.example.com"],
       "allowedMethods": ["GET", "POST"],
@@ -153,12 +154,13 @@ AirlockQA is configured via `airlock.config.json` in the root of your repository
     ]
   },
   "compliance": {
-    "signingKey": "your-secret-signing-key-32-chars",
     "outputDir": "./.airlock/compliance",
     "generateHtmlReport": true
   }
 }
 ```
+
+`compliance.signingKey` has no default and is intentionally left out of the sample: keep it out of committed files and supply it from a local, untracked config. Each secret's real value is read from the environment variable named by `realFromEnv`; the literal `real` value is only a fallback placeholder. Set `browser.executablePath` or `AIRLOCK_CHROME_PATH` to use a specific Chrome build. Set `AIRLOCK_CHECKPOINT_KEY` to encrypt saved browser-state checkpoints (they contain cookies and storage).
 
 ---
 
