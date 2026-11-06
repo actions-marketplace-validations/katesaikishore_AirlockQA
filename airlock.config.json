@@ -14,7 +14,8 @@
   },
   "secrets": {
     "STRIPE_SECRET_KEY": {
-      "real": "sk_test_live_sample_51M001AcmeProductionSecretKey9900",
+      "realFromEnv": "STRIPE_SECRET_KEY",
+      "real": "REPLACE_ME_REAL_SECRET",
       "phantom": "ph_sec_stripe_test_8f2a1c",
       "allowedHosts": [
         "localhost",
@@ -32,7 +33,8 @@
       ]
     },
     "ADMIN_AUTH_TOKEN": {
-      "real": "jwt_admin_supersecret_production_session_bearer_token",
+      "realFromEnv": "ADMIN_AUTH_TOKEN",
+      "real": "REPLACE_ME_REAL_SECRET",
       "phantom": "ph_auth_bearer_9901_admin",
       "allowedHosts": [
         "localhost",
@@ -96,7 +98,6 @@
     "maxParallelForks": 5
   },
   "compliance": {
-    "signingKey": "airlock-hmac-master-key-32-chars-long!",
     "outputDir": "./.airlock/compliance",
     "generateHtmlReport": true
   }

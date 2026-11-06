@@ -112,7 +112,8 @@ Running `bun run cli init` (or `npx airlock init`) generates a default configura
   },
   "secrets": {
     "STRIPE_KEY": {
-      "real": "sk_live_actual_production_secret_key",
+      "realFromEnv": "STRIPE_SECRET_KEY",
+      "real": "REPLACE_ME_REAL_SECRET",
       "phantom": "ph_sec_stripe_test_placeholder",
       "allowedHosts": ["localhost", "127.0.0.1", "api.stripe.com"],
       "allowedMethods": ["GET", "POST"],
@@ -150,12 +151,13 @@ Running `bun run cli init` (or `npx airlock init`) generates a default configura
     "maxParallelForks": 5
   },
   "compliance": {
-    "signingKey": "airlock-hmac-master-key-32-chars-long!",
     "outputDir": "./.airlock/compliance",
     "generateHtmlReport": true
   }
 }
 ```
+
+`compliance.signingKey` has no default and is intentionally left out of the sample: keep it out of committed files and supply it from a local, untracked config. Each secret's real value is read from the environment variable named by `realFromEnv`; the literal `real` value is only a fallback placeholder. Set `browser.executablePath` or `AIRLOCK_CHROME_PATH` to use a specific Chrome build. Set `AIRLOCK_CHECKPOINT_KEY` to encrypt saved browser-state checkpoints (they contain cookies and storage).
 
 ### Security Rules:
 1. **Never send real secrets over the network**: Real secret values are kept exclusively in runner memory or edge vaults. The browser test runtime only sees `phantom` placeholders (e.g. `ph_sec_stripe_test_placeholder`).

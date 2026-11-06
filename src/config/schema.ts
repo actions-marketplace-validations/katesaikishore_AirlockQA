@@ -3,13 +3,18 @@ import { z } from 'zod';
 export const HttpMethodSchema = z.enum(['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS']);
 
 export const PhantomSecretConfigSchema = z.object({
-  real: z.string().min(1, 'Real secret cannot be empty'),
+  /** Literal secret value. Prefer `realFromEnv` so real values stay out of config files. */
+  real: z.string().min(1, 'Real secret cannot be empty').optional(),
+  /** Name of an environment variable holding the real secret. Takes precedence over `real`. */
+  realFromEnv: z.string().min(1, 'realFromEnv must name an environment variable').optional(),
   phantom: z.string().min(1, 'Phantom token cannot be empty'),
   allowedHosts: z.array(z.string()).default([]),
   allowedMethods: z.array(HttpMethodSchema).optional(),
   blockedPaths: z.array(z.string()).optional(),
   headerName: z.string().default('Authorization'),
   headerPrefix: z.string().default('Bearer '),
+}).refine((secret) => secret.real !== undefined || secret.realFromEnv !== undefined, {
+  message: 'Each secret needs either `real` or `realFromEnv`',
 });
 
 export const EgressRuleSchema = z.object({
@@ -59,31 +64,9 @@ export const AirlockConfigSchema = z.object({
   secrets: z.record(z.string(), PhantomSecretConfigSchema).default({}),
   policy: EgressPolicyConfigSchema.default({
     defaultAction: 'BLOCK',
-    allowedEgressHosts: ['127.0.0.1', 'localhost', 'api.stripe.com'],
-    blockedEgressHosts: ['pastebin.com', 'webhook.site', 'transfer.sh'],
-    rules: [
-      {
-        id: 'block-refunds-and-wipes',
-        description: 'Prevent destructive operations during QA',
-        hostPattern: '*',
-        blockedPaths: ['*/refunds*', '*/wipe*', '*/delete-all*'],
-        action: 'BLOCK',
-      },
-      {
-        id: 'allow-staging-and-local',
-        description: 'Allow standard local and staging interaction',
-        hostPattern: 'localhost',
-        action: 'ALLOW',
-      },
-      {
-        id: 'allow-stripe-get-and-charge',
-        description: 'Allow Stripe API calls except refunds',
-        hostPattern: 'api.stripe.com',
-        allowedPaths: ['/v1/charges', '/v1/customers', '/v1/tokens'],
-        blockedPaths: ['/v1/refunds'],
-        action: 'ALLOW',
-      },
-    ],
+    allowedEgressHosts: ['127.0.0.1', 'localhost', '::1'],
+    blockedEgressHosts: [],
+    rules: [],
     logPayloads: true,
   }),
   compiler: z.object({
@@ -114,11 +97,11 @@ export const AirlockConfigSchema = z.object({
     maxParallelForks: 10,
   }),
   compliance: z.object({
-    signingKey: z.string().default('airlock-dev-signing-key-32-chars-long!'),
+    // No default: a signing key must be supplied explicitly (config or environment).
+    signingKey: z.string().min(1).optional(),
     outputDir: z.string().default('./.airlock/compliance'),
     generateHtmlReport: z.boolean().default(true),
   }).default({
-    signingKey: 'airlock-dev-signing-key-32-chars-long!',
     outputDir: './.airlock/compliance',
     generateHtmlReport: true,
   }),

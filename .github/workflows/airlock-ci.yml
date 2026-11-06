@@ -19,28 +19,44 @@ jobs:
       - name: Install Bun runtime
         uses: oven-sh/setup-bun@v2
         with:
-          bun-version: latest
+          bun-version: 1.3.14
+
+      - name: Cache Bun dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('bun.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
 
       - name: Install dependencies
-        run: bun install
+        run: bun install --frozen-lockfile
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('bun.lock') }}
 
       - name: Install Playwright Chromium
         run: npx playwright install chromium --with-deps
 
+      - name: Build TypeScript
+        run: bun run build
+
       - name: Start demo store
         run: |
           bun ./examples/demo-store/server.ts > /tmp/airlockqa-demo-store.log 2>&1 &
-          for attempt in {1..30}; do
+          for attempt in $(seq 1 30); do
             if curl -fsS http://127.0.0.1:3900/ >/dev/null; then
+              echo "Demo store is up"
               exit 0
             fi
             sleep 1
           done
+          echo "::error::Demo store did not start on http://127.0.0.1:3900 within 30s"
           cat /tmp/airlockqa-demo-store.log
           exit 1
-
-      - name: Build TypeScript
-        run: bun run build
 
       - name: Run automated tests
         run: bun test
@@ -52,6 +68,7 @@ jobs:
         run: bun ./bin/airlock.ts audit ./.airlock/compliance/latest-attestation.json
 
       - name: Upload run evidence artifacts
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: airlockqa-run-evidence
@@ -59,3 +76,4 @@ jobs:
             .airlock/compliance/
             .airlock/dataset/
           retention-days: 30
+          if-no-files-found: warn

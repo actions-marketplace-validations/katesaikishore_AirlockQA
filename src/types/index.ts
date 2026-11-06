@@ -12,6 +12,8 @@ export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'HEAD' | 
 export interface PhantomSecretConfig {
   /** Configured secret used by the trusted proxy for an allowed substitution. */
   real: string;
+  /** Environment variable the loader read `real` from, when configured that way. */
+  realFromEnv?: string;
   /** The dummy phantom token injected into the sandbox */
   phantom: string;
   /** Permitted destination hosts for this secret */

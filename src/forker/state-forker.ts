@@ -43,9 +43,8 @@ export class StateForker {
     }
 
     const forkStartTime = Date.now();
-    logger.moat(
-      3,
-      `Parallel Browser-State Forking: Spawning ${variations.length} Isolated Contexts`,
+    logger.stage(
+      `Forking ${variations.length} browser contexts`,
       `Restoring browser checkpoint '${checkpointName}' without repeating setup steps`
     );
 
