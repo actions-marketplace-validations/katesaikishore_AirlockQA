@@ -3,7 +3,7 @@
 [![CI](https://github.com/katesaikishore/AirlockQA/actions/workflows/airlock-ci.yml/badge.svg)](https://github.com/katesaikishore/AirlockQA/actions/workflows/airlock-ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-AirlockQA is a local-first command-line tool for browser testing. It records a browser session, compiles it into a Playwright test, runs tests with a request policy that keeps real credentials out of the test browser, and writes a signed evidence bundle for each run that can be verified later.
+AirlockQA is a local-first command-line tool for browser testing. It records a browser session, compiles it into a Playwright test, runs tests with a request policy that keeps real credentials out of the test browser, and writes a signed evidence bundle for each run. A bundle can be verified later when its signing key is kept and available (see [Evidence, signing and audit](#evidence-signing-and-audit)).
 
 It runs on your machine or in CI. The hosted Airlock Cloud service is not part of this repository and is not required.
 
@@ -16,14 +16,14 @@ Read this table before relying on a feature. Each row describes what this reposi
 | `explore`, `compile`, `init` | Implemented | Records clicks, typing, key presses and selects into a trace; compiles it to a Playwright spec. |
 | `test --local` | Implemented | Runs specs through Playwright Test. Hand-written specs can use the `airlockTest` fixture; compiled specs attach the gateway in `beforeEach`. |
 | `run` (configured workflow) | Implemented | Runs `workflow` steps in one browser, with the gateway attached, and writes signed evidence. |
-| Phantom credential substitution | Implemented | Exact string match in text request bodies only. Binary bodies are not rewritten. |
+| Phantom credential substitution | Implemented | Exact string match in request headers and in text request bodies. Other bodies are passed through unchanged. |
 | Request policy (egress rules) | Implemented, scoped | Covers browser-context requests and the standalone HTTP proxy. It is not an operating-system firewall. |
 | Evidence signing and `audit` | Implemented | HMAC-SHA256 or Ed25519. The SOC 2 mapping fields are `NOT_ASSESSED`; this is not a certification. |
 | Browser checkpoints and `fork` | Implemented | Saves cookies, storage and DOM hash, then restores them into new contexts. It does not capture process or VM memory. |
 | `chaos` | Prototype | Clicks one action and reports whether the observed request carried an idempotency key. It does not inject faults. |
 | `warp` | Prototype | The CLI command has no effect on the browser clock. The runner API can offset `Date` on one page. |
 | `teleport` | Prototype | Generates a repro spec from a capsule file. It does not replay the capsule. |
-| Self-healing locators | Partial | A fallback helper used by compiled specs. `healer.confidenceThreshold` and `healer.datasetDir` are used; `healer.autoHeal` and `healer.saveMutations` are not read yet. |
+| Self-healing locators | Partial | `airlockLocator` accepts an optional healer for a fallback tier. Compiled specs do not pass one, so no healing runs by default. `healer.datasetDir` is used by the dataset command and console; `healer.confidenceThreshold` applies only when a caller passes the runner's healer. `healer.autoHeal` and `healer.saveMutations` are not read yet. |
 | `serve` (web console) | Partial | Evidence and checkpoint views read local files. Run lists and metrics are sample data. |
 | Airlock Cloud (`test --cloud`) | Client only | The client exists. The service, key issuance and quota enforcement are not in this repository. |
 
@@ -76,7 +76,7 @@ Compiled specs import from `airlockqa`, which resolves only where the package is
 
 ## CLI reference
 
-The examples in this README use `airlock`. From a clone, run `bun run cli <command>` instead.
+The examples in this README use `airlock` for brevity. From a clone, substitute `bun ./bin/airlock.ts <command>` or `bun run cli <command>`, which the quick start and typical workflow use.
 
 | Command | Purpose |
 | :--- | :--- |
@@ -131,7 +131,7 @@ The main fields are documented in [docs/HOW-TO-USE.md](docs/HOW-TO-USE.md). A fe
 | `AIRLOCK_CHECKPOINT_KEY` | Encrypts saved checkpoints at rest (AES-256-GCM). Without it, checkpoints are plain text and contain cookies, storage and page HTML. |
 | `AIRLOCK_API_KEY` | Airlock Cloud key. Sent only as a Bearer token over HTTPS (plain HTTP is allowed only for localhost). |
 | `AIRLOCK_CLOUD_URL` | Cloud API base URL. Requires HTTPS except for localhost. |
-| `CI` | When set and no signing key is provided, `run` and `audit` refuse to use the development key. |
+| `CI` | When set to a value other than `false` or `0`, and no signing key is provided, `run` and `audit` refuse to use the development key. |
 
 Secret values are read from the variable named by `realFromEnv`, and `${env:NAME}` may be used in workflow step values. Names are yours to choose. The container and proxy variables are read by `container/start-proxy.ts` and `container/entrypoint.sh`; see those files and `container/docker-compose.yml`.
 
@@ -141,7 +141,7 @@ Secret values are read from the variable named by `realFromEnv`, and `${env:NAME
 
 1. `--local` runs on your machine.
 2. `--cloud` submits a run to Airlock Cloud and requires `AIRLOCK_API_KEY`.
-3. With neither flag, the command runs on Cloud if `AIRLOCK_API_KEY` is set, and locally otherwise.
+3. With neither flag, the command submits to the default Cloud endpoint if `AIRLOCK_API_KEY` is set, and runs locally otherwise. Pass `--local` to avoid the Cloud endpoint.
 
 Cloud execution is client code only in this repository. When `AIRLOCK_CLOUD_URL` is unset, the client sends runs to the default endpoint `https://api.qbrin.cloud`, a hosted service outside this repository. This repository does not verify that service's availability. Set `AIRLOCK_CLOUD_URL` to use another deployment that implements `POST /v1/runs`.
 
@@ -154,16 +154,16 @@ Test code sees placeholder values (phantom tokens). The gateway replaces a place
 - the method and path are not blocked, and
 - the egress policy allows the host.
 
-Replacement is an exact string match in text request bodies. Binary bodies are passed through unchanged. Encoded, split or transformed values are not detected.
+Replacement is an exact string match in request headers and in text request bodies (`text/*`, JSON, XML, form-encoded). Other bodies are passed through unchanged. Encoded, split or transformed values are not detected.
 
-Unlisted hosts are blocked by default (`defaultAction: BLOCK`). The policy does not cover requests that a server makes to other servers, it is not an operating-system firewall, and it does not replace a secrets vault. Read the limits in [docs/HOW-TO-USE.md](docs/HOW-TO-USE.md) before relying on it for production credentials.
+Requests through the gateway or proxy to unlisted hosts are blocked by default (`defaultAction: BLOCK`). The policy does not cover requests that a server makes to other servers, it is not an operating-system firewall, and it does not replace a secrets vault. Read the limits in [docs/HOW-TO-USE.md](docs/HOW-TO-USE.md) before relying on it for production credentials.
 
 ## Evidence, signing and audit
 
 Each `run` writes `.airlock/compliance/latest-attestation.json` and an HTML report. A bundle records the ledger hash chain, the Merkle root of the chain, the policy decisions and the signature over the whole bundle.
 
-- A bundle proves that the recorded ledger has not changed since it was signed, and that the signer held the key.
-- Anyone holding the HMAC key can verify a bundle. With Ed25519, verify against a pinned public key (`AIRLOCK_TRUSTED_PUBLIC_KEY`). Without one, `audit` checks only that the bundle matches the key embedded in it, which shows consistency but not who signed it.
+- A bundle shows that the recorded ledger has not changed since signing, when verified with the signing key (HMAC) or a pinned Ed25519 public key. Without a pinned key, it shows only consistency.
+- Anyone holding the HMAC key can verify a bundle. With Ed25519, verify against a pinned public key (`AIRLOCK_TRUSTED_PUBLIC_KEY`). Without one, `audit` checks only that the bundle matches the key embedded in it, which shows consistency but not who signed it. With CI set and no signing key, `audit` refuses an Ed25519 bundle unless `AIRLOCK_TRUSTED_PUBLIC_KEY` is set. A configured PEM signing key also pins the signer.
 - A bundle does not prove that the tests passed, that the application is secure, or that any compliance control was met. The SOC 2 mapping fields are `NOT_ASSESSED`.
 - In CI without `AIRLOCK_SIGNING_KEY`, the workflow in this repository signs with a random key for that job. Such a bundle cannot be verified later by a key holder.
 - Outside CI, with no signing key configured, a run is signed with a development key that is public in this repository. Such a bundle is marked `insecureDevKey` and provides no integrity guarantee. Set `AIRLOCK_SIGNING_KEY` for any bundle you rely on.
@@ -190,7 +190,7 @@ To produce bundles that can be verified later, add `AIRLOCK_SIGNING_KEY` as a re
 | `bun run demo:server` | Start the demo store on port 3900. |
 | `bun run qa:gui` | Drive the staging UI. Requires `agent-browser` and Chrome; not run in CI. |
 
-Set `AIRLOCK_CHROME_PATH` if Playwright cannot find a browser. The tests use it for browser-based cases.
+Install a browser with `bunx playwright install chromium`. The CLI uses `AIRLOCK_CHROME_PATH` when `browser.executablePath` is not set. The browser-based tests read `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` instead.
 
 ## Documentation
 
