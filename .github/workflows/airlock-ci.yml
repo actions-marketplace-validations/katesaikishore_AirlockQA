@@ -25,7 +25,7 @@ jobs:
         run: bun install
 
       - name: Install Playwright Chromium
-        run: npx --yes playwright@1.65.0 install chromium --with-deps
+        run: npx playwright install chromium --with-deps
 
       - name: Start demo store
         run: |
