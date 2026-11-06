@@ -3,82 +3,741 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#f7f8f6">
-  <meta name="description" content="Submit browser test runs from CI with Airlock Cloud. Explore the current API and browser tooling, including clearly labeled preview data.">
-  <title>Airlock Cloud · Test with confidence</title>
+  <meta name="theme-color" content="#F7F8F5">
+  <meta name="description" content="AirlockQA — Browser tests that can’t break real things. Turn browser explorations into repeatable tests with request policies, self-healing locators, and signed execution receipts.">
+  <title>AirlockQA — Browser tests that can’t break real things</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/marketing.css">
-  <script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js" } }</script>
-  <script type="module" src="/marketing-motion.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/marketing.css?v=20261107">
+  <script src="/marketing.js?v=20261107" defer></script>
 </head>
-<body>
-  <header class="marketing-header">
-    <a class="marketing-brand" href="/" aria-label="Airlock Cloud home"><img class="brand-mark" src="/favicon.svg" alt="" width="27" height="27"><span>airlock<span>cloud</span></span></a>
-    <nav class="marketing-nav" aria-label="Main navigation"><a href="#platform">Platform</a><a href="#workflow">How it works</a><a href="#security">Security</a><a href="https://github.com/katesaikishore/AirlockQA" target="_blank" rel="noreferrer">Docs ↗</a></nav>
-    <div class="marketing-actions"><a class="login-link" href="/login">Sign in</a><a class="button button-dark" href="/login?next=%2Fconsole">Open sample workspace <span>↗</span></a></div>
-  </header>
-  <main>
-    <section class="hero section-shell">
-      <div class="hero-copy">
-        <div class="eyebrow"><span class="eyebrow-dot"></span> ISOLATED BROWSER TESTING FOR CI</div>
-        <h1>Turn browser explorations<br>into repeatable tests.</h1>
-        <p class="hero-description">Record a browser journey, compile it to Playwright, then submit runs from CI through Airlock Cloud. Review the response from your deployment; advanced sandbox capabilities are evolving.</p>
-        <div class="hero-actions"><a class="button button-primary" href="/login?next=%2Fconsole">Explore the sample console <span>→</span></a><a class="text-link" href="#workflow">See how it works <span>↓</span></a></div>
-        <div class="hero-points"><span><i>✓</i> CI-first API</span><span><i>✓</i> Browser test tooling</span><span><i>✓</i> Run response evidence</span></div>
-      </div>
-      <div class="hero-visual" role="img" aria-label="Sample Airlock Cloud run interface">
-        <div class="visual-glow"></div><div class="visual-orbit orbit-one"></div><div class="visual-orbit orbit-two"></div>
-        <canvas class="hero-three" id="hero-three" aria-hidden="true"></canvas>
-        <div class="product-window">
-          <div class="window-top"><span class="window-logo"><i></i><i></i><i></i></span><span>Airlock Cloud</span><span class="window-workspace">SAMPLE WORKSPACE</span></div>
-          <div class="window-content">
-            <div class="window-sidebar"><span class="mini-nav active"><i>⌂</i> Overview</span><span class="mini-nav"><i>◷</i> Test runs</span><span class="mini-nav"><i>▦</i> Explorer</span><span class="mini-nav"><i>♧</i> Evidence</span><div class="mini-sidebar-foot"><b>MC</b><span>Maya Chen<small>Workspace admin</small></span></div></div>
-            <div class="window-main">
-              <div class="window-heading"><div><small>ACME WORKSPACE / RUN DETAIL</small><strong>Checkout payment</strong></div><span class="sample-pill">SAMPLE</span></div>
-              <div class="window-summary"><div><small>RESULT</small><strong class="result-good"><i>✓</i> Passed</strong></div><div><small>STEPS</small><strong>18 <span>of 18</span></strong></div><div><small>EXECUTION</small><strong>42s</strong></div></div>
-              <div class="window-timeline"><div class="timeline-title"><strong>Execution timeline</strong><small>Sample response</small></div><div class="timeline-row"><i class="timeline-check">✓</i><span><b>Isolated browser ready</b><small>Fresh execution context started</small></span><time>1.4s</time></div><div class="timeline-row"><i class="timeline-check">✓</i><span><b>Checkout assertions passed</b><small>Test steps completed successfully</small></span><time>42s</time></div><div class="timeline-row"><i class="timeline-proof">◇</i><span><b>Attestation returned</b><small>Proof attached to run result</small></span><time>42s</time></div></div>
-              <div class="window-foot"><span><i></i> All sample checks complete</span><span>PREVIEW DATA</span></div>
-            </div>
-          </div>
-        </div>
-        <div class="float-card float-policy"><span class="float-icon">⛨</span><span><b>Policy boundary</b><small>Outbound request evaluated</small></span><i>✓</i></div>
-        <div class="float-card float-proof"><span class="float-icon proof-icon">◇</span><span><b>Run evidence</b><small>Illustrative preview</small></span></div>
-        <div class="visual-caption"><i></i> 3D execution path · illustrative sample</div>
-      </div>
-    </section>
-    <section class="workflow-strip section-shell" id="workflow">
-      <div class="strip-heading"><span>FROM COMMIT TO EVIDENCE</span><p>A straightforward path from your pipeline to a result.</p></div>
-      <div class="workflow-steps"><div class="workflow-step"><i>⌘</i><span><b>Your CI runner</b><small>Push or pull request</small></span></div><span class="step-connector"><i></i></span><div class="workflow-step"><i>⇄</i><span><b>Airlock run API</b><small>POST /v1/runs</small></span></div><span class="step-connector"><i></i></span><div class="workflow-step"><i>▣</i><span><b>Browser runner</b><small>Execution varies by deployment</small></span></div><span class="step-connector"><i></i></span><div class="workflow-step"><i>✓</i><span><b>Run response</b><small>Returned to CI</small></span></div></div>
-    </section>
-    <section class="platform-section section-shell" id="platform">
-      <div class="section-intro"><div class="eyebrow">A SAFER WAY TO TEST</div><h2>Confidence belongs in<br>every pull request.</h2><p>Airlock provides a run-submission API plus a local Playwright toolkit with request policies, browser-state checkpoints, and evidence utilities.</p></div>
-      <div class="feature-grid" id="security">
-        <article class="feature-card"><span class="feature-icon feature-green">⌑</span><span class="feature-index">01 / REQUEST POLICY</span><h3>Apply request policies in the browser context.</h3><p>Configure host, path, and method rules and substitute configured phantom tokens on intercepted browser requests. This prototype is not an OS-level egress firewall.</p><a href="/login?next=%2Fconsole">Explore the workflow <b>→</b></a></article>
-        <article class="feature-card"><span class="feature-icon feature-blue">◷</span><span class="feature-index">02 / BROWSER STATE</span><h3>Reuse browser state for test variations.</h3><p>Capture browser storage and session state, then restore it into a new Playwright context. These are browser snapshots, not VM memory clones.</p><a href="/login?next=%2Fconsole">View the sample console <b>→</b></a></article>
-        <article class="feature-card"><span class="feature-icon feature-lilac">◇</span><span class="feature-index">03 / EXECUTION EVIDENCE</span><h3>Create verifiable execution bundles.</h3><p>AirlockQA can generate hash-linked ledger entries and signed bundles for verification with the configured key. This does not certify compliance.</p><a href="/login?next=%2Fconsole">See the response path <b>→</b></a></article>
-      </div>
-    </section>
-    <section class="integration-section">
-      <div class="section-shell integration-layout">
-        <div><div class="eyebrow">BUILT FOR YOUR PIPELINE</div><h2>One request.<br><em>A result your CI can use.</em></h2><p>The cloud API exposes a run-submission route at POST /v1/runs. Cloud execution is still evolving; confirm the capabilities of your deployment before relying on run isolation or advanced diagnostics.</p><a class="button button-primary" href="/login?next=%2Fconsole">See the CI/CD setup <span>→</span></a></div>
-        <div class="terminal-card"><div class="terminal-header"><span><i></i><i></i><i></i></span><b>GITHUB ACTIONS</b><small>airlock.yml</small></div><pre><code>jobs:
-  browser-tests:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - run: npm install
-      - run: npx airlock test --cloud
-        env:
-          AIRLOCK_API_KEY: &lt;from CI secrets&gt;</code></pre><div class="terminal-footer"><span>POST <b>/v1/runs</b></span><span>Result returned to CI <i>✓</i></span></div></div>
-      </div>
-    </section>
-    <section class="closing-cta section-shell"><div><span class="eyebrow">READY TO SEE YOUR RUNS?</span><h2>Take a look inside Airlock Cloud.</h2><p>Explore the sample workspace and the current run-submission flow. Sample metrics are illustrative.</p></div><a class="button button-dark" href="/login?next=%2Fconsole">Open sample workspace <span>↗</span></a></section>
-  </main>
-  <footer class="marketing-footer"><a class="marketing-brand" href="/"><img class="brand-mark" src="/favicon.svg" alt="" width="23" height="23"><span>airlock<span>cloud</span></span></a><span>Isolated browser testing for CI.</span><div><a href="/login">Sign in</a><a href="https://github.com/katesaikishore/AirlockQA" target="_blank" rel="noreferrer">GitHub ↗</a></div></footer>
+<body id="top">
+<div class="al al-mode-plain" data-tab="cli" data-motion="on" style="min-height: 100vh; overflow-x: hidden; background: #F7F8F5; color: #15211C; font-family: 'DM Sans', system-ui, -apple-system, 'Segoe UI', sans-serif; font-size: 16px; line-height: 1.6">
+
+<header style="max-width: 1200px; margin: 0 auto; padding: 18px 24px; display: flex; align-items: center; gap: 24px">
+<a href="#top" aria-label="AirlockQA home" style="display: inline-flex; align-items: center; gap: 10px; color: #15211C; text-decoration: none">
+<svg width="34" height="34" viewBox="0 0 64 64" aria-hidden="true"><rect x="2" y="2" width="60" height="60" rx="18" fill="#2F6F5B"></rect><path d="M16 48V31.5C16 22.94 22.94 16 31.5 16h1C41.06 16 48 22.94 48 31.5V48" fill="none" stroke="#F7FBF8" stroke-width="4.5" stroke-linecap="round"></path><path d="M23.5 47V31.5a8.5 8.5 0 0 1 17 0V47" fill="none" stroke="#B8E4CE" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"></path><path d="M32 31v13" fill="none" stroke="#F7FBF8" stroke-width="2.5" stroke-linecap="round"></path><path d="M19.5 49.5h25" fill="none" stroke="#F7FBF8" stroke-width="4.5" stroke-linecap="round"></path><circle cx="44.5" cy="20.5" r="2.2" fill="#B8E4CE"></circle></svg>
+<span style="font: 800 20px/1 Manrope, system-ui, sans-serif; letter-spacing: -0.5px">Airlock<span style="color: #2F6F5B">QA</span></span>
+</a>
+<nav class="al-navlinks" aria-label="Main" style="flex: 1; justify-content: center; align-items: center; gap: 30px; font-size: 15px">
+<a class="al-link" href="#how">How it works</a>
+<a class="al-link" href="#features">Features</a>
+<a class="al-link" href="#safety">Safety</a>
+<a class="al-link" href="#plans">Plans</a>
+<a class="al-link" href="https://github.com/katesaikishore/AirlockQA" target="_blank" rel="noreferrer">Docs</a>
+</nav>
+<div style="margin-left: auto; display: flex; align-items: center; gap: 18px">
+<a class="al-link" href="/login" style="font-size: 15px">Sign in</a>
+<a class="al-btn" href="/login?next=%2Fconsole" style="display: inline-flex; align-items: center; gap: 8px; height: 44px; padding: 0 18px; border-radius: 12px; background: #2F6F5B; color: #FFFFFF; font-size: 15px; font-weight: 600; text-decoration: none; white-space: nowrap">Explore the demo<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></a>
+</div>
+</header>
+
+<main>
+<section id="top" style="position: relative; max-width: 1200px; margin: 0 auto; padding: 48px 24px 88px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(480px, 100%), 1fr)); gap: 56px; align-items: center">
+<div aria-hidden="true" style="position: absolute; right: -120px; top: 0; width: 760px; height: 720px; background-image: radial-gradient(#D3DDD5 1.2px, transparent 1.2px); background-size: 22px 22px; -webkit-mask-image: radial-gradient(closest-side, #000 35%, transparent); mask-image: radial-gradient(closest-side, #000 35%, transparent); pointer-events: none"></div>
+
+<div style="position: relative">
+<div class="al-rise" data-anim="1" style="display: inline-flex; align-items: center; gap: 10px; padding: 5px 14px 5px 5px; border: 1px solid #D9E7DE; border-radius: 999px; background: #FFFFFF; font-size: 14px; font-weight: 600; color: #2F6F5B">
+<span style="display: inline-flex; align-items: center; height: 26px; padding: 0 10px; border-radius: 999px; background: #E2F2E9; color: #1F6B4F; font-size: 12.5px">Open source</span>
+MIT licensed · Built on Playwright
+</div>
+<h1 class="al-rise" data-anim="1" style="animation-delay: .06s; margin: 22px 0 0; font: 800 clamp(42px, 5.4vw, 68px)/1.03 Manrope, system-ui, sans-serif; letter-spacing: -0.035em; color: #15211C; text-wrap: balance">Browser tests that can’t break <span style="color: #2F6F5B">real things.</span></h1>
+<div class="al-rise" data-anim="1" style="animation-delay: .12s; margin-top: 22px; max-width: 560px; font-size: 18.5px; line-height: 1.65; color: #46544C">
+<div class="al-text-mode al-mode-plain"><p style="margin: 0">AirlockQA clicks through your website like a real customer to check that everything works. Each test runs behind a safety door, so it can’t refund a card, delete data or leak a real password — and every run ends with a signed receipt anyone can check.</p></div>
+<div class="al-text-mode al-mode-tech"><p style="margin: 0">Record a browser session, compile it to Playwright TypeScript, and run it locally or from CI. Requests pass a policy gateway with host, path and method rules and phantom-token swaps, and every run emits a hash-linked, signed evidence bundle.</p></div>
+</div>
+<div class="al-rise" data-anim="1" style="animation-delay: .18s; margin-top: 26px; display: flex; flex-wrap: wrap; align-items: center; gap: 12px">
+<span style="font-size: 14.5px; font-weight: 500; color: #5A6961">Explain it for</span>
+<div role="group" aria-label="Explanation level" style="display: inline-flex; gap: 4px; padding: 4px; border: 1px solid #E3E8E2; border-radius: 999px; background: #FFFFFF">
+<button type="button" aria-pressed="true" data-mode-btn="plain" class="al-mode-btn al-mode-btn-plain" style="display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 16px; border: 0; border-radius: 999px; cursor: pointer; font: 600 14px/1 'DM Sans', system-ui, sans-serif; "><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"></circle><path d="M2.5 20a6.5 6.5 0 0 1 13 0"></path><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18.5 14.4A6.5 6.5 0 0 1 21.5 20"></path></svg>Everyone</button>
+<button type="button" aria-pressed="false" data-mode-btn="tech" class="al-mode-btn al-mode-btn-tech" style="display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 16px; border: 0; border-radius: 999px; cursor: pointer; font: 600 14px/1 'DM Sans', system-ui, sans-serif; "><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 8l-4 4 4 4M16 8l4 4-4 4M13.5 5l-3 14"></path></svg>Engineers</button>
+</div>
+</div>
+<div class="al-rise" data-anim="1" style="animation-delay: .24s; margin-top: 30px; display: flex; flex-wrap: wrap; align-items: center; gap: 12px">
+<a class="al-btn" href="/login?next=%2Fconsole" style="display: inline-flex; align-items: center; gap: 10px; height: 54px; padding: 0 24px; border-radius: 14px; background: #2F6F5B; color: #FFFFFF; font-size: 16.5px; font-weight: 700; text-decoration: none">Explore the demo<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></a>
+<div style="display: inline-flex; align-items: center; gap: 12px; height: 54px; padding: 0 8px 0 18px; border: 1px solid #D3DBD4; border-radius: 14px; background: #FFFFFF; font: 500 15px/1 'JetBrains Mono', ui-monospace, monospace; color: #15211C">
+<span aria-hidden="true" style="color: #5A6961">$</span>npm i -D airlockqa
+<button type="button" data-copy-target="npm install --save-dev airlockqa" aria-label="Copy install command" class="al-copy-btn" style="height: 38px; padding: 0 14px; border: 1px solid #E3E8E2; border-radius: 10px; background: #F7F8F5; color: #2F6F5B; font: 600 13.5px/1 'DM Sans', system-ui, sans-serif; cursor: pointer"><span class="al-copy-label">Copy</span></button>
+</div>
+</div>
+<ul class="al-rise" data-anim="1" style="animation-delay: .3s; list-style: none; margin: 28px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 10px 22px; font-size: 14.5px; color: #46544C">
+<li style="display: inline-flex; align-items: center; gap: 8px"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#2F6F5B" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.2 4.2L19 7"></path></svg>Free on your laptop or in CI</li>
+<li style="display: inline-flex; align-items: center; gap: 8px"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#2F6F5B" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.2 4.2L19 7"></path></svg>Works with GitHub Actions</li>
+<li style="display: inline-flex; align-items: center; gap: 8px"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#2F6F5B" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.2 4.2L19 7"></path></svg>A signed receipt for every run</li>
+</ul>
+</div>
+
+<div class="al-rise" data-anim="1" role="group" aria-label="Animated example: one test passing through the AirlockQA safety door" style="animation-delay: .2s; position: relative; padding: 20px; border: 1px solid #E3E8E2; border-radius: 24px; background: #FFFFFF; box-shadow: 0 1px 0 rgba(21,33,28,.03), 0 32px 72px rgba(21,33,28,.10)">
+<div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px">
+<div style="display: inline-flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 600; color: #15211C"><span data-anim="1" style="width: 9px; height: 9px; border-radius: 50%; background: #2F6F5B; animation: al-pulse 2.2s ease-in-out infinite"></span>Watch one test run</div>
+<div style="display: flex; gap: 14px; font-size: 13px; color: #5A6961">
+<span style="display: inline-flex; align-items: center; gap: 6px"><span style="width: 10px; height: 10px; border-radius: 3px; background: #2F6F5B"></span>Allowed</span>
+<span style="display: inline-flex; align-items: center; gap: 6px"><span style="width: 10px; height: 10px; border-radius: 3px; background: #D9822B"></span>Stopped</span>
+</div>
+</div>
+
+<div style="margin-top: 16px; border: 1px solid #E3E8E2; border-radius: 14px; background: #F7F8F5; overflow: hidden">
+<div style="display: flex; align-items: center; gap: 6px; padding: 8px 12px; border-bottom: 1px solid #E3E8E2; background: #FFFFFF">
+<span style="width: 9px; height: 9px; border-radius: 50%; background: #E3E8E2"></span><span style="width: 9px; height: 9px; border-radius: 50%; background: #E3E8E2"></span><span style="width: 9px; height: 9px; border-radius: 50%; background: #E3E8E2"></span>
+<span style="flex: 1; min-width: 0; margin-left: 6px; height: 24px; display: flex; align-items: center; padding: 0 10px; border-radius: 7px; background: #F1F4F0; font: 500 12px/1 'JetBrains Mono', ui-monospace, monospace; color: #5A6961; white-space: nowrap; overflow: hidden">shop.test/checkout</span>
+<span style="font-size: 12px; font-weight: 600; color: #2F6F5B; white-space: nowrap"><span class="al-mode-plain">Your test</span><span class="al-mode-tech">Playwright context</span></span>
+</div>
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px">
+<div style="min-width: 0">
+<div style="font: 700 15px/1.3 Manrope, system-ui, sans-serif; color: #15211C">Order summary</div>
+<div style="font-size: 13px; color: #5A6961">1 × Trail runner · $49.00</div>
+</div>
+<div style="position: relative; flex: none">
+<span style="display: inline-flex; align-items: center; height: 38px; padding: 0 18px; border-radius: 10px; background: #15211C; color: #FFFFFF; font-size: 14px; font-weight: 600">Pay $49</span>
+<span data-anim="1" style="position: absolute; left: 50%; top: 50%; width: 26px; height: 26px; margin: -13px 0 0 -13px; border: 2px solid #2F6F5B; border-radius: 50%; opacity: 0; animation: al-ripple 14s ease-out 0s infinite both"></span>
+<span data-anim="1" style="position: absolute; left: 50%; top: 50%; width: 26px; height: 26px; margin: -13px 0 0 -13px; border: 2px solid #2F6F5B; border-radius: 50%; opacity: 0; animation: al-ripple 14s ease-out 3.5s infinite both"></span>
+<span data-anim="1" style="position: absolute; left: 50%; top: 50%; width: 26px; height: 26px; margin: -13px 0 0 -13px; border: 2px solid #2F6F5B; border-radius: 50%; opacity: 0; animation: al-ripple 14s ease-out 7s infinite both"></span>
+<svg data-anim="1" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" style="position: absolute; right: -4px; bottom: -12px; transform-origin: 30% 20%; animation: al-click 14s ease-in-out infinite"><path d="M5 3l14 7.2-6.4 1.9L9.9 18.5z" fill="#15211C" stroke="#FFFFFF" stroke-width="1.6" stroke-linejoin="round"></path></svg>
+</div>
+</div>
+</div>
+
+<div style="position: relative; height: 224px">
+<div style="position: absolute; left: 0; right: 0; top: 100px; height: 42px; display: flex; align-items: center; justify-content: center; gap: 10px; border-radius: 12px; background: #15211C; color: #E7F2EC; font-size: 13px; font-weight: 600">
+<svg width="20" height="20" viewBox="0 0 64 64" aria-hidden="true"><path d="M16 48V31.5C16 22.94 22.94 16 31.5 16h1C41.06 16 48 22.94 48 31.5V48" fill="none" stroke="#F7FBF8" stroke-width="5" stroke-linecap="round"></path><path d="M23.5 47V31.5a8.5 8.5 0 0 1 17 0V47" fill="none" stroke="#7FD6AE" stroke-width="4.5" stroke-linecap="round"></path></svg><span class="al-mode-plain">Airlock safety door</span><span class="al-mode-tech">Policy gateway</span>
+</div>
+<div style="position: absolute; inset: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr))">
+<div style="position: relative">
+<span style="position: absolute; left: 50%; top: 0; bottom: 0; border-left: 2px dashed #D3DBD4"></span>
+<span data-anim="1" style="position: absolute; left: 10%; right: 10%; top: 97px; height: 48px; border: 2px solid #4CC08C; border-radius: 13px; box-shadow: 0 0 0 4px rgba(76,192,140,.25); opacity: 0; animation: al-door 14s ease-in-out 0s infinite both"></span>
+<div data-anim="1" style="position: absolute; left: 50%; top: 0; z-index: 2; max-width: 96%; transform: translate(-50%, 156px); animation: al-ok 14s ease-in-out 0s infinite both">
+<div style="display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 8px 10px; border: 1px solid #CFE3D7; border-radius: 11px; background: #FFFFFF; box-shadow: 0 10px 24px rgba(21,33,28,.12); text-align: center">
+<span style="font-size: 12.5px; font-weight: 600; line-height: 1.2; color: #15211C"><span class="al-mode-plain">Look up saved card</span><span class="al-mode-tech">GET /v1/payment_methods</span></span>
+<span style="display: inline-grid; font-size: 11px; font-weight: 600; line-height: 1">
+<span data-anim="1" style="grid-area: 1 / 1; padding: 4px 7px; border-radius: 6px; background: #F1F4F0; color: #46544C; opacity: 0; animation: al-swap-out 14s ease-in-out 0s infinite both"><span class="al-mode-plain">stand-in key</span><span class="al-mode-tech">ph_sec_stripe…</span></span>
+<span data-anim="1" style="grid-area: 1 / 1; padding: 4px 7px; border-radius: 6px; background: #E2F2E9; color: #1F6B4F; animation: al-swap-in 14s ease-in-out 0s infinite both"><span class="al-mode-plain">real key added</span><span class="al-mode-tech">sk_live_•••• swapped</span></span>
+</span>
+</div>
+</div>
+</div>
+<div style="position: relative">
+<span style="position: absolute; left: 50%; top: 0; bottom: 0; border-left: 2px dashed #D3DBD4"></span>
+<span data-anim="1" style="position: absolute; left: 10%; right: 10%; top: 97px; height: 48px; border: 2px solid #E8892B; border-radius: 13px; box-shadow: 0 0 0 4px rgba(232,137,43,.25); opacity: 0; animation: al-door 14s ease-in-out 3.5s infinite both"></span>
+<div data-anim="1" style="position: absolute; left: 50%; top: 0; z-index: 2; max-width: 96%; transform: translate(-50%, 58px); animation: al-block 14s ease-in-out 3.5s infinite both">
+<div style="position: relative; padding: 9px 12px; border: 1px solid #E3E8E2; border-radius: 11px; background: #FFFFFF; box-shadow: 0 10px 24px rgba(21,33,28,.12); text-align: center; font-size: 12.5px; font-weight: 600; line-height: 1.2; color: #15211C"><span class="al-mode-plain">Refund $49</span><span class="al-mode-tech">POST /v1/refunds</span><span data-anim="1" style="position: absolute; inset: -1px; display: flex; align-items: center; justify-content: center; gap: 6px; border: 1px solid #E8A15A; border-radius: 11px; background: #FFF3E2; color: #9A4A07; font-size: 12px; font-weight: 700; animation: al-tint 14s ease-in-out 3.5s infinite both"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17"></path></svg><span class="al-mode-plain">Stopped</span><span class="al-mode-tech">403 BLOCKED</span></span></div>
+</div>
+</div>
+<div style="position: relative">
+<span style="position: absolute; left: 50%; top: 0; bottom: 0; border-left: 2px dashed #D3DBD4"></span>
+<span data-anim="1" style="position: absolute; left: 10%; right: 10%; top: 97px; height: 48px; border: 2px solid #4CC08C; border-radius: 13px; box-shadow: 0 0 0 4px rgba(76,192,140,.25); opacity: 0; animation: al-door 14s ease-in-out 7s infinite both"></span>
+<div data-anim="1" style="position: absolute; left: 50%; top: 0; z-index: 2; max-width: 96%; transform: translate(-50%, -14px); opacity: 0; animation: al-ok 14s ease-in-out 7s infinite both">
+<div style="display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 8px 10px; border: 1px solid #CFE3D7; border-radius: 11px; background: #FFFFFF; box-shadow: 0 10px 24px rgba(21,33,28,.12); text-align: center">
+<span style="font-size: 12.5px; font-weight: 600; line-height: 1.2; color: #15211C"><span class="al-mode-plain">Place order</span><span class="al-mode-tech">POST /api/orders</span></span>
+<span style="display: inline-grid; font-size: 11px; font-weight: 600; line-height: 1">
+<span data-anim="1" style="grid-area: 1 / 1; padding: 4px 7px; border-radius: 6px; background: #F1F4F0; color: #46544C; animation: al-swap-out 14s ease-in-out 7s infinite both"><span class="al-mode-plain">test login</span><span class="al-mode-tech">phantom session</span></span>
+<span data-anim="1" style="grid-area: 1 / 1; padding: 4px 7px; border-radius: 6px; background: #E2F2E9; color: #1F6B4F; opacity: 0; animation: al-swap-in 14s ease-in-out 7s infinite both"><span class="al-mode-plain">checked</span><span class="al-mode-tech">allowed host</span></span>
+</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px">
+<div style="position: relative; overflow: hidden; padding: 10px 12px; border: 1px solid #E3E8E2; border-radius: 12px; background: #FFFFFF; text-align: center">
+<span data-anim="1" style="position: absolute; inset: 0; background: #E2F2E9; opacity: 0; animation: al-hit 14s ease-in-out 0s infinite both"></span>
+<div style="position: relative; font: 700 13.5px/1.3 Manrope, system-ui, sans-serif; color: #15211C"><span class="al-mode-plain">Payments</span><span class="al-mode-tech">api.stripe.com</span></div>
+<div style="position: relative; font: 500 11.5px/1.4 'JetBrains Mono', ui-monospace, monospace; color: #5A6961; white-space: nowrap; overflow: hidden; text-overflow: ellipsis"><span class="al-mode-plain">api.stripe.com</span><span class="al-mode-tech">allowedHosts</span></div>
+</div>
+<div style="position: relative; overflow: hidden; padding: 10px 12px; border: 1px solid #E3E8E2; border-radius: 12px; background: #FFFFFF; text-align: center">
+<span data-anim="1" style="position: absolute; inset: 0; background: #FFF3E2; opacity: 0; animation: al-hitb 14s ease-in-out 3.5s infinite both"></span>
+<div style="position: relative; display: flex; align-items: center; justify-content: center; gap: 6px; font: 700 13.5px/1.3 Manrope, system-ui, sans-serif; color: #15211C"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9A4A07" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8.5 11V8a3.5 3.5 0 0 1 7 0v3"></path></svg><span class="al-mode-plain">Refunds</span><span class="al-mode-tech">/v1/refunds</span></div>
+<div style="position: relative; font: 500 11.5px/1.4 'JetBrains Mono', ui-monospace, monospace; color: #9A4A07; white-space: nowrap; overflow: hidden; text-overflow: ellipsis"><span class="al-mode-plain">never reached</span><span class="al-mode-tech">blockedPaths</span></div>
+</div>
+<div style="position: relative; overflow: hidden; padding: 10px 12px; border: 1px solid #E3E8E2; border-radius: 12px; background: #FFFFFF; text-align: center">
+<span data-anim="1" style="position: absolute; inset: 0; background: #E2F2E9; opacity: 0; animation: al-hit 14s ease-in-out 7s infinite both"></span>
+<div style="position: relative; font: 700 13.5px/1.3 Manrope, system-ui, sans-serif; color: #15211C"><span class="al-mode-plain">Orders</span><span class="al-mode-tech">staging.shop.test</span></div>
+<div style="position: relative; font: 500 11.5px/1.4 'JetBrains Mono', ui-monospace, monospace; color: #5A6961; white-space: nowrap; overflow: hidden; text-overflow: ellipsis"><span class="al-mode-plain">staging.shop.test</span><span class="al-mode-tech">allowedEgressHosts</span></div>
+</div>
+</div>
+
+<div aria-live="off" style="position: relative; height: 26px; margin-top: 12px; font-size: 13.5px; font-weight: 600">
+<span data-anim="1" style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 8px; color: #1F6B4F; opacity: 0; animation: al-flash 14s ease-in-out 0s infinite both; text-align: center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.2 4.2L19 7"></path></svg><span class="al-mode-plain">Allowed — the door swapped in the real key</span><span class="al-mode-tech">ALLOWED · phantom → real on an allowed host</span></span>
+<span data-anim="1" style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 8px; color: #9A4A07; animation: al-flash 14s ease-in-out 3.5s infinite both; text-align: center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17"></path></svg><span class="al-mode-plain">Stopped — tests may never issue refunds</span><span class="al-mode-tech">BLOCKED · rule block-destructive-refunds</span></span>
+<span data-anim="1" style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 8px; color: #1F6B4F; opacity: 0; animation: al-flash 14s ease-in-out 7s infinite both; text-align: center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.2 4.2L19 7"></path></svg><span class="al-mode-plain">Allowed — order placed in the test shop</span><span class="al-mode-tech">ALLOWED · host in allowedEgressHosts</span></span>
+</div>
+
+<div style="margin-top: 12px; padding: 14px 16px; border-radius: 14px; background: #0F1D17; color: #D7E7DD; font: 500 12.5px/1.55 'JetBrains Mono', ui-monospace, monospace">
+<div style="display: flex; justify-content: space-between; gap: 12px; font-size: 11.5px; color: #8FB3A0"><span><span class="al-mode-plain">Run receipt</span><span class="al-mode-tech">evidence ledger</span></span><span>run_40549cd06baf</span></div>
+<div style="margin-top: 8px; display: grid; gap: 5px; min-height: 96px">
+<div data-anim="1" style="display: flex; align-items: center; gap: 10px; animation: al-r1 14s ease-in-out infinite both"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7FD6AE" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.2 4.2L19 7"></path></svg><span><span class="al-mode-plain">Card looked up with a stand-in key</span><span class="al-mode-tech">SECRET_SWAP  GET /v1/payment_methods  200</span></span></div>
+<div data-anim="1" style="display: flex; align-items: center; gap: 10px; animation: al-r2 14s ease-in-out infinite both"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#F2B26B" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17"></path></svg><span><span class="al-mode-plain">Refund stopped at the door</span><span class="al-mode-tech">EGRESS_BLOCKED  POST /v1/refunds  403</span></span></div>
+<div data-anim="1" style="display: flex; align-items: center; gap: 10px; animation: al-r3 14s ease-in-out infinite both"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7FD6AE" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.2 4.2L19 7"></path></svg><span><span class="al-mode-plain">Test order placed</span><span class="al-mode-tech">ACTION_COMPLETE  POST /api/orders  201</span></span></div>
+<div data-anim="1" style="display: flex; align-items: center; gap: 10px; color: #E9C98B; animation: al-r4 14s ease-in-out infinite both"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l9 9-9 9-9-9z"></path></svg><span><span class="al-mode-plain">Receipt sealed — anyone can check it</span><span class="al-mode-tech">sealed · merkle e2114ac9…6aece · HMAC-SHA256</span></span></div>
+</div>
+</div>
+</div>
+</section>
+
+<section aria-label="Built on" style="border-top: 1px solid #E3E8E2; border-bottom: 1px solid #E3E8E2; background: #FFFFFF">
+<div style="max-width: 1200px; margin: 0 auto; padding: 22px 24px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px 28px">
+<span style="font-size: 14px; font-weight: 600; color: #5A6961">Built on tools engineers already trust</span>
+<ul style="list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 12px 30px; font: 700 15.5px/1 Manrope, system-ui, sans-serif; color: #15211C">
+<li style="display: inline-flex; align-items: center; gap: 8px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2F6F5B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"></path></svg>Playwright</li>
+<li style="display: inline-flex; align-items: center; gap: 8px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2F6F5B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 8l-4 4 4 4M16 8l4 4-4 4M13.5 5l-3 14"></path></svg>TypeScript</li>
+<li style="display: inline-flex; align-items: center; gap: 8px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2F6F5B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4.5" width="18" height="15" rx="2.5"></rect><path d="M7.5 10l2.5 2-2.5 2M12.5 15h4"></path></svg>Bun or Node.js 18+</li>
+<li style="display: inline-flex; align-items: center; gap: 8px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2F6F5B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="6" r="2.5"></circle><circle cx="6" cy="18" r="2.5"></circle><circle cx="18" cy="9" r="2.5"></circle><path d="M6 8.5v7M18 11.5c0 3.5-3.5 4.5-9.5 5.5"></path></svg>GitHub Actions</li>
+<li style="display: inline-flex; align-items: center; gap: 8px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2F6F5B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4.5A1.5 1.5 0 0 1 6.5 3H19v15H6.5A1.5 1.5 0 0 0 5 19.5z"></path><path d="M5 19.5A1.5 1.5 0 0 0 6.5 21H19"></path></svg>MIT licensed</li>
+</ul>
+</div>
+</section>
+
+<section id="how" style="max-width: 1200px; margin: 0 auto; padding: 112px 24px 40px">
+<div class="al-reveal" data-anim="1" style="max-width: 760px">
+<div style="display: inline-flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #2F6F5B"><span style="width: 20px; height: 2px; background: #2F6F5B"></span>How it works</div>
+<h2 style="margin: 16px 0 0; font: 800 clamp(32px, 3.6vw, 48px)/1.08 Manrope, system-ui, sans-serif; letter-spacing: -0.03em; color: #15211C; text-wrap: balance">From a few clicks to a signed result.</h2>
+<div class="al-text-mode al-mode-plain"><p style="margin: 16px 0 0; font-size: 18px; line-height: 1.65; color: #46544C">No test scripts to write by hand. Show AirlockQA what a customer does once — it turns that into a test, runs it safely and hands you proof.</p></div>
+<div class="al-text-mode al-mode-tech"><p style="margin: 16px 0 0; font-size: 18px; line-height: 1.65; color: #46544C">explore → compile → test → audit. Each stage is one CLI command and produces a file you can commit and review.</p></div>
+</div>
+
+<div aria-hidden="true" class="al-sm-hide" style="position: relative; margin-top: 52px; height: 36px">
+<div style="position: absolute; left: 12.5%; right: 12.5%; top: 17px; height: 2px; background: #DCE6DF">
+<span data-anim="1" style="position: absolute; top: -4px; left: 0; width: 10px; height: 10px; border-radius: 50%; background: #2F6F5B; box-shadow: 0 0 0 4px rgba(47,111,91,.15); animation: al-travel 5s cubic-bezier(.5,0,.5,1) infinite"></span>
+</div>
+<div style="position: absolute; inset: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px">
+<div style="display: flex; justify-content: center"><span style="width: 36px; height: 36px; border: 2px solid #2F6F5B; border-radius: 50%; background: #FFFFFF; color: #2F6F5B; font: 700 12.5px/32px 'JetBrains Mono', ui-monospace, monospace; text-align: center">01</span></div>
+<div style="display: flex; justify-content: center"><span style="width: 36px; height: 36px; border: 2px solid #2F6F5B; border-radius: 50%; background: #FFFFFF; color: #2F6F5B; font: 700 12.5px/32px 'JetBrains Mono', ui-monospace, monospace; text-align: center">02</span></div>
+<div style="display: flex; justify-content: center"><span style="width: 36px; height: 36px; border: 2px solid #2F6F5B; border-radius: 50%; background: #FFFFFF; color: #2F6F5B; font: 700 12.5px/32px 'JetBrains Mono', ui-monospace, monospace; text-align: center">03</span></div>
+<div style="display: flex; justify-content: center"><span style="width: 36px; height: 36px; border: 2px solid #2F6F5B; border-radius: 50%; background: #FFFFFF; color: #2F6F5B; font: 700 12.5px/32px 'JetBrains Mono', ui-monospace, monospace; text-align: center">04</span></div>
+</div>
+</div>
+
+<ol style="list-style: none; margin: 20px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(250px, 100%), 1fr)); gap: 20px">
+<li class="al-card al-reveal" data-anim="1" style="display: flex; flex-direction: column; padding: 22px; border: 1px solid #E3E8E2; border-radius: 20px; background: #FFFFFF">
+<span style="width: 42px; height: 42px; border-radius: 12px; background: #E2F2E9; color: #2F6F5B; display: inline-flex; align-items: center; justify-content: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"></circle><circle cx="12" cy="12" r="3.5" fill="currentColor"></circle></svg></span>
+<h3 style="margin: 18px 0 0; font: 800 21px/1.25 Manrope, system-ui, sans-serif; letter-spacing: -0.02em; color: #15211C">Record</h3>
+<div class="al-text-mode al-mode-plain"><p style="margin: 8px 0 0; font-size: 15.5px; line-height: 1.6; color: #46544C">Click through your site once. AirlockQA watches and writes down every step.</p></div>
+<div class="al-text-mode al-mode-tech"><p style="margin: 8px 0 0; font-size: 15.5px; line-height: 1.6; color: #46544C"><code style="font: 500 13.5px 'JetBrains Mono', monospace; color: #2F6F5B">airlock explore &lt;url&gt;</code> records DOM actions and network events to a trace file.</p></div>
+<div aria-hidden="true" style="position: relative; margin-top: auto; height: 112px; border: 1px solid #E3E8E2; border-radius: 14px; background: #F7F8F5; overflow: hidden">
+<div style="display: flex; align-items: center; gap: 6px; padding: 9px 12px"><span data-anim="1" style="width: 8px; height: 8px; border-radius: 50%; background: #C2410C; animation: al-blink 1.2s steps(2, end) infinite"></span><span style="font-size: 10.5px; font-weight: 700; letter-spacing: .1em; color: #9A4A07">REC</span></div>
+<span style="position: absolute; left: 12px; top: 38px; width: 58%; height: 10px; border-radius: 5px; background: #E3E8E2"></span>
+<span style="position: absolute; left: 12px; top: 56px; width: 38%; height: 10px; border-radius: 5px; background: #E3E8E2"></span>
+<span style="position: absolute; right: 12px; bottom: 12px; width: 72px; height: 28px; border-radius: 8px; background: #2F6F5B"></span>
+<span data-anim="1" style="position: absolute; right: 38px; bottom: 16px; width: 20px; height: 20px; border: 2px solid #2F6F5B; border-radius: 50%; animation: al-ping 2.4s ease-out infinite"></span>
+<svg data-anim="1" width="20" height="20" viewBox="0 0 24 24" style="position: absolute; right: 26px; bottom: 4px; animation: al-float 2.4s ease-in-out infinite"><path d="M5 3l14 7.2-6.4 1.9L9.9 18.5z" fill="#15211C" stroke="#FFFFFF" stroke-width="1.6" stroke-linejoin="round"></path></svg>
+</div>
+</li>
+<li class="al-card al-reveal" data-anim="1" style="display: flex; flex-direction: column; padding: 22px; border: 1px solid #E3E8E2; border-radius: 20px; background: #FFFFFF">
+<span style="width: 42px; height: 42px; border-radius: 12px; background: #EAF1FB; color: #24589B; display: inline-flex; align-items: center; justify-content: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3h7l5 5v13H7z"></path><path d="M14 3v5h5M10.5 13l-2 2 2 2M13.5 13l2 2-2 2"></path></svg></span>
+<h3 style="margin: 18px 0 0; font: 800 21px/1.25 Manrope, system-ui, sans-serif; letter-spacing: -0.02em; color: #15211C">Turn it into a test</h3>
+<div class="al-text-mode al-mode-plain"><p style="margin: 8px 0 0; font-size: 15.5px; line-height: 1.6; color: #46544C">Your clicks become a real, repeatable test that people and machines can both read.</p></div>
+<div class="al-text-mode al-mode-tech"><p style="margin: 8px 0 0; font-size: 15.5px; line-height: 1.6; color: #46544C"><code style="font: 500 13.5px 'JetBrains Mono', monospace; color: #2F6F5B">airlock compile</code> emits Playwright TypeScript with multi-attribute fallback locators.</p></div>
+<div aria-hidden="true" style="margin-top: auto; height: 112px; padding: 14px; border-radius: 14px; background: #0F1D17; display: flex; flex-direction: column; gap: 9px">
+<span data-anim="1" style="display: block; width: 62%; height: 8px; border-radius: 4px; background: #7FD6AE; transform-origin: left; animation: al-grow 4.8s ease-out 0s infinite both"></span>
+<span data-anim="1" style="display: block; width: 84%; height: 8px; border-radius: 4px; background: #3A5A4B; transform-origin: left; animation: al-grow 4.8s ease-out .4s infinite both"></span>
+<span data-anim="1" style="display: block; width: 48%; height: 8px; border-radius: 4px; background: #E9C98B; transform-origin: left; animation: al-grow 4.8s ease-out .8s infinite both"></span>
+<span data-anim="1" style="display: block; width: 72%; height: 8px; border-radius: 4px; background: #3A5A4B; transform-origin: left; animation: al-grow 4.8s ease-out 1.2s infinite both"></span>
+<span data-anim="1" style="display: block; width: 36%; height: 8px; border-radius: 4px; background: #7FD6AE; transform-origin: left; animation: al-grow 4.8s ease-out 1.6s infinite both"></span>
+</div>
+</li>
+<li class="al-card al-reveal" data-anim="1" style="display: flex; flex-direction: column; padding: 22px; border: 1px solid #E3E8E2; border-radius: 20px; background: #FFFFFF">
+<span style="width: 42px; height: 42px; border-radius: 12px; background: #FFF3E2; color: #9A4A07; display: inline-flex; align-items: center; justify-content: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7.5 3v5.5c0 4.6-3.2 8.2-7.5 9.5c-4.3-1.3-7.5-4.9-7.5-9.5V6z"></path></svg></span>
+<h3 style="margin: 18px 0 0; font: 800 21px/1.25 Manrope, system-ui, sans-serif; letter-spacing: -0.02em; color: #15211C">Run it safely</h3>
+<div class="al-text-mode al-mode-plain"><p style="margin: 8px 0 0; font-size: 15.5px; line-height: 1.6; color: #46544C">Run it on your laptop or on every code change. The safety door checks every request.</p></div>
+<div class="al-text-mode al-mode-tech"><p style="margin: 8px 0 0; font-size: 15.5px; line-height: 1.6; color: #46544C"><code style="font: 500 13.5px 'JetBrains Mono', monospace; color: #2F6F5B">airlock test --local | --cloud</code> runs behind the request policy; cloud runs go to <code style="font: 500 13.5px 'JetBrains Mono', monospace; color: #2F6F5B">POST /v1/runs</code>.</p></div>
+<div aria-hidden="true" style="margin-top: auto; height: 112px; padding: 14px; border: 1px solid #E3E8E2; border-radius: 14px; background: #F7F8F5; display: flex; flex-direction: column; justify-content: space-between">
+<div style="display: flex; gap: 8px">
+<span data-anim="1" style="width: 28px; height: 28px; border-radius: 8px; background: #E2F2E9; color: #1F6B4F; display: inline-flex; align-items: center; justify-content: center; animation: al-pop 3.6s ease-out .2s infinite both"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.2 4.2L19 7"></path></svg></span>
+<span data-anim="1" style="width: 28px; height: 28px; border-radius: 8px; background: #E2F2E9; color: #1F6B4F; display: inline-flex; align-items: center; justify-content: center; animation: al-pop 3.6s ease-out .7s infinite both"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.2 4.2L19 7"></path></svg></span>
+<span data-anim="1" style="width: 28px; height: 28px; border-radius: 8px; background: #FFF3E2; color: #9A4A07; display: inline-flex; align-items: center; justify-content: center; animation: al-pop 3.6s ease-out 1.2s infinite both"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7.5 3v5.5c0 4.6-3.2 8.2-7.5 9.5c-4.3-1.3-7.5-4.9-7.5-9.5V6z"></path></svg></span>
+<span data-anim="1" style="width: 28px; height: 28px; border-radius: 8px; background: #E2F2E9; color: #1F6B4F; display: inline-flex; align-items: center; justify-content: center; animation: al-pop 3.6s ease-out 1.7s infinite both"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.2 4.2L19 7"></path></svg></span>
+</div>
+<div style="height: 8px; border-radius: 4px; background: #E3E8E2; overflow: hidden"><span data-anim="1" style="display: block; height: 100%; background: #2F6F5B; transform-origin: left; animation: al-fill 3.6s ease-in-out infinite"></span></div>
+</div>
+</li>
+<li class="al-card al-reveal" data-anim="1" style="display: flex; flex-direction: column; padding: 22px; border: 1px solid #E3E8E2; border-radius: 20px; background: #FFFFFF">
+<span style="width: 42px; height: 42px; border-radius: 12px; background: #F0EDF8; color: #57479A; display: inline-flex; align-items: center; justify-content: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"></path><path d="M9 8h6M9 12h6M9 16h3"></path></svg></span>
+<h3 style="margin: 18px 0 0; font: 800 21px/1.25 Manrope, system-ui, sans-serif; letter-spacing: -0.02em; color: #15211C">Get a receipt</h3>
+<div class="al-text-mode al-mode-plain"><p style="margin: 8px 0 0; font-size: 15.5px; line-height: 1.6; color: #46544C">Every run ends with a signed receipt showing exactly what happened — and it breaks if anyone edits it.</p></div>
+<div class="al-text-mode al-mode-tech"><p style="margin: 8px 0 0; font-size: 15.5px; line-height: 1.6; color: #46544C"><code style="font: 500 13.5px 'JetBrains Mono', monospace; color: #2F6F5B">airlock audit</code> recomputes the Merkle root and checks the HMAC-SHA256 signature.</p></div>
+<div aria-hidden="true" style="position: relative; margin-top: auto; height: 112px; padding: 12px 14px; border: 1px solid #E3E8E2; border-radius: 14px; background: #FFFFFF; overflow: hidden">
+<div style="font: 600 11px/1 'JetBrains Mono', monospace; color: #5A6961">merkle root</div>
+<div style="margin-top: 6px; font: 600 12.5px/1.3 'JetBrains Mono', monospace; color: #15211C">e2114ac9…6aece</div>
+<div style="margin-top: 10px; display: grid; gap: 6px"><span style="width: 80%; height: 6px; border-radius: 3px; background: #EEF2EE"></span><span style="width: 56%; height: 6px; border-radius: 3px; background: #EEF2EE"></span></div>
+<span data-anim="1" style="position: absolute; right: 12px; bottom: 12px; display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border: 2px solid #2F6F5B; border-radius: 999px; color: #2F6F5B; font-size: 11px; font-weight: 800; letter-spacing: .07em; transform: rotate(-8deg); animation: al-stamp 3.6s ease-out infinite both">VERIFIED</span>
+</div>
+</li>
+</ol>
+</section>
+
+<section id="features" style="margin-top: 72px; border-top: 1px solid #E3E8E2; border-bottom: 1px solid #E3E8E2; background: #FFFFFF">
+<div style="max-width: 1200px; margin: 0 auto; padding: 112px 24px">
+<div style="display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 24px">
+<div class="al-reveal" data-anim="1" style="max-width: 720px">
+<div style="display: inline-flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #2F6F5B"><span style="width: 20px; height: 2px; background: #2F6F5B"></span>What’s inside</div>
+<h2 style="margin: 16px 0 0; font: 800 clamp(32px, 3.6vw, 48px)/1.08 Manrope, system-ui, sans-serif; letter-spacing: -0.03em; color: #15211C; text-wrap: balance">Everything a careful test needs, in one toolkit.</h2>
+</div>
+<div style="display: flex; align-items: center; gap: 12px">
+<span style="font-size: 14px; font-weight: 500; color: #5A6961">Reading as</span>
+<div role="group" aria-label="Explanation level" style="display: inline-flex; gap: 4px; padding: 4px; border: 1px solid #E3E8E2; border-radius: 999px; background: #F7F8F5">
+<button type="button" aria-pressed="true" data-mode-btn="plain" class="al-mode-btn al-mode-btn-plain" style="height: 36px; padding: 0 14px; border: 0; border-radius: 999px; cursor: pointer; font: 600 13.5px/1 'DM Sans', system-ui, sans-serif; ">Everyone</button>
+<button type="button" aria-pressed="false" data-mode-btn="tech" class="al-mode-btn al-mode-btn-tech" style="height: 36px; padding: 0 14px; border: 0; border-radius: 999px; cursor: pointer; font: 600 13.5px/1 'DM Sans', system-ui, sans-serif; ">Engineers</button>
+</div>
+</div>
+</div>
+
+<div style="margin-top: 80px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(460px, 100%), 1fr)); gap: 56px; align-items: center">
+<div class="al-reveal" data-anim="1">
+<span style="display: inline-flex; align-items: center; gap: 8px; height: 30px; padding: 0 12px; border-radius: 999px; background: #E2F2E9; color: #1F6B4F; font-size: 13px; font-weight: 600"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7.5 3v5.5c0 4.6-3.2 8.2-7.5 9.5c-4.3-1.3-7.5-4.9-7.5-9.5V6z"></path></svg>Request policy · Phantom credentials</span>
+<h3 style="margin: 18px 0 0; font: 800 clamp(28px, 2.8vw, 38px)/1.12 Manrope, system-ui, sans-serif; letter-spacing: -0.03em; color: #15211C; text-wrap: balance">A safety door for every request.</h3>
+<div class="al-text-mode al-mode-plain"><div>
+<p style="margin: 16px 0 0; font-size: 17px; line-height: 1.7; color: #46544C">Your test talks to payment providers, email services and your own APIs. AirlockQA checks each request on the way out: safe ones go through; risky ones — refunds, deletes, unknown websites — are stopped. Tests only carry a stand-in key; the real one is added at the door, and only for places you approve.</p>
+<ul style="list-style: none; margin: 22px 0 0; padding: 0; display: grid; gap: 12px; font-size: 16px; color: #15211C">
+<li style="display: flex; align-items: flex-start; gap: 12px"><span style="flex: none; width: 24px; height: 24px; border-radius: 8px; background: #E2F2E9; color: #1F6B4F; display: inline-flex; align-items: center; justify-content: center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.2 4.2L19 7"></path></svg></span>Refunds, deletes and unknown sites are blocked by default</li>
+<li style="display: flex; align-items: flex-start; gap: 12px"><span style="flex: none; width: 24px; height: 24px; border-radius: 8px; background: #E2F2E9; color: #1F6B4F; display: inline-flex; align-items: center; justify-content: center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.2 4.2L19 7"></path></svg></span>Stand-in keys instead of real passwords in the browser</li>
+<li style="display: flex; align-items: flex-start; gap: 12px"><span style="flex: none; width: 24px; height: 24px; border-radius: 8px; background: #E2F2E9; color: #1F6B4F; display: inline-flex; align-items: center; justify-content: center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.2 4.2L19 7"></path></svg></span>A clear log of every allow and every block</li>
+</ul>
+</div></div>
+<div class="al-text-mode al-mode-tech"><div>
+<p style="margin: 16px 0 0; font-size: 17px; line-height: 1.7; color: #46544C">The gateway intercepts requests in the Playwright context and evaluates host, path and method rules under a default-deny action. Phantom tokens are swapped for configured real values only on <code style="font: 500 14.5px 'JetBrains Mono', monospace; color: #2F6F5B">allowedHosts</code>, and matching upstream responses are sanitized before they reach the page.</p>
+<ul style="list-style: none; margin: 22px 0 0; padding: 0; display: grid; gap: 12px; font-size: 16px; color: #15211C">
+<li style="display: flex; align-items: flex-start; gap: 12px"><span style="flex: none; width: 24px; height: 24px; border-radius: 8px; background: #E2F2E9; color: #1F6B4F; display: inline-flex; align-items: center; justify-content: center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.2 4.2L19 7"></path></svg></span><span><code style="font: 500 14.5px 'JetBrains Mono', monospace">defaultAction: "BLOCK"</code> with allow and deny host lists</span></li>
+<li style="display: flex; align-items: flex-start; gap: 12px"><span style="flex: none; width: 24px; height: 24px; border-radius: 8px; background: #E2F2E9; color: #1F6B4F; display: inline-flex; align-items: center; justify-content: center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.2 4.2L19 7"></path></svg></span>Per-secret allowed hosts, methods and blocked paths</li>
+<li style="display: flex; align-items: flex-start; gap: 12px"><span style="flex: none; width: 24px; height: 24px; border-radius: 8px; background: #E2F2E9; color: #1F6B4F; display: inline-flex; align-items: center; justify-content: center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.2 4.2L19 7"></path></svg></span>Verdicts logged as ALLOWED, BLOCKED or SANITIZED</li>
+</ul>
+</div></div>
+<p style="margin: 20px 0 0; display: flex; align-items: flex-start; gap: 8px; font-size: 14px; line-height: 1.55; color: #5A6961"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="flex: none; margin-top: 1px"><circle cx="12" cy="12" r="9"></circle><path d="M12 11v5.5M12 7.6v.1"></path></svg>Covers requests made by the test browser — it isn’t an OS-level firewall.</p>
+</div>
+<div class="al-reveal" data-anim="1" aria-hidden="true" style="position: relative; padding: 22px; border: 1px solid #E3E8E2; border-radius: 22px; background: #F7F8F5; overflow: hidden">
+<div style="display: flex; justify-content: space-between; gap: 12px; font-size: 13px; font-weight: 600; color: #5A6961"><span>Request log · checkout run</span><span style="font-family: 'JetBrains Mono', monospace">4 requests</span></div>
+<div style="position: relative; margin-top: 14px; display: flex; flex-direction: column; gap: 8px">
+<span data-anim="1" style="position: absolute; left: -6px; right: -6px; top: 0; height: 46px; border-radius: 12px; background: rgba(47,111,91,.07); border: 1px solid rgba(47,111,91,.18); --scan: 162px; animation: al-scan 6s linear infinite"></span>
+<div style="position: relative; display: grid; grid-template-columns: 48px minmax(0, 1fr) auto; align-items: center; gap: 12px; height: 46px; padding: 0 12px; border: 1px solid #E3E8E2; border-radius: 10px; background: #FFFFFF">
+<span style="font: 700 12px 'JetBrains Mono', monospace; color: #24589B">GET</span><span style="font: 500 13px 'JetBrains Mono', monospace; color: #15211C; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">api.stripe.com/v1/payment_methods</span>
+<span data-anim="1" style="display: inline-flex; align-items: center; height: 26px; padding: 0 10px; border-radius: 999px; background: #E2F2E9; color: #1F6B4F; font-size: 12px; font-weight: 700; white-space: nowrap; animation: al-pop 6s ease-out .3s infinite both">Allowed · key swapped</span>
+</div>
+<div style="position: relative; display: grid; grid-template-columns: 48px minmax(0, 1fr) auto; align-items: center; gap: 12px; height: 46px; padding: 0 12px; border: 1px solid #E3E8E2; border-radius: 10px; background: #FFFFFF">
+<span style="font: 700 12px 'JetBrains Mono', monospace; color: #9A4A07">POST</span><span style="font: 500 13px 'JetBrains Mono', monospace; color: #15211C; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">api.stripe.com/v1/refunds</span>
+<span data-anim="1" style="display: inline-flex; align-items: center; height: 26px; padding: 0 10px; border-radius: 999px; background: #FFF3E2; color: #9A4A07; font-size: 12px; font-weight: 700; white-space: nowrap; animation: al-pop 6s ease-out 1.8s infinite both">Blocked · refund rule</span>
+</div>
+<div style="position: relative; display: grid; grid-template-columns: 48px minmax(0, 1fr) auto; align-items: center; gap: 12px; height: 46px; padding: 0 12px; border: 1px solid #E3E8E2; border-radius: 10px; background: #FFFFFF">
+<span style="font: 700 12px 'JetBrains Mono', monospace; color: #9A4A07">POST</span><span style="font: 500 13px 'JetBrains Mono', monospace; color: #15211C; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">pastebin.com/api/paste</span>
+<span data-anim="1" style="display: inline-flex; align-items: center; height: 26px; padding: 0 10px; border-radius: 999px; background: #FFF3E2; color: #9A4A07; font-size: 12px; font-weight: 700; white-space: nowrap; animation: al-pop 6s ease-out 3.3s infinite both">Blocked · unknown site</span>
+</div>
+<div style="position: relative; display: grid; grid-template-columns: 48px minmax(0, 1fr) auto; align-items: center; gap: 12px; height: 46px; padding: 0 12px; border: 1px solid #E3E8E2; border-radius: 10px; background: #FFFFFF">
+<span style="font: 700 12px 'JetBrains Mono', monospace; color: #24589B">GET</span><span style="font: 500 13px 'JetBrains Mono', monospace; color: #15211C; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">staging.shop.test/api/cart</span>
+<span data-anim="1" style="display: inline-flex; align-items: center; height: 26px; padding: 0 10px; border-radius: 999px; background: #E2F2E9; color: #1F6B4F; font-size: 12px; font-weight: 700; white-space: nowrap; animation: al-pop 6s ease-out 4.8s infinite both">Allowed · cleaned</span>
+</div>
+</div>
+<div style="margin-top: 16px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 14px 16px; border-radius: 14px; background: #0F1D17; font: 500 12.5px/1.4 'JetBrains Mono', monospace; color: #D7E7DD">
+<span style="color: #8FB3A0">STRIPE_KEY</span><span style="padding: 4px 8px; border-radius: 6px; background: #1E3A2E">ph_sec_stripe_test…</span>
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7FD6AE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>
+<span style="padding: 4px 8px; border-radius: 6px; background: #7FD6AE; color: #0F1D17; font-weight: 600">sk_live_•••• at the door</span>
+</div>
+</div>
+</div>
+
+<div style="margin-top: 112px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(460px, 100%), 1fr)); gap: 56px; align-items: center">
+<div class="al-reveal" data-anim="1" aria-hidden="true" style="padding: 22px; border: 1px solid #E3E8E2; border-radius: 22px; background: #F7F8F5">
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr)); gap: 16px">
+<div style="padding: 16px; border: 1px solid #E3E8E2; border-radius: 16px; background: #FFFFFF">
+<div style="height: 84px; border-radius: 12px; background: #E8F1EB; color: #2F6F5B; display: flex; align-items: center; justify-content: center"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8h14l-1.2 12.5H6.2z"></path><path d="M9 8V6.5a3 3 0 0 1 6 0V8"></path></svg></div>
+<div style="margin-top: 12px; font: 700 15px/1.3 Manrope, system-ui, sans-serif; color: #15211C">Trail runner</div>
+<div style="font-size: 13px; color: #5A6961">$49.00</div>
+<div style="position: relative; margin-top: 12px; height: 40px">
+<span data-anim="1" style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; border-radius: 10px; background: #15211C; color: #FFFFFF; font-size: 14px; font-weight: 600; opacity: 0; animation: al-xa 6s ease-in-out infinite both">Buy now</span>
+<span data-anim="1" style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; border-radius: 10px; background: #2F6F5B; color: #FFFFFF; font-size: 14px; font-weight: 600; animation: al-xb 6s ease-in-out infinite both">Add to bag</span>
+</div>
+<div style="margin-top: 8px; font-size: 12px; color: #5A6961; text-align: center">Design update: button renamed and moved</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 10px; padding: 16px; border-radius: 16px; background: #0F1D17; font: 500 12.5px/1.6 'JetBrains Mono', monospace; color: #D7E7DD">
+<div style="color: #6E8A7B">// step 6 · click</div>
+<div style="position: relative; width: max-content; max-width: 100%">locator('#buy-now')<span data-anim="1" style="position: absolute; left: 0; right: 0; top: 50%; height: 2px; background: #F2B26B; transform-origin: left; animation: al-strike 6s ease-in-out infinite both"></span></div>
+<div data-anim="1" style="color: #7FD6AE; animation: al-xb 6s ease-in-out infinite both">→ getByTestId('add-to-bag')</div>
+<span data-anim="1" style="align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; padding: 5px 9px; border-radius: 999px; background: #1E3A2E; color: #BFF0D8; font: 600 11.5px/1.2 'DM Sans', system-ui, sans-serif; animation: al-xb 6s ease-in-out infinite both"><span class="al-mode-plain">92% match · found by its label</span><span class="al-mode-tech">aria_fuzzy · 0.92 ≥ threshold 0.80</span></span>
+<div style="margin-top: auto; padding-top: 10px; border-top: 1px solid #23392F; font-size: 11.5px; color: #8FB3A0">logged for review · mutations.jsonl</div>
+</div>
+</div>
+</div>
+<div class="al-reveal" data-anim="1">
+<span style="display: inline-flex; align-items: center; gap: 8px; height: 30px; padding: 0 12px; border-radius: 999px; background: #EAF1FB; color: #24589B; font-size: 13px; font-weight: 600"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="7"></circle><circle cx="12" cy="12" r="2"></circle><path d="M12 2v3M12 19v3M2 12h3M19 12h3"></path></svg>Self-healing locators</span>
+<h3 style="margin: 18px 0 0; font: 800 clamp(28px, 2.8vw, 38px)/1.12 Manrope, system-ui, sans-serif; letter-spacing: -0.03em; color: #15211C; text-wrap: balance">When your design changes, tests find their way.</h3>
+<div class="al-text-mode al-mode-plain"><p style="margin: 16px 0 0; font-size: 17px; line-height: 1.7; color: #46544C">Renamed a button or moved it? That’s where most tests break. AirlockQA looks for the same element by its label, text and place on the page, fixes the step, and shows you exactly what it changed so a person can approve it.</p></div>
+<div class="al-text-mode al-mode-tech"><p style="margin: 16px 0 0; font-size: 17px; line-height: 1.7; color: #46544C">When a selector misses, the healer scores candidates by test id, accessible name, text and structure. Above the confidence threshold (0.8 by default) it resolves the locator and writes the before/after DOM to a mutation dataset you can inspect with <code style="font: 500 14.5px 'JetBrains Mono', monospace; color: #2F6F5B">airlock dataset</code>.</p></div>
+<p style="margin: 20px 0 0; display: flex; align-items: flex-start; gap: 8px; font-size: 14px; line-height: 1.55; color: #5A6961"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="flex: none; margin-top: 1px"><circle cx="12" cy="12" r="9"></circle><path d="M12 11v5.5M12 7.6v.1"></path></svg>Every repair is a suggestion you can accept or reject in the console.</p>
+</div>
+</div>
+
+<div style="margin-top: 112px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(460px, 100%), 1fr)); gap: 56px; align-items: center">
+<div class="al-reveal" data-anim="1">
+<span style="display: inline-flex; align-items: center; gap: 8px; height: 30px; padding: 0 12px; border-radius: 999px; background: #E2F2E9; color: #1F6B4F; font-size: 13px; font-weight: 600"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="6" r="2.5"></circle><circle cx="6" cy="18" r="2.5"></circle><circle cx="18" cy="9" r="2.5"></circle><path d="M6 8.5v7M18 11.5c0 3.5-3.5 4.5-9.5 5.5"></path></svg>Browser checkpoints · Forks</span>
+<h3 style="margin: 18px 0 0; font: 800 clamp(28px, 2.8vw, 38px)/1.12 Manrope, system-ui, sans-serif; letter-spacing: -0.03em; color: #15211C; text-wrap: balance">Save points: log in once, test many paths.</h3>
+<div class="al-text-mode al-mode-plain"><p style="margin: 16px 0 0; font-size: 17px; line-height: 1.7; color: #46544C">Like a save point in a game. AirlockQA remembers a moment — signed in, cart filled — and starts new tests from there, side by side, instead of repeating the same steps every time.</p></div>
+<div class="al-text-mode al-mode-tech"><p style="margin: 16px 0 0; font-size: 17px; line-height: 1.7; color: #46544C">A checkpoint captures storage state, session storage, URL and a DOM hash, then restores them into fresh Playwright contexts. <code style="font: 500 14.5px 'JetBrains Mono', monospace; color: #2F6F5B">airlock fork cart_ready --workers 5</code> runs variations in parallel from the same warm state.</p></div>
+<p style="margin: 20px 0 0; display: flex; align-items: flex-start; gap: 8px; font-size: 14px; line-height: 1.55; color: #5A6961"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="flex: none; margin-top: 1px"><circle cx="12" cy="12" r="9"></circle><path d="M12 11v5.5M12 7.6v.1"></path></svg>Browser state only — not VM or process memory.</p>
+</div>
+<div class="al-reveal" data-anim="1" aria-hidden="true" style="padding: 22px; border: 1px solid #E3E8E2; border-radius: 22px; background: #F7F8F5; overflow: hidden">
+<div style="display: flex; justify-content: space-between; gap: 12px; font-size: 13px; font-weight: 600; color: #5A6961"><span>From save point · cart_ready</span><span style="font-family: 'JetBrains Mono', monospace">3 branches</span></div>
+<div style="position: relative; height: 280px; margin-top: 12px">
+<svg viewBox="0 0 500 280" preserveAspectRatio="none" style="position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible">
+<path d="M10 140 H200" fill="none" stroke="#CFDDD3" stroke-width="2.5" stroke-dasharray="6 6"></path>
+<path data-anim="1" d="M200 140 C262 140 250 46 312 46" pathLength="100" fill="none" stroke="#2F6F5B" stroke-width="2.5" style="stroke-dasharray: 100; stroke-dashoffset: 0; animation: al-dash 6s ease-in-out 0s infinite both"></path>
+<path data-anim="1" d="M200 140 H312" pathLength="100" fill="none" stroke="#2F6F5B" stroke-width="2.5" style="stroke-dasharray: 100; stroke-dashoffset: 0; animation: al-dash 6s ease-in-out .25s infinite both"></path>
+<path data-anim="1" d="M200 140 C262 140 250 234 312 234" pathLength="100" fill="none" stroke="#2F6F5B" stroke-width="2.5" style="stroke-dasharray: 100; stroke-dashoffset: 0; animation: al-dash 6s ease-in-out .5s infinite both"></path>
+</svg>
+<div style="position: absolute; left: 0; top: 112px; width: 33%; padding: 10px 12px; border: 1px dashed #C9D6CC; border-radius: 12px; background: #FFFFFF">
+<div style="font-size: 13px; font-weight: 700; color: #15211C">Log in + fill cart</div>
+<div style="font-size: 12px; color: #5A6961">runs once</div>
+</div>
+<div style="position: absolute; left: 40%; top: 140px; width: 0; height: 0">
+<span data-anim="1" style="position: absolute; left: -16px; top: -16px; width: 32px; height: 32px; border-radius: 50%; border: 2px solid #2F6F5B; animation: al-ping 2.4s ease-out infinite"></span>
+<span style="position: absolute; left: -11px; top: -11px; width: 22px; height: 22px; border-radius: 5px; background: #2F6F5B; transform: rotate(45deg); box-shadow: 0 6px 16px rgba(47,111,91,.35)"></span>
+<span style="position: absolute; left: -50px; top: 22px; width: 100px; text-align: center; font-size: 12px; font-weight: 700; color: #2F6F5B">Save point</span>
+</div>
+<div data-anim="1" style="position: absolute; left: 62.4%; right: 0; top: 24px; display: flex; align-items: center; justify-content: space-between; gap: 8px; height: 44px; padding: 0 12px; border: 1px solid #E3E8E2; border-radius: 12px; background: #FFFFFF; font-size: 13px; font-weight: 600; color: #15211C; animation: al-pop 6s ease-out 1.6s infinite both"><span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis">SAVE20 coupon</span><span style="flex: none; color: #1F6B4F">✓ 1.4s</span></div>
+<div data-anim="1" style="position: absolute; left: 62.4%; right: 0; top: 118px; display: flex; align-items: center; justify-content: space-between; gap: 8px; height: 44px; padding: 0 12px; border: 1px solid #E3E8E2; border-radius: 12px; background: #FFFFFF; font-size: 13px; font-weight: 600; color: #15211C; animation: al-pop 6s ease-out 1.85s infinite both"><span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis">Expired coupon</span><span style="flex: none; color: #1F6B4F">✓ 1.1s</span></div>
+<div data-anim="1" style="position: absolute; left: 62.4%; right: 0; top: 212px; display: flex; align-items: center; justify-content: space-between; gap: 8px; height: 44px; padding: 0 12px; border: 1px solid #F5C9C4; border-radius: 12px; background: #FFFFFF; font-size: 13px; font-weight: 600; color: #15211C; animation: al-pop 6s ease-out 2.1s infinite both"><span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis">Guest checkout</span><span style="flex: none; color: #B42318">✕ 1.6s</span></div>
+</div>
+</div>
+</div>
+
+<div style="margin-top: 112px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(460px, 100%), 1fr)); gap: 56px; align-items: center">
+<div class="al-reveal" data-anim="1" aria-hidden="true" style="padding: 22px; border: 1px solid #E3E8E2; border-radius: 22px; background: #F7F8F5">
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(112px, 100%), 1fr)); gap: 10px">
+<div data-anim="1" style="padding: 10px 12px; border: 1px solid #E3E8E2; border-radius: 12px; background: #FFFFFF; font-family: 'JetBrains Mono', monospace; animation: al-pop 6s ease-out .2s infinite both"><div style="font-size: 10.5px; font-weight: 700; color: #2F6F5B">#1</div><div style="margin-top: 6px; font-size: 12px; font-weight: 700; color: #15211C">EXEC_START</div><div style="margin-top: 6px; font-size: 11px; color: #5A6961">hash 4f1c…</div><div style="font-size: 11px; color: #5A6961">prev 0000…</div></div>
+<div data-anim="1" style="padding: 10px 12px; border: 1px solid #E3E8E2; border-radius: 12px; background: #FFFFFF; font-family: 'JetBrains Mono', monospace; animation: al-pop 6s ease-out .7s infinite both"><div style="font-size: 10.5px; font-weight: 700; color: #2F6F5B">#2</div><div style="margin-top: 6px; font-size: 12px; font-weight: 700; color: #15211C">SECRET_SWAP</div><div style="margin-top: 6px; font-size: 11px; color: #5A6961">hash 9b02…</div><div style="font-size: 11px; color: #5A6961">prev 4f1c…</div></div>
+<div data-anim="1" style="padding: 10px 12px; border: 1px solid #F3D3AE; border-radius: 12px; background: #FFFFFF; font-family: 'JetBrains Mono', monospace; animation: al-pop 6s ease-out 1.2s infinite both"><div style="font-size: 10.5px; font-weight: 700; color: #9A4A07">#3</div><div style="margin-top: 6px; font-size: 12px; font-weight: 700; color: #15211C">EGRESS_BLOCKED</div><div style="margin-top: 6px; font-size: 11px; color: #5A6961">hash c7e9…</div><div style="font-size: 11px; color: #5A6961">prev 9b02…</div></div>
+<div data-anim="1" style="padding: 10px 12px; border: 1px solid #E3E8E2; border-radius: 12px; background: #FFFFFF; font-family: 'JetBrains Mono', monospace; animation: al-pop 6s ease-out 1.7s infinite both"><div style="font-size: 10.5px; font-weight: 700; color: #2F6F5B">#4</div><div style="margin-top: 6px; font-size: 12px; font-weight: 700; color: #15211C">EXEC_COMPLETE</div><div style="margin-top: 6px; font-size: 11px; color: #5A6961">hash 21ad…</div><div style="font-size: 11px; color: #5A6961">prev c7e9…</div></div>
+</div>
+<div style="margin-top: 14px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px; border-radius: 14px; background: #0F1D17; color: #D7E7DD">
+<div style="min-width: 0"><div style="font: 600 11px 'JetBrains Mono', monospace; color: #8FB3A0">merkle root · HMAC-SHA256</div><div style="font: 600 13.5px 'JetBrains Mono', monospace; overflow-wrap: anywhere">e2114ac9fab7…a8f6aece</div></div>
+<span data-anim="1" style="display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border-radius: 999px; background: #7FD6AE; color: #0F1D17; font-size: 12.5px; font-weight: 800; animation: al-pop 6s ease-out 2.5s infinite both"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.2 4.2L19 7"></path></svg>Verified</span>
+</div>
+<div style="margin-top: 12px; font-size: 13px; color: #5A6961">Edit one entry later and verification reports <span style="font-family: 'JetBrains Mono', monospace; color: #B42318">TAMPERED</span>.</div>
+</div>
+<div class="al-reveal" data-anim="1">
+<span style="display: inline-flex; align-items: center; gap: 8px; height: 30px; padding: 0 12px; border-radius: 999px; background: #F0EDF8; color: #57479A; font-size: 13px; font-weight: 600"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"></path><path d="M9 8h6M9 12h6M9 16h3"></path></svg>Execution evidence</span>
+<h3 style="margin: 18px 0 0; font: 800 clamp(28px, 2.8vw, 38px)/1.12 Manrope, system-ui, sans-serif; letter-spacing: -0.03em; color: #15211C; text-wrap: balance">A receipt you can check, for every run.</h3>
+<div class="al-text-mode al-mode-plain"><p style="margin: 16px 0 0; font-size: 17px; line-height: 1.7; color: #46544C">Each run writes down what happened, step by step, and seals it. If anyone changes a line later, the seal breaks. Share it with a teammate, a client or an auditor as proof of what was tested.</p></div>
+<div class="al-text-mode al-mode-tech"><p style="margin: 16px 0 0; font-size: 17px; line-height: 1.7; color: #46544C">Every event becomes a hash-linked ledger block; the run’s Merkle root is signed with HMAC-SHA256 or Ed25519. <code style="font: 500 14.5px 'JetBrains Mono', monospace; color: #2F6F5B">airlock audit</code> and the console verifier recompute the chain and flag tampering.</p></div>
+<p style="margin: 20px 0 0; display: flex; align-items: flex-start; gap: 8px; font-size: 14px; line-height: 1.55; color: #5A6961"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="flex: none; margin-top: 1px"><circle cx="12" cy="12" r="9"></circle><path d="M12 11v5.5M12 7.6v.1"></path></svg>Evidence, not a compliance certification.</p>
+</div>
+</div>
+</div>
+</section>
+
+<section id="lab" style="max-width: 1200px; margin: 0 auto; padding: 112px 24px 40px">
+<div class="al-reveal" data-anim="1" style="max-width: 760px">
+<div style="display: inline-flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #57479A"><span style="width: 20px; height: 2px; background: #57479A"></span>The lab</div>
+<h2 style="margin: 16px 0 0; font: 800 clamp(32px, 3.6vw, 48px)/1.08 Manrope, system-ui, sans-serif; letter-spacing: -0.03em; color: #15211C; text-wrap: balance">Power tools, clearly labelled.</h2>
+<div class="al-text-mode al-mode-plain"><p style="margin: 16px 0 0; font-size: 18px; line-height: 1.65; color: #46544C">These work today inside the test browser. Each one is marked Preview and says exactly what it covers.</p></div>
+<div class="al-text-mode al-mode-tech"><p style="margin: 16px 0 0; font-size: 18px; line-height: 1.65; color: #46544C">Browser-level prototypes with explicit scope. Limits for each are listed in the capability table below.</p></div>
+</div>
+<div style="margin-top: 44px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(208px, 100%), 1fr)); gap: 16px">
+<article class="al-card al-reveal" data-anim="1" style="display: flex; flex-direction: column; padding: 20px; border: 1px solid #E3E8E2; border-radius: 20px; background: #FFFFFF">
+<div aria-hidden="true" style="height: 92px; display: flex; align-items: center; gap: 14px">
+<div style="width: 64px; overflow: hidden; border: 1px solid #E3E8E2; border-radius: 12px; background: #FFFFFF; text-align: center">
+<div style="background: #2F6F5B; color: #FFFFFF; font-size: 11px; font-weight: 700; line-height: 22px; letter-spacing: .08em">NOV</div>
+<div style="position: relative; height: 42px; font: 800 26px/42px Manrope, system-ui, sans-serif; color: #15211C"><span data-anim="1" style="position: absolute; inset: 0; animation: al-xa 5s ease-in-out infinite both">6</span><span data-anim="1" style="position: absolute; inset: 0; opacity: 0; animation: al-xb 5s ease-in-out infinite both">20</span></div>
+</div>
+<span data-anim="1" style="display: inline-flex; align-items: center; height: 28px; padding: 0 10px; border-radius: 999px; background: #E2F2E9; color: #1F6B4F; font: 600 12.5px 'JetBrains Mono', monospace; animation: al-xb 5s ease-in-out infinite both">+14 days</span>
+</div>
+<div style="margin-top: 14px; display: flex; align-items: center; justify-content: space-between; gap: 8px"><h3 style="margin: 0; font: 800 18px/1.25 Manrope, system-ui, sans-serif; color: #15211C">Time warp</h3><span style="height: 22px; padding: 0 8px; border-radius: 999px; background: #F0EDF8; color: #57479A; font-size: 11px; font-weight: 700; line-height: 22px; letter-spacing: .05em">PREVIEW</span></div>
+<div class="al-text-mode al-mode-plain"><p style="margin: 8px 0 0; font-size: 14.5px; line-height: 1.6; color: #46544C">See what your app shows 14 days from now — trials ending, coupons expiring — without waiting two weeks.</p></div>
+<div class="al-text-mode al-mode-tech"><p style="margin: 8px 0 0; font-size: 14.5px; line-height: 1.6; color: #46544C">Offsets <code style="font-family: 'JetBrains Mono', monospace">Date</code> in the page and later navigations. Server, database and cron clocks don’t move.</p></div>
+<code style="display: block; margin-top: auto; padding-top: 14px; font: 500 12.5px/1.4 'JetBrains Mono', monospace; color: #2F6F5B">airlock warp "+14 days"</code>
+</article>
+<article class="al-card al-reveal" data-anim="1" style="display: flex; flex-direction: column; padding: 20px; border: 1px solid #E3E8E2; border-radius: 20px; background: #FFFFFF">
+<div aria-hidden="true" style="height: 92px; display: flex; flex-direction: column; justify-content: center; gap: 8px; font: 500 11.5px/1 'JetBrains Mono', monospace">
+<div style="display: flex; align-items: center; gap: 8px; height: 30px; padding: 0 10px; border-radius: 8px; background: #F7F8F5; color: #15211C"><span data-anim="1" style="width: 8px; height: 8px; border-radius: 50%; background: #C2410C; animation: al-blink 1.2s steps(2, end) infinite"></span>saved · GET /v1/rates</div>
+<div style="position: relative; display: flex; align-items: center; gap: 8px; height: 30px; padding: 0 10px; border-radius: 8px; background: #E2F2E9; color: #1F6B4F; overflow: hidden"><svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4l13 8-13 8z"></path></svg>replayed · 200<span data-anim="1" style="position: absolute; bottom: 0; left: 0; width: 30%; height: 2px; background: #2F6F5B; animation: al-travel 2.6s linear infinite"></span></div>
+</div>
+<div style="margin-top: 14px; display: flex; align-items: center; justify-content: space-between; gap: 8px"><h3 style="margin: 0; font: 800 18px/1.25 Manrope, system-ui, sans-serif; color: #15211C">Fixtures</h3><span style="height: 22px; padding: 0 8px; border-radius: 999px; background: #F0EDF8; color: #57479A; font-size: 11px; font-weight: 700; line-height: 22px; letter-spacing: .05em">PREVIEW</span></div>
+<div class="al-text-mode al-mode-plain"><p style="margin: 8px 0 0; font-size: 14.5px; line-height: 1.6; color: #46544C">Save an outside service’s answer once and replay it, so a test doesn’t fail when that service has a bad day.</p></div>
+<div class="al-text-mode al-mode-tech"><p style="margin: 8px 0 0; font-size: 14.5px; line-height: 1.6; color: #46544C">Serves saved responses for matching browser-context requests. Misses currently pass through to the network.</p></div>
+<code style="display: block; margin-top: auto; padding-top: 14px; font: 500 12.5px/1.4 'JetBrains Mono', monospace; color: #2F6F5B">browser-context routes</code>
+</article>
+<article class="al-card al-reveal" data-anim="1" style="display: flex; flex-direction: column; padding: 20px; border: 1px solid #E3E8E2; border-radius: 20px; background: #FFFFFF">
+<div aria-hidden="true" style="height: 92px; display: flex; align-items: center; gap: 12px">
+<div style="position: relative; flex: none"><span style="display: inline-flex; align-items: center; height: 34px; padding: 0 14px; border-radius: 9px; background: #15211C; color: #FFFFFF; font-size: 13px; font-weight: 600">Pay</span><span data-anim="1" style="position: absolute; left: 50%; top: 50%; width: 22px; height: 22px; margin: -11px 0 0 -11px; border: 2px solid #D9822B; border-radius: 50%; animation: al-ping 2.6s ease-out 0s infinite"></span><span data-anim="1" style="position: absolute; left: 50%; top: 50%; width: 22px; height: 22px; margin: -11px 0 0 -11px; border: 2px solid #D9822B; border-radius: 50%; animation: al-ping 2.6s ease-out .3s infinite"></span></div>
+<span data-anim="1" style="display: inline-flex; align-items: center; min-height: 28px; padding: 4px 10px; border-radius: 10px; background: #FFF3E2; color: #9A4A07; font-size: 12px; font-weight: 700; line-height: 1.25; animation: al-pop 2.6s ease-out .6s infinite both">No idempotency key</span>
+</div>
+<div style="margin-top: 14px; display: flex; align-items: center; justify-content: space-between; gap: 8px"><h3 style="margin: 0; font: 800 18px/1.25 Manrope, system-ui, sans-serif; color: #15211C">Chaos report</h3><span style="height: 22px; padding: 0 8px; border-radius: 999px; background: #F0EDF8; color: #57479A; font-size: 11px; font-weight: 700; line-height: 22px; letter-spacing: .05em">PREVIEW</span></div>
+<div class="al-text-mode al-mode-plain"><p style="margin: 8px 0 0; font-size: 14.5px; line-height: 1.6; color: #46544C">Spots checkout buttons that could charge a customer twice if they double-click.</p></div>
+<div class="al-text-mode al-mode-tech"><p style="margin: 8px 0 0; font-size: 14.5px; line-height: 1.6; color: #46544C">Observes a mutation request and reports whether an idempotency key was sent. Duplicate, abort and 502 scenarios are simulated.</p></div>
+<code style="display: block; margin-top: auto; padding-top: 14px; font: 500 12.5px/1.4 'JetBrains Mono', monospace; color: #2F6F5B">airlock chaos &lt;url&gt;</code>
+</article>
+<article class="al-card al-reveal" data-anim="1" style="display: flex; flex-direction: column; padding: 20px; border: 1px solid #E3E8E2; border-radius: 20px; background: #FFFFFF">
+<div aria-hidden="true" style="position: relative; height: 92px; display: flex; flex-direction: column; justify-content: center; gap: 5px; font: 500 11.5px/1 'JetBrains Mono', monospace">
+<span data-anim="1" style="position: absolute; left: -4px; right: -4px; top: 10px; height: 24px; border-radius: 6px; background: rgba(36,88,155,.10); --scan: 54px; animation: al-scan 3s linear infinite"></span>
+<div style="position: relative; display: flex; justify-content: space-between; height: 22px; align-items: center; padding: 0 8px; color: #15211C"><span>GET /api/cart</span><span style="color: #1F6B4F">200</span></div>
+<div style="position: relative; display: flex; justify-content: space-between; height: 22px; align-items: center; padding: 0 8px; border-radius: 6px; background: #FFF3E2; color: #9A4A07; font-weight: 600"><span>POST /api/checkout</span><span>500</span></div>
+<div style="position: relative; display: flex; justify-content: space-between; height: 22px; align-items: center; padding: 0 8px; color: #15211C"><span>GET /api/me</span><span style="color: #1F6B4F">200</span></div>
+</div>
+<div style="margin-top: 14px; display: flex; align-items: center; justify-content: space-between; gap: 8px"><h3 style="margin: 0; font: 800 18px/1.25 Manrope, system-ui, sans-serif; color: #15211C">Failure X-Ray</h3><span style="height: 22px; padding: 0 8px; border-radius: 999px; background: #F0EDF8; color: #57479A; font-size: 11px; font-weight: 700; line-height: 22px; letter-spacing: .05em">PREVIEW</span></div>
+<div class="al-text-mode al-mode-plain"><p style="margin: 8px 0 0; font-size: 14.5px; line-height: 1.6; color: #46544C">When a test fails, see which request broke and what the server said back.</p></div>
+<div class="al-text-mode al-mode-tech"><p style="margin: 8px 0 0; font-size: 14.5px; line-height: 1.6; color: #46544C">Adds W3C <code style="font-family: 'JetBrains Mono', monospace">traceparent</code> headers and records response metadata; backend detail only when the server returns it.</p></div>
+<code style="display: block; margin-top: auto; padding-top: 14px; font: 500 12.5px/1.4 'JetBrains Mono', monospace; color: #2F6F5B">in every run report</code>
+</article>
+<article class="al-card al-reveal" data-anim="1" style="display: flex; flex-direction: column; padding: 20px; border: 1px solid #E3E8E2; border-radius: 20px; background: #FFFFFF">
+<div aria-hidden="true" style="height: 92px; display: flex; align-items: center; gap: 10px">
+<svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#57479A" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="8" width="19" height="8" rx="4" transform="rotate(-35 12 12)" fill="#F0EDF8"></rect><path d="M9.7 8.7l4.6 6.6"></path></svg>
+<div style="position: relative; flex: 1; height: 2px; background: #E3E8E2"><span data-anim="1" style="position: absolute; top: -3px; left: 0; width: 8px; height: 8px; border-radius: 50%; background: #57479A; animation: al-travel 2.4s ease-in-out infinite"></span></div>
+<div style="flex: none; width: 52px; padding: 8px 6px; border: 1px solid #E3E8E2; border-radius: 8px; background: #FFFFFF; display: grid; gap: 4px"><span style="height: 4px; border-radius: 2px; background: #7FD6AE"></span><span style="height: 4px; width: 70%; border-radius: 2px; background: #E3E8E2"></span><span style="height: 4px; width: 85%; border-radius: 2px; background: #E3E8E2"></span><span style="font: 600 8.5px 'JetBrains Mono', monospace; color: #5A6961">.spec.ts</span></div>
+</div>
+<div style="margin-top: 14px; display: flex; align-items: center; justify-content: space-between; gap: 8px"><h3 style="margin: 0; font: 800 18px/1.25 Manrope, system-ui, sans-serif; color: #15211C">Bug capsules</h3><span style="height: 22px; padding: 0 8px; border-radius: 999px; background: #F0EDF8; color: #57479A; font-size: 11px; font-weight: 700; line-height: 22px; letter-spacing: .05em">PREVIEW</span></div>
+<div class="al-text-mode al-mode-plain"><p style="margin: 8px 0 0; font-size: 14.5px; line-height: 1.6; color: #46544C">Turn a captured bug into a test that reproduces it, with obvious personal details scrubbed out.</p></div>
+<div class="al-text-mode al-mode-tech"><p style="margin: 8px 0 0; font-size: 14.5px; line-height: 1.6; color: #46544C">Replays a sanitized event capsule and synthesizes a Playwright repro spec. Redaction is heuristic — no real user data yet.</p></div>
+<code style="display: block; margin-top: auto; padding-top: 14px; font: 500 12.5px/1.4 'JetBrains Mono', monospace; color: #2F6F5B">airlock teleport capsule.json</code>
+</article>
+</div>
+</section>
+
+<section style="max-width: 1200px; margin: 0 auto; padding: 112px 24px 112px">
+<div class="al-reveal" data-anim="1" style="max-width: 760px">
+<div style="display: inline-flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #2F6F5B"><span style="width: 20px; height: 2px; background: #2F6F5B"></span>Who it’s for</div>
+<h2 style="margin: 16px 0 0; font: 800 clamp(32px, 3.6vw, 48px)/1.08 Manrope, system-ui, sans-serif; letter-spacing: -0.03em; color: #15211C; text-wrap: balance">Clear enough for the whole team.</h2>
+</div>
+<div style="margin-top: 44px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(255px, 100%), 1fr)); gap: 16px">
+<article class="al-card al-reveal" data-anim="1" style="padding: 24px; border: 1px solid #E3E8E2; border-radius: 20px; background: #FFFFFF">
+<span style="width: 44px; height: 44px; border-radius: 12px; background: #FFF3E2; color: #9A4A07; display: inline-flex; align-items: center; justify-content: center"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="18" height="13" rx="2"></rect><path d="M9 7V5h6v2M3 12.5h18"></path></svg></span>
+<div style="margin-top: 16px; font-size: 13px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #5A6961">Founders &amp; product</div>
+<h3 style="margin: 6px 0 0; font: 800 20px/1.3 Manrope, system-ui, sans-serif; color: #15211C">Know what’s tested — in plain words.</h3>
+<ul style="margin: 14px 0 0; padding-left: 18px; display: grid; gap: 8px; font-size: 15px; line-height: 1.5; color: #46544C"><li>Readable steps and run summaries</li><li>Receipts to share with customers</li><li>No code needed to follow along</li></ul>
+</article>
+<article class="al-card al-reveal" data-anim="1" style="padding: 24px; border: 1px solid #E3E8E2; border-radius: 20px; background: #FFFFFF">
+<span style="width: 44px; height: 44px; border-radius: 12px; background: #EAF1FB; color: #24589B; display: inline-flex; align-items: center; justify-content: center"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="3"></rect><path d="M8 12.5l2.8 2.8L16.5 9.5"></path></svg></span>
+<div style="margin-top: 16px; font-size: 13px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #5A6961">QA &amp; testers</div>
+<h3 style="margin: 6px 0 0; font: 800 20px/1.3 Manrope, system-ui, sans-serif; color: #15211C">Record tests by clicking.</h3>
+<ul style="margin: 14px 0 0; padding-left: 18px; display: grid; gap: 8px; font-size: 15px; line-height: 1.5; color: #46544C"><li>The recorder writes the test for you</li><li>Self-healing cuts broken-selector churn</li><li>Save points for long flows</li></ul>
+</article>
+<article class="al-card al-reveal" data-anim="1" style="padding: 24px; border: 1px solid #E3E8E2; border-radius: 20px; background: #FFFFFF">
+<span style="width: 44px; height: 44px; border-radius: 12px; background: #E2F2E9; color: #2F6F5B; display: inline-flex; align-items: center; justify-content: center"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 8l-4 4 4 4M16 8l4 4-4 4M13.5 5l-3 14"></path></svg></span>
+<div style="margin-top: 16px; font-size: 13px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #5A6961">Developers</div>
+<h3 style="margin: 6px 0 0; font: 800 20px/1.3 Manrope, system-ui, sans-serif; color: #15211C">It’s just Playwright.</h3>
+<ul style="margin: 14px 0 0; padding-left: 18px; display: grid; gap: 8px; font-size: 15px; line-height: 1.5; color: #46544C"><li>TypeScript specs you own and commit</li><li>A CLI for local runs and CI</li><li>One JSON file of configuration</li></ul>
+</article>
+<article class="al-card al-reveal" data-anim="1" style="padding: 24px; border: 1px solid #E3E8E2; border-radius: 20px; background: #FFFFFF">
+<span style="width: 44px; height: 44px; border-radius: 12px; background: #F0EDF8; color: #57479A; display: inline-flex; align-items: center; justify-content: center"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7.5 3v5.5c0 4.6-3.2 8.2-7.5 9.5c-4.3-1.3-7.5-4.9-7.5-9.5V6z"></path></svg></span>
+<div style="margin-top: 16px; font-size: 13px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #5A6961">Security &amp; compliance</div>
+<h3 style="margin: 6px 0 0; font: 800 20px/1.3 Manrope, system-ui, sans-serif; color: #15211C">Proof, not promises.</h3>
+<ul style="margin: 14px 0 0; padding-left: 18px; display: grid; gap: 8px; font-size: 15px; line-height: 1.5; color: #46544C"><li>Default-deny request policy</li><li>Real keys stay out of the browser</li><li>Hash-linked, verifiable evidence</li></ul>
+</article>
+</div>
+</section>
+
+<section id="developers" style="border-top: 1px solid #E3E8E2; border-bottom: 1px solid #E3E8E2; background: #EEF3EF">
+<div style="max-width: 1200px; margin: 0 auto; padding: 112px 24px">
+<div class="al-reveal" data-anim="1" style="max-width: 760px">
+<div style="display: inline-flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #2F6F5B"><span style="width: 20px; height: 2px; background: #2F6F5B"></span>For engineers</div>
+<h2 style="margin: 16px 0 0; font: 800 clamp(32px, 3.6vw, 48px)/1.08 Manrope, system-ui, sans-serif; letter-spacing: -0.03em; color: #15211C; text-wrap: balance">Five commands from zero to signed evidence.</h2>
+</div>
+<div style="margin-top: 44px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(420px, 100%), 1fr)); gap: 24px; align-items: start">
+<div class="al-reveal" data-anim="1" style="overflow: hidden; border-radius: 20px; background: #0F1D17; box-shadow: 0 30px 60px rgba(15,29,23,.18)">
+<div role="group" aria-label="Code examples" style="display: flex; flex-wrap: wrap; gap: 4px; padding: 10px; border-bottom: 1px solid #23392F">
+<button type="button" aria-pressed="true" data-tab-target="cli" class="al-tab-btn" style="height: 36px; padding: 0 14px; border: 0; border-radius: 9px; cursor: pointer; font: 600 13px/1 'DM Sans', system-ui, sans-serif; ">Terminal</button>
+<button type="button" aria-pressed="false" data-tab-target="cfg" class="al-tab-btn" style="height: 36px; padding: 0 14px; border: 0; border-radius: 9px; cursor: pointer; font: 600 13px/1 'DM Sans', system-ui, sans-serif; ">airlock.config.json</button>
+<button type="button" aria-pressed="false" data-tab-target="ci" class="al-tab-btn" style="height: 36px; padding: 0 14px; border: 0; border-radius: 9px; cursor: pointer; font: 600 13px/1 'DM Sans', system-ui, sans-serif; ">GitHub Actions</button>
+</div>
+<div class="al-code-panel" data-panel="cli"><pre style="margin: 0; padding: 22px 24px; overflow-x: auto; font: 500 13.5px/1.9 'JetBrains Mono', ui-monospace, monospace; color: #D7E7DD; white-space: pre"><span style="color: #6E8A7B"># install and set up
+</span><span style="color: #7FD6AE">$</span> npm install --save-dev airlockqa
+<span style="color: #7FD6AE">$</span> npx airlock init
+<span style="color: #6E8A7B"># record a session, then compile it
+</span><span style="color: #7FD6AE">$</span> npx airlock explore http://localhost:3000 --name checkout-flow
+<span style="color: #7FD6AE">$</span> npx airlock compile .airlock/traces/checkout-flow-trace.json -o tests/checkout.spec.ts
+<span style="color: #6E8A7B"># run behind the policy, then verify the evidence
+</span><span style="color: #7FD6AE">$</span> npx airlock test --local
+<span style="color: #7FD6AE">$</span> npx airlock audit .airlock/compliance/latest-attestation.json
+<span style="color: #7FD6AE">✓ VALID_CHAIN</span> · merkle root e2114ac9…6aece · HMAC-SHA256</pre></div>
+<div class="al-code-panel" data-panel="cfg"><pre style="margin: 0; padding: 22px 24px; overflow-x: auto; font: 500 13.5px/1.75 'JetBrains Mono', ui-monospace, monospace; color: #D7E7DD; white-space: pre">{
+  <span style="color: #7FD6AE">"projectName"</span>: <span style="color: #E9C98B">"Acme SaaS QA"</span>,
+  <span style="color: #7FD6AE">"baseUrl"</span>: <span style="color: #E9C98B">"http://localhost:3000"</span>,
+  <span style="color: #7FD6AE">"secrets"</span>: {
+    <span style="color: #7FD6AE">"STRIPE_KEY"</span>: {
+      <span style="color: #7FD6AE">"phantom"</span>: <span style="color: #E9C98B">"ph_sec_stripe_test_placeholder"</span>,
+      <span style="color: #7FD6AE">"allowedHosts"</span>: [<span style="color: #E9C98B">"api.stripe.com"</span>],
+      <span style="color: #7FD6AE">"allowedMethods"</span>: [<span style="color: #E9C98B">"GET"</span>, <span style="color: #E9C98B">"POST"</span>],
+      <span style="color: #7FD6AE">"blockedPaths"</span>: [<span style="color: #E9C98B">"*/refunds*"</span>, <span style="color: #E9C98B">"*/transfers*"</span>]
+    }
+  },
+  <span style="color: #7FD6AE">"policy"</span>: {
+    <span style="color: #7FD6AE">"defaultAction"</span>: <span style="color: #E9C98B">"BLOCK"</span>,
+    <span style="color: #7FD6AE">"allowedEgressHosts"</span>: [<span style="color: #E9C98B">"localhost"</span>, <span style="color: #E9C98B">"api.stripe.com"</span>],
+    <span style="color: #7FD6AE">"blockedEgressHosts"</span>: [<span style="color: #E9C98B">"pastebin.com"</span>, <span style="color: #E9C98B">"webhook.site"</span>]
+  },
+  <span style="color: #7FD6AE">"healer"</span>: { <span style="color: #7FD6AE">"autoHeal"</span>: true, <span style="color: #7FD6AE">"confidenceThreshold"</span>: 0.8 }
+}</pre></div>
+<div class="al-code-panel" data-panel="ci"><pre style="margin: 0; padding: 22px 24px; overflow-x: auto; font: 500 13.5px/1.85 'JetBrains Mono', ui-monospace, monospace; color: #D7E7DD; white-space: pre"><span style="color: #7FD6AE">name</span>: AirlockQA
+<span style="color: #7FD6AE">on</span>: [push, pull_request]
+<span style="color: #7FD6AE">jobs</span>:
+  <span style="color: #7FD6AE">browser-tests</span>:
+    <span style="color: #7FD6AE">runs-on</span>: ubuntu-latest
+    <span style="color: #7FD6AE">steps</span>:
+      - <span style="color: #7FD6AE">uses</span>: actions/checkout@v4
+      - <span style="color: #7FD6AE">uses</span>: oven-sh/setup-bun@v2
+      - <span style="color: #7FD6AE">run</span>: bun install &amp;&amp; bunx playwright install --with-deps chromium
+      - <span style="color: #7FD6AE">run</span>: bunx airlock test --cloud
+        <span style="color: #7FD6AE">env</span>:
+          <span style="color: #7FD6AE">AIRLOCK_API_KEY</span>: <span style="color: #E9C98B">${{ secrets.AIRLOCK_API_KEY }}</span>
+      - <span style="color: #7FD6AE">run</span>: bunx airlock audit</pre></div>
+<div style="padding: 12px 24px 16px; border-top: 1px solid #23392F; font-size: 13px; color: #8FB3A0">Real secret values live only in your runner — the browser and cloud payloads only ever see the phantom.</div>
+</div>
+<div class="al-reveal" data-anim="1" style="display: grid; gap: 12px">
+<div style="padding: 20px; border: 1px solid #DCE6DF; border-radius: 18px; background: #FFFFFF">
+<div style="display: flex; align-items: center; gap: 12px"><span style="width: 38px; height: 38px; border-radius: 11px; background: #E2F2E9; color: #2F6F5B; display: inline-flex; align-items: center; justify-content: center"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="11" rx="1.5"></rect><path d="M2.5 19h19"></path></svg></span><div style="flex: 1"><div style="font: 800 17px/1.3 Manrope, system-ui, sans-serif; color: #15211C">Local</div><div style="font-size: 14px; color: #5A6961">Your laptop or CI runner. Free, no key.</div></div><code style="font: 600 12.5px 'JetBrains Mono', monospace; color: #2F6F5B">--local</code></div>
+</div>
+<div style="padding: 20px; border: 1px solid #DCE6DF; border-radius: 18px; background: #FFFFFF">
+<div style="display: flex; align-items: center; gap: 12px"><span style="width: 38px; height: 38px; border-radius: 11px; background: #EAF1FB; color: #24589B; display: inline-flex; align-items: center; justify-content: center"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 18.5h10.5a4 4 0 0 0 .6-7.95A6 6 0 0 0 6.6 9.1 4.75 4.75 0 0 0 7 18.5z"></path></svg></span><div style="flex: 1"><div style="font: 800 17px/1.3 Manrope, system-ui, sans-serif; color: #15211C">Cloud plan</div><div style="font-size: 14px; color: #5A6961">Hosted runs from CI. The key travels only as an HTTPS Bearer token.</div></div><code style="font: 600 12.5px 'JetBrains Mono', monospace; color: #2F6F5B">--cloud</code></div>
+</div>
+<div style="padding: 20px; border: 1px solid #DCE6DF; border-radius: 18px; background: #FFFFFF">
+<div style="display: flex; align-items: center; gap: 12px"><span style="width: 38px; height: 38px; border-radius: 11px; background: #F0EDF8; color: #57479A; display: inline-flex; align-items: center; justify-content: center"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 21V5.5L12 3v18M12 8.5l8 2.5v10M3 21h18"></path></svg></span><div style="flex: 1"><div style="font: 800 17px/1.3 Manrope, system-ui, sans-serif; color: #15211C">Enterprise</div><div style="font-size: 14px; color: #5A6961">Point the same CLI at your own endpoint.</div></div><code style="font: 600 12.5px 'JetBrains Mono', monospace; color: #2F6F5B">AIRLOCK_CLOUD_URL</code></div>
+</div>
+<div style="padding: 20px; border-radius: 18px; background: #15211C; color: #E7F2EC">
+<div style="font: 800 17px/1.3 Manrope, system-ui, sans-serif">A console on your machine</div>
+<div style="margin-top: 4px; font-size: 14px; line-height: 1.55; color: #B8CCC0">Browse runs, checkpoints, healing logs and evidence locally.</div>
+<code style="display: block; margin-top: 10px; font: 500 13px 'JetBrains Mono', monospace; color: #7FD6AE">npx airlock serve -p 4100</code>
+</div>
+</div>
+</div>
+</div>
+</section>
+
+<section id="safety" style="max-width: 1200px; margin: 0 auto; padding: 112px 24px 40px">
+<div class="al-reveal" data-anim="1" style="max-width: 780px">
+<div style="display: inline-flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #2F6F5B"><span style="width: 20px; height: 2px; background: #2F6F5B"></span>Straight answers</div>
+<h2 style="margin: 16px 0 0; font: 800 clamp(32px, 3.6vw, 48px)/1.08 Manrope, system-ui, sans-serif; letter-spacing: -0.03em; color: #15211C; text-wrap: balance">What AirlockQA does today — and what it doesn’t yet.</h2>
+<p style="margin: 16px 0 0; font-size: 18px; line-height: 1.65; color: #46544C">Testing tools love big claims. We describe each capability by what it actually does, so you know exactly what you’re relying on.</p>
+</div>
+<div class="al-reveal" data-anim="1" style="margin-top: 40px; overflow-x: auto; border: 1px solid #E3E8E2; border-radius: 20px; background: #FFFFFF">
+<table style="width: 100%; min-width: 760px; border-collapse: collapse; font-size: 15px; line-height: 1.55">
+<thead><tr style="background: #F7F8F5"><th scope="col" style="width: 20%; padding: 16px 22px; border-bottom: 1px solid #E3E8E2; text-align: left; font-size: 13px; font-weight: 700; color: #46544C">Capability</th><th scope="col" style="padding: 16px 22px; border-bottom: 1px solid #E3E8E2; text-align: left; font-size: 13px; font-weight: 700; color: #1F6B4F">Does today</th><th scope="col" style="padding: 16px 22px; border-bottom: 1px solid #E3E8E2; text-align: left; font-size: 13px; font-weight: 700; color: #9A4A07">Not yet</th></tr></thead>
+<tbody>
+<tr><th scope="row" style="padding: 18px 22px; border-bottom: 1px solid #EEF2EE; text-align: left; vertical-align: top; font: 700 15px/1.4 Manrope, system-ui, sans-serif; color: #15211C">Safety door</th><td style="padding: 18px 22px; border-bottom: 1px solid #EEF2EE; vertical-align: top; color: #15211C">Checks requests the test browser makes (host, path, method), blocks risky ones and swaps stand-in keys on approved hosts.</td><td style="padding: 18px 22px; border-bottom: 1px solid #EEF2EE; vertical-align: top; color: #46544C">Not an OS-level firewall — your servers’ own outbound calls aren’t routed through it.</td></tr>
+<tr><th scope="row" style="padding: 18px 22px; border-bottom: 1px solid #EEF2EE; text-align: left; vertical-align: top; font: 700 15px/1.4 Manrope, system-ui, sans-serif; color: #15211C">Self-healing</th><td style="padding: 18px 22px; border-bottom: 1px solid #EEF2EE; vertical-align: top; color: #15211C">Re-finds moved or renamed elements from test id, label, text and structure, and logs every fix.</td><td style="padding: 18px 22px; border-bottom: 1px solid #EEF2EE; vertical-align: top; color: #46544C">Repairs are suggestions — review them in your app’s context.</td></tr>
+<tr><th scope="row" style="padding: 18px 22px; border-bottom: 1px solid #EEF2EE; text-align: left; vertical-align: top; font: 700 15px/1.4 Manrope, system-ui, sans-serif; color: #15211C">Checkpoints</th><td style="padding: 18px 22px; border-bottom: 1px solid #EEF2EE; vertical-align: top; color: #15211C">Saves cookies, local and session storage, URL and a DOM snapshot, and restores them into new browser contexts.</td><td style="padding: 18px 22px; border-bottom: 1px solid #EEF2EE; vertical-align: top; color: #46544C">No VM or process memory snapshots.</td></tr>
+<tr><th scope="row" style="padding: 18px 22px; border-bottom: 1px solid #EEF2EE; text-align: left; vertical-align: top; font: 700 15px/1.4 Manrope, system-ui, sans-serif; color: #15211C">Time warp</th><td style="padding: 18px 22px; border-bottom: 1px solid #EEF2EE; vertical-align: top; color: #15211C">Moves the clock for <code style="font-family: 'JetBrains Mono', monospace">Date</code> in the page and later navigations.</td><td style="padding: 18px 22px; border-bottom: 1px solid #EEF2EE; vertical-align: top; color: #46544C">Browser timers, servers, databases, cron jobs and TLS keep real time.</td></tr>
+<tr><th scope="row" style="padding: 18px 22px; border-bottom: 1px solid #EEF2EE; text-align: left; vertical-align: top; font: 700 15px/1.4 Manrope, system-ui, sans-serif; color: #15211C">Fixtures</th><td style="padding: 18px 22px; border-bottom: 1px solid #EEF2EE; vertical-align: top; color: #15211C">Replays saved responses for matching browser requests.</td><td style="padding: 18px 22px; border-bottom: 1px solid #EEF2EE; vertical-align: top; color: #46544C">Backend and worker traffic isn’t captured; unmatched requests pass through.</td></tr>
+<tr><th scope="row" style="padding: 18px 22px; border-bottom: 1px solid #EEF2EE; text-align: left; vertical-align: top; font: 700 15px/1.4 Manrope, system-ui, sans-serif; color: #15211C">Chaos report</th><td style="padding: 18px 22px; border-bottom: 1px solid #EEF2EE; vertical-align: top; color: #15211C">Watches a risky action and reports whether an idempotency key was sent.</td><td style="padding: 18px 22px; border-bottom: 1px solid #EEF2EE; vertical-align: top; color: #46544C">Duplicate, dropped-connection and 502 scenarios are simulated, not executed.</td></tr>
+<tr><th scope="row" style="padding: 18px 22px; border-bottom: 1px solid #EEF2EE; text-align: left; vertical-align: top; font: 700 15px/1.4 Manrope, system-ui, sans-serif; color: #15211C">Failure X-Ray</th><td style="padding: 18px 22px; border-bottom: 1px solid #EEF2EE; vertical-align: top; color: #15211C">Adds W3C trace headers and records browser response details.</td><td style="padding: 18px 22px; border-bottom: 1px solid #EEF2EE; vertical-align: top; color: #46544C">No backend or database telemetry, and latency isn’t measured yet.</td></tr>
+<tr><th scope="row" style="padding: 18px 22px; border-bottom: 1px solid #EEF2EE; text-align: left; vertical-align: top; font: 700 15px/1.4 Manrope, system-ui, sans-serif; color: #15211C">Bug capsules</th><td style="padding: 18px 22px; border-bottom: 1px solid #EEF2EE; vertical-align: top; color: #15211C">Turns a sanitized event capsule into a Playwright repro spec.</td><td style="padding: 18px 22px; border-bottom: 1px solid #EEF2EE; vertical-align: top; color: #46544C">Redaction is best-effort and capsules aren’t encrypted — keep real user data out.</td></tr>
+<tr><th scope="row" style="padding: 18px 22px; text-align: left; vertical-align: top; font: 700 15px/1.4 Manrope, system-ui, sans-serif; color: #15211C">Signed evidence</th><td style="padding: 18px 22px; vertical-align: top; color: #15211C">A hash-linked, signed ledger per run that anyone with the key can verify.</td><td style="padding: 18px 22px; vertical-align: top; color: #46544C">Evidence only — not a SOC 2 or ISO certification.</td></tr>
+</tbody>
+</table>
+</div>
+<a href="https://github.com/katesaikishore/AirlockQA/blob/main/docs/five-impossible-moats-implementation-plan.md" target="_blank" rel="noreferrer" style="display: inline-flex; align-items: center; gap: 6px; margin-top: 18px; font-size: 15px; font-weight: 600">Read the capability roadmap<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h6v6M20 4l-8.5 8.5M18 14v5.5H4.5V6H10"></path></svg></a>
+</section>
+
+<section id="plans" style="max-width: 1200px; margin: 0 auto; padding: 112px 24px 40px">
+<div class="al-reveal" data-anim="1" style="max-width: 760px">
+<div style="display: inline-flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #2F6F5B"><span style="width: 20px; height: 2px; background: #2F6F5B"></span>Plans</div>
+<h2 style="margin: 16px 0 0; font: 800 clamp(32px, 3.6vw, 48px)/1.08 Manrope, system-ui, sans-serif; letter-spacing: -0.03em; color: #15211C; text-wrap: balance">Start free. Add the cloud when you need it.</h2>
+</div>
+<div style="margin-top: 44px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr)); gap: 18px; align-items: stretch">
+<article class="al-card al-reveal" data-anim="1" style="display: flex; flex-direction: column; padding: 28px; border: 1px solid #E3E8E2; border-radius: 22px; background: #FFFFFF">
+<h3 style="margin: 0; font: 800 20px/1.3 Manrope, system-ui, sans-serif; color: #15211C">Open source</h3>
+<div style="margin-top: 14px; font: 800 40px/1 Manrope, system-ui, sans-serif; letter-spacing: -0.03em; color: #15211C">Free</div>
+<p style="margin: 10px 0 0; font-size: 15px; line-height: 1.6; color: #46544C">For anyone running tests on their own machines or CI.</p>
+<ul style="list-style: none; margin: 22px 0 0; padding: 0; display: grid; gap: 10px; font-size: 15px; color: #15211C">
+<li style="display: flex; gap: 10px; align-items: flex-start"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2F6F5B" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 2px"><path d="M5 12.5l4.2 4.2L19 7"></path></svg>Recorder, compiler and runner</li>
+<li style="display: flex; gap: 10px; align-items: flex-start"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2F6F5B" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 2px"><path d="M5 12.5l4.2 4.2L19 7"></path></svg>Safety door and stand-in keys</li>
+<li style="display: flex; gap: 10px; align-items: flex-start"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2F6F5B" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 2px"><path d="M5 12.5l4.2 4.2L19 7"></path></svg>Self-healing, checkpoints and the lab</li>
+<li style="display: flex; gap: 10px; align-items: flex-start"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2F6F5B" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 2px"><path d="M5 12.5l4.2 4.2L19 7"></path></svg>Signed evidence and the local console</li>
+</ul>
+<a class="al-btn" href="https://github.com/katesaikishore/AirlockQA" target="_blank" rel="noreferrer" style="margin-top: auto; display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 48px; padding: 0 18px; border: 1px solid #D3DBD4; border-radius: 13px; background: #FFFFFF; color: #15211C; font-size: 15px; font-weight: 600; text-decoration: none; transform: translateY(0)">Get it on GitHub</a>
+</article>
+<article class="al-card al-reveal" data-anim="1" style="position: relative; display: flex; flex-direction: column; padding: 28px; border: 2px solid #2F6F5B; border-radius: 22px; background: #FFFFFF; box-shadow: 0 24px 54px rgba(47,111,91,.14)">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 10px"><h3 style="margin: 0; font: 800 20px/1.3 Manrope, system-ui, sans-serif; color: #15211C">Cloud</h3><span style="height: 26px; padding: 0 10px; border-radius: 999px; background: #E2F2E9; color: #1F6B4F; font-size: 12px; font-weight: 700; line-height: 26px">Early access</span></div>
+<div style="margin-top: 14px; display: flex; align-items: baseline; gap: 6px"><span style="font: 800 40px/1 Manrope, system-ui, sans-serif; letter-spacing: -0.03em; color: #15211C">[YOUR PRICE]</span><span style="font-size: 15px; color: #5A6961">/ month</span></div>
+<p style="margin: 10px 0 0; font-size: 15px; line-height: 1.6; color: #46544C">Hosted browser runs, submitted straight from CI.</p>
+<ul style="list-style: none; margin: 22px 0 0; padding: 0; display: grid; gap: 10px; font-size: 15px; color: #15211C">
+<li style="display: flex; gap: 10px; align-items: flex-start"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2F6F5B" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 2px"><path d="M5 12.5l4.2 4.2L19 7"></path></svg>Everything in Open source</li>
+<li style="display: flex; gap: 10px; align-items: flex-start"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2F6F5B" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 2px"><path d="M5 12.5l4.2 4.2L19 7"></path></svg>Project API keys for CI</li>
+<li style="display: flex; gap: 10px; align-items: flex-start"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2F6F5B" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 2px"><path d="M5 12.5l4.2 4.2L19 7"></path></svg>Run history and analytics in the console</li>
+<li style="display: flex; gap: 10px; align-items: flex-start"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2F6F5B" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 2px"><path d="M5 12.5l4.2 4.2L19 7"></path></svg>Results posted to pull requests</li>
+<li style="display: flex; gap: 10px; align-items: flex-start"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2F6F5B" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 2px"><path d="M5 12.5l4.2 4.2L19 7"></path></svg>Daily run allowance: [YOUR LIMIT]</li>
+</ul>
+<a class="al-btn" href="/login" style="margin-top: 26px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 48px; padding: 0 18px; border-radius: 13px; background: #2F6F5B; color: #FFFFFF; font-size: 15px; font-weight: 700; text-decoration: none">Join early access</a>
+</article>
+<article class="al-card al-reveal" data-anim="1" style="display: flex; flex-direction: column; padding: 28px; border: 1px solid #E3E8E2; border-radius: 22px; background: #FFFFFF">
+<h3 style="margin: 0; font: 800 20px/1.3 Manrope, system-ui, sans-serif; color: #15211C">Enterprise</h3>
+<div style="margin-top: 14px; font: 800 40px/1 Manrope, system-ui, sans-serif; letter-spacing: -0.03em; color: #15211C">Custom</div>
+<p style="margin: 10px 0 0; font-size: 15px; line-height: 1.6; color: #46544C">Your own deployment, endpoint and keys.</p>
+<ul style="list-style: none; margin: 22px 0 0; padding: 0; display: grid; gap: 10px; font-size: 15px; color: #15211C">
+<li style="display: flex; gap: 10px; align-items: flex-start"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2F6F5B" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 2px"><path d="M5 12.5l4.2 4.2L19 7"></path></svg>Dedicated endpoint via AIRLOCK_CLOUD_URL</li>
+<li style="display: flex; gap: 10px; align-items: flex-start"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2F6F5B" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 2px"><path d="M5 12.5l4.2 4.2L19 7"></path></svg>Deployment-scoped credentials</li>
+<li style="display: flex; gap: 10px; align-items: flex-start"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2F6F5B" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 2px"><path d="M5 12.5l4.2 4.2L19 7"></path></svg>Security review support</li>
+<li style="display: flex; gap: 10px; align-items: flex-start"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2F6F5B" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 2px"><path d="M5 12.5l4.2 4.2L19 7"></path></svg>[YOUR SUPPORT TERMS]</li>
+</ul>
+<a class="al-btn" href="/login" style="margin-top: auto; display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 48px; padding: 0 18px; border: 1px solid #D3DBD4; border-radius: 13px; background: #FFFFFF; color: #15211C; font-size: 15px; font-weight: 600; text-decoration: none">Talk to us</a>
+</article>
+</div>
+<p style="margin: 18px 0 0; font-size: 14px; color: #5A6961">Cloud pricing and run limits are still being finalized.</p>
+</section>
+
+<section id="faq" style="max-width: 920px; margin: 0 auto; padding: 112px 24px 40px">
+<div class="al-reveal" data-anim="1">
+<div style="display: inline-flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #2F6F5B"><span style="width: 20px; height: 2px; background: #2F6F5B"></span>Questions</div>
+<h2 style="margin: 16px 0 0; font: 800 clamp(32px, 3.6vw, 48px)/1.08 Manrope, system-ui, sans-serif; letter-spacing: -0.03em; color: #15211C">Good questions, short answers.</h2>
+</div>
+<div style="margin-top: 32px; border-top: 1px solid #E3E8E2">
+<div class="al-faq-item is-open" style="border-bottom: 1px solid #E3E8E2">
+<h3 style="margin: 0"><button type="button" class="al-faq-toggle" data-faq-index="0" aria-expanded="true" style="width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 22px 0; border: 0; background: transparent; cursor: pointer; text-align: left; font: 700 18.5px/1.4 Manrope, system-ui, sans-serif; color: #15211C">Do I need to know how to code?<span class="al-faq-icon" <span style="flex: none; width: 34px; height: 34px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; transition: transform .2s ease; ; ; "><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg></span></button></h3>
+<div class="al-faq-body" data-faq-body="0" ><p style="margin: 0 0 24px; max-width: 760px; font-size: 16.5px; line-height: 1.7; color: #46544C">Not to get started. Record a test by clicking through your site; the console shows each step in plain words. The output is real Playwright code, so engineers can review and extend it later.</p></div>
+</div>
+<div class="al-faq-item" style="border-bottom: 1px solid #E3E8E2">
+<h3 style="margin: 0"><button type="button" class="al-faq-toggle" data-faq-index="1" aria-expanded="false" style="width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 22px 0; border: 0; background: transparent; cursor: pointer; text-align: left; font: 700 18.5px/1.4 Manrope, system-ui, sans-serif; color: #15211C">Can a test touch real customers or real money?<span class="al-faq-icon" <span style="flex: none; width: 34px; height: 34px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; transition: transform .2s ease; ; ; "><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg></span></button></h3>
+<div class="al-faq-body" data-faq-body="1" hidden><p style="margin: 0 0 24px; max-width: 760px; font-size: 16.5px; line-height: 1.7; color: #46544C">Every request from the test browser passes the safety door first. Risky paths like refunds and deletes are blocked by your rules, unknown sites are blocked by default, and the browser only ever holds stand-in keys. It covers browser traffic — not calls your own servers make.</p></div>
+</div>
+<div class="al-faq-item" style="border-bottom: 1px solid #E3E8E2">
+<h3 style="margin: 0"><button type="button" class="al-faq-toggle" data-faq-index="2" aria-expanded="false" style="width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 22px 0; border: 0; background: transparent; cursor: pointer; text-align: left; font: 700 18.5px/1.4 Manrope, system-ui, sans-serif; color: #15211C">What is a signed receipt, exactly?<span class="al-faq-icon" <span style="flex: none; width: 34px; height: 34px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; transition: transform .2s ease; ; ; "><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg></span></button></h3>
+<div class="al-faq-body" data-faq-body="2" hidden><p style="margin: 0 0 24px; max-width: 760px; font-size: 16.5px; line-height: 1.7; color: #46544C">Each run writes a hash-linked log of what happened and signs it. Anyone with the key can check that nothing was changed afterwards. It’s strong evidence of what was tested — not a compliance certificate.</p></div>
+</div>
+<div class="al-faq-item" style="border-bottom: 1px solid #E3E8E2">
+<h3 style="margin: 0"><button type="button" class="al-faq-toggle" data-faq-index="3" aria-expanded="false" style="width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 22px 0; border: 0; background: transparent; cursor: pointer; text-align: left; font: 700 18.5px/1.4 Manrope, system-ui, sans-serif; color: #15211C">Where do my tests run?<span class="al-faq-icon" <span style="flex: none; width: 34px; height: 34px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; transition: transform .2s ease; ; ; "><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg></span></button></h3>
+<div class="al-faq-body" data-faq-body="3" hidden><p style="margin: 0 0 24px; max-width: 760px; font-size: 16.5px; line-height: 1.7; color: #46544C">On your laptop or CI runner for free, on hosted runners with the Cloud plan, or on your own enterprise endpoint. The same CLI works for all three.</p></div>
+</div>
+<div class="al-faq-item" style="border-bottom: 1px solid #E3E8E2">
+<h3 style="margin: 0"><button type="button" class="al-faq-toggle" data-faq-index="4" aria-expanded="false" style="width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 22px 0; border: 0; background: transparent; cursor: pointer; text-align: left; font: 700 18.5px/1.4 Manrope, system-ui, sans-serif; color: #15211C">What does “Preview” mean?<span class="al-faq-icon" <span style="flex: none; width: 34px; height: 34px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; transition: transform .2s ease; ; ; "><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg></span></button></h3>
+<div class="al-faq-body" data-faq-body="4" hidden><p style="margin: 0 0 24px; max-width: 760px; font-size: 16.5px; line-height: 1.7; color: #46544C">Preview tools work today, but only inside the test browser. Each one lists what it covers and what it doesn’t, so nothing is oversold.</p></div>
+</div>
+<div class="al-faq-item" style="border-bottom: 1px solid #E3E8E2">
+<h3 style="margin: 0"><button type="button" class="al-faq-toggle" data-faq-index="5" aria-expanded="false" style="width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 22px 0; border: 0; background: transparent; cursor: pointer; text-align: left; font: 700 18.5px/1.4 Manrope, system-ui, sans-serif; color: #15211C">Which browsers are supported?<span class="al-faq-icon" <span style="flex: none; width: 34px; height: 34px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; transition: transform .2s ease; ; ; "><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg></span></button></h3>
+<div class="al-faq-body" data-faq-body="5" hidden><p style="margin: 0 0 24px; max-width: 760px; font-size: 16.5px; line-height: 1.7; color: #46544C">Chromium today, managed by Playwright. Runs work headless or with a visible window.</p></div>
+</div>
+</div>
+</section>
+
+<section style="max-width: 1200px; margin: 0 auto; padding: 72px 24px 112px">
+<div class="al-reveal" data-anim="1" style="position: relative; overflow: hidden; padding: clamp(36px, 6vw, 72px); border-radius: 28px; background: #15211C; color: #FFFFFF">
+<div aria-hidden="true" style="position: absolute; right: 0; top: 0; bottom: 0; width: 46%; pointer-events: none">
+<div style="position: absolute; left: 0; right: 0; top: 30%; border-top: 2px dashed rgba(127,214,174,.18)"><span data-anim="1" style="position: absolute; top: -5px; width: 8px; height: 8px; border-radius: 50%; background: #7FD6AE; animation: al-travel 4.5s linear infinite"></span></div>
+<div style="position: absolute; left: 0; right: 0; top: 52%; border-top: 2px dashed rgba(127,214,174,.18)"><span data-anim="1" style="position: absolute; top: -5px; width: 8px; height: 8px; border-radius: 50%; background: #F2B26B; animation: al-travel 5.5s linear 1s infinite"></span></div>
+<div style="position: absolute; left: 0; right: 0; top: 74%; border-top: 2px dashed rgba(127,214,174,.18)"><span data-anim="1" style="position: absolute; top: -5px; width: 8px; height: 8px; border-radius: 50%; background: #7FD6AE; animation: al-travel 5s linear 2s infinite"></span></div>
+<svg width="240" height="240" viewBox="0 0 64 64" style="position: absolute; right: 6%; top: 50%; transform: translateY(-50%); opacity: .14"><path d="M16 48V31.5C16 22.94 22.94 16 31.5 16h1C41.06 16 48 22.94 48 31.5V48" fill="none" stroke="#B8E4CE" stroke-width="3" stroke-linecap="round"></path><path d="M23.5 47V31.5a8.5 8.5 0 0 1 17 0V47" fill="none" stroke="#B8E4CE" stroke-width="3" stroke-linecap="round"></path></svg>
+</div>
+<div style="position: relative; max-width: 640px">
+<h2 style="margin: 0; font: 800 clamp(32px, 4vw, 52px)/1.06 Manrope, system-ui, sans-serif; letter-spacing: -0.03em; color: #FFFFFF; text-wrap: balance">See a safe test run for yourself.</h2>
+<p style="margin: 18px 0 0; font-size: 18px; line-height: 1.65; color: #C9D8CF">Open the demo console to explore runs, the safety door and signed receipts with sample data — or install AirlockQA and record your first test.</p>
+<div style="margin-top: 30px; display: flex; flex-wrap: wrap; align-items: center; gap: 12px">
+<a class="al-btn" href="/login?next=%2Fconsole" style="display: inline-flex; align-items: center; gap: 10px; height: 54px; padding: 0 24px; border-radius: 14px; background: #B8E4CE; color: #15211C; font-size: 16.5px; font-weight: 700; text-decoration: none">Explore the demo<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></a>
+<span style="display: inline-flex; align-items: center; gap: 10px; height: 54px; padding: 0 18px; border: 1px solid rgba(255,255,255,.18); border-radius: 14px; font: 500 15px 'JetBrains Mono', ui-monospace, monospace; color: #E7F2EC"><span aria-hidden="true" style="color: #8FB3A0">$</span>npm i -D airlockqa</span>
+</div>
+</div>
+</div>
+</section>
+</main>
+
+<footer style="border-top: 1px solid #E3E8E2; background: #FFFFFF">
+<div style="max-width: 1200px; margin: 0 auto; padding: 52px 24px 28px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr)); gap: 32px">
+<div>
+<a href="#top" style="display: inline-flex; align-items: center; gap: 10px; color: #15211C; text-decoration: none"><svg width="30" height="30" viewBox="0 0 64 64" aria-hidden="true"><rect x="2" y="2" width="60" height="60" rx="18" fill="#2F6F5B"></rect><path d="M16 48V31.5C16 22.94 22.94 16 31.5 16h1C41.06 16 48 22.94 48 31.5V48" fill="none" stroke="#F7FBF8" stroke-width="4.5" stroke-linecap="round"></path><path d="M23.5 47V31.5a8.5 8.5 0 0 1 17 0V47" fill="none" stroke="#B8E4CE" stroke-width="4" stroke-linecap="round"></path><path d="M19.5 49.5h25" fill="none" stroke="#F7FBF8" stroke-width="4.5" stroke-linecap="round"></path></svg><span style="font: 800 18px/1 Manrope, system-ui, sans-serif">Airlock<span style="color: #2F6F5B">QA</span></span></a>
+<p style="margin: 14px 0 0; max-width: 260px; font-size: 14.5px; line-height: 1.6; color: #5A6961">Browser tests with a safety door. Open source under the MIT License.</p>
+</div>
+<nav aria-label="Product" style="display: grid; align-content: start; gap: 10px; font-size: 15px"><div style="font-size: 13px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #5A6961">Product</div><a class="al-link" href="#how">How it works</a><a class="al-link" href="#features">Features</a><a class="al-link" href="#plans">Plans</a><a class="al-link" href="/login?next=%2Fconsole">Demo console</a></nav>
+<nav aria-label="Resources" style="display: grid; align-content: start; gap: 10px; font-size: 15px"><div style="font-size: 13px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #5A6961">Resources</div><a class="al-link" href="https://github.com/katesaikishore/AirlockQA" target="_blank" rel="noreferrer">GitHub</a><a class="al-link" href="https://github.com/katesaikishore/AirlockQA/blob/main/docs/HOW-TO-USE.md" target="_blank" rel="noreferrer">User guide</a><a class="al-link" href="https://github.com/katesaikishore/AirlockQA/blob/main/docs/five-impossible-moats-implementation-plan.md" target="_blank" rel="noreferrer">Capability roadmap</a></nav>
+<nav aria-label="Account" style="display: grid; align-content: start; gap: 10px; font-size: 15px"><div style="font-size: 13px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #5A6961">Account</div><a class="al-link" href="/login">Sign in</a><a class="al-link" href="/console#integrations">Connect CI</a></nav>
+</div>
+<div style="max-width: 1200px; margin: 0 auto; padding: 18px 24px 32px; border-top: 1px solid #EEF2EE; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; font-size: 13.5px; color: #5A6961"><span>© 2026 AirlockQA</span><span>MIT License</span></div>
+</footer>
+</div>
 </body>
 </html>
