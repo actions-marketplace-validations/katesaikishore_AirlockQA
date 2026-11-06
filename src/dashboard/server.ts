@@ -1,13 +1,14 @@
 import * as http from 'node:http';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { TLSSocket } from 'node:tls';
 import { fileURLToPath } from 'node:url';
 import type { AirlockConfig, ComplianceProofBundle } from '../types/index.js';
 import { readJsonFile, readJsonlFile } from '../utils/files.js';
 import { AttestationEngine } from '../compliance/attestation.js';
 import { logger } from '../utils/logger.js';
+import { isEncryptedCheckpointFile } from '../forker/checkpoint-manager.js';
 
 const moduleDirectory = path.dirname(fileURLToPath(import.meta.url));
 const publicDirectoryCandidates = [
@@ -29,6 +30,65 @@ const staticContentTypes: Record<string, string> = {
 };
 
 const previewRecordingName = 'airlockqa-motion-preview.webm';
+const maxVerifyBodyBytes = 5 * 1024 * 1024;
+
+const localHostnames = new Set(['localhost', '127.0.0.1', '[::1]']);
+
+/**
+ * DNS-rebinding guard: only accept requests whose Host header names a loopback
+ * hostname on the port this server is actually listening on.
+ */
+export function isAllowedHost(hostHeader: string | undefined, port: number): boolean {
+  if (!hostHeader) return false;
+  const host = hostHeader.trim().toLowerCase();
+  let hostname: string;
+  let hostPort: string | undefined;
+  const ipv6 = /^(\[[0-9a-f:.]+\])(?::(\d+))?$/.exec(host);
+  if (ipv6) {
+    hostname = ipv6[1];
+    hostPort = ipv6[2];
+  } else {
+    const match = /^([a-z0-9.-]+)(?::(\d+))?$/.exec(host);
+    if (!match) return false;
+    hostname = match[1];
+    hostPort = match[2];
+  }
+  if (!localHostnames.has(hostname)) return false;
+  const effectivePort = hostPort === undefined ? 80 : Number(hostPort);
+  return effectivePort === port;
+}
+
+const reportCsp = [
+  "default-src 'none'",
+  "style-src 'unsafe-inline'",
+  "img-src data:",
+  "base-uri 'none'",
+  "form-action 'none'",
+  "frame-ancestors 'none'",
+].join('; ');
+
+/** Strict CSP for dashboard HTML. Inline scripts (e.g. import maps) are allowed only by hash. */
+function htmlCsp(html: string): string {
+  const inlineScriptHashes: string[] = [];
+  const inlineScript = /<script\b(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/gi;
+  for (const match of html.matchAll(inlineScript)) {
+    if (match[1].length === 0) continue;
+    inlineScriptHashes.push(`'sha256-${createHash('sha256').update(match[1], 'utf8').digest('base64')}'`);
+  }
+  return [
+    "default-src 'self'",
+    ["script-src 'self' https://cdn.jsdelivr.net", ...inlineScriptHashes].join(' '),
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+    "font-src 'self' https://fonts.gstatic.com",
+    "img-src 'self' data: blob:",
+    "media-src 'self' blob:",
+    "connect-src 'self'",
+    "object-src 'none'",
+    "base-uri 'none'",
+    "form-action 'self'",
+    "frame-ancestors 'none'",
+  ].join('; ');
+}
 const maxPreviewRecordingBytes = 16 * 1024 * 1024;
 
 function hasSameOrigin(req: http.IncomingMessage): boolean {
@@ -68,6 +128,14 @@ export function startDashboardServer(
   const checkpointsDir = config.forker?.checkpointsDir || './.airlock/checkpoints';
 
   const server = http.createServer((req, res) => {
+    const address = server.address();
+    const listeningPort = address && typeof address === 'object' ? address.port : port;
+    if (!isAllowedHost(req.headers.host, listeningPort)) {
+      res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' });
+      res.end(req.method === 'HEAD' ? undefined : 'Forbidden: unexpected Host header');
+      req.resume();
+      return;
+    }
     const url = new URL(req.url || '/', `http://${req.headers.host}`);
 
     // Save the dashboard's short motion preview at one fixed local path.
@@ -182,7 +250,11 @@ export function startDashboardServer(
     if (url.pathname === '/api/checkpoints') {
       if (fs.existsSync(checkpointsDir)) {
         const files = fs.readdirSync(checkpointsDir).filter((f) => f.endsWith('.json'));
-        const checkpoints = files.map((f) => readJsonFile(path.join(checkpointsDir, f)));
+        // Encrypted checkpoints are listed by name only; their contents stay on disk.
+        const checkpoints = files.map((f) => {
+          const entry = readJsonFile(path.join(checkpointsDir, f));
+          return isEncryptedCheckpointFile(entry) ? { name: path.basename(f, '.json'), encrypted: true } : entry;
+        });
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify(checkpoints));
       } else {
@@ -194,11 +266,33 @@ export function startDashboardServer(
 
     // API: Verify Bundle
     if (url.pathname === '/api/verify' && req.method === 'POST') {
-      let body = '';
-      req.on('data', (c) => (body += c));
+      const declaredLength = Number(req.headers['content-length']);
+      if (Number.isFinite(declaredLength) && declaredLength > maxVerifyBodyBytes) {
+        res.writeHead(413, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ valid: false, reason: 'Bundle exceeds the 5 MiB limit' }));
+        req.resume();
+        return;
+      }
+      const chunks: Buffer[] = [];
+      let receivedBytes = 0;
+      let rejected = false;
+      req.on('data', (chunk: Buffer) => {
+        if (rejected) return;
+        receivedBytes += chunk.length;
+        if (receivedBytes > maxVerifyBodyBytes) {
+          rejected = true;
+          chunks.length = 0;
+          res.writeHead(413, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ valid: false, reason: 'Bundle exceeds the 5 MiB limit' }));
+          req.resume();
+          return;
+        }
+        chunks.push(chunk);
+      });
       req.on('end', () => {
+        if (rejected || res.writableEnded) return;
         try {
-          const bundle = JSON.parse(body) as ComplianceProofBundle;
+          const bundle = JSON.parse(Buffer.concat(chunks).toString('utf8')) as ComplianceProofBundle;
           const key = config.compliance?.signingKey || 'airlock-default-signing-key';
           const result = AttestationEngine.verifyBundle(bundle, key);
           res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -217,7 +311,10 @@ export function startDashboardServer(
     if (url.pathname === '/compliance-report' && fs.existsSync(reportPath)) {
       res.writeHead(200, {
         'Content-Type': 'text/html; charset=utf-8',
+        'Content-Security-Policy': reportCsp,
         'X-Content-Type-Options': 'nosniff',
+        'X-Frame-Options': 'DENY',
+        'Referrer-Policy': 'no-referrer',
       });
       res.end(req.method === 'HEAD' ? undefined : fs.readFileSync(reportPath, 'utf8'));
       return;
@@ -253,15 +350,25 @@ export function startDashboardServer(
 
       if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
         const contentType = staticContentTypes[path.extname(filePath).toLowerCase()] || 'application/octet-stream';
-        res.writeHead(200, {
+        const headers: http.OutgoingHttpHeaders = {
           'Content-Type': contentType,
           'Cache-Control': 'no-cache',
           'X-Content-Type-Options': 'nosniff',
-        });
+        };
+        let textBody: string | undefined;
+        if (contentType.startsWith('text/') || contentType.startsWith('application/json')) {
+          textBody = fs.readFileSync(filePath, 'utf8');
+        }
+        if (contentType.startsWith('text/html')) {
+          headers['Content-Security-Policy'] = htmlCsp(textBody ?? '');
+          headers['X-Frame-Options'] = 'DENY';
+          headers['Referrer-Policy'] = 'no-referrer';
+        }
+        res.writeHead(200, headers);
         if (req.method === 'HEAD') {
           res.end();
-        } else if (contentType.startsWith('text/') || contentType.startsWith('application/json')) {
-          res.end(fs.readFileSync(filePath, 'utf8'));
+        } else if (textBody !== undefined) {
+          res.end(textBody);
         } else {
           res.end(fs.readFileSync(filePath));
         }
@@ -276,7 +383,11 @@ export function startDashboardServer(
     }
 
     // Keep a small fallback for package installations that omit public assets.
-    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    res.writeHead(200, {
+      'Content-Type': 'text/html; charset=utf-8',
+      'Content-Security-Policy': reportCsp,
+      'X-Content-Type-Options': 'nosniff',
+    });
     res.end(`<!DOCTYPE html>
 <html>
 <head>
@@ -289,7 +400,7 @@ export function startDashboardServer(
   </style>
 </head>
 <body>
-  <h1>🛡️ AirlockQA Interactive Console</h1>
+  <h1>AirlockQA Console</h1>
   <p>Browser testing, request policy, and signed run evidence</p>
   <div class="card">
     <h3>No Run-Evidence Report Generated Yet</h3>
@@ -301,7 +412,9 @@ export function startDashboardServer(
   });
 
   server.listen(port, '127.0.0.1', () => {
-    logger.success(`AirlockQA Dashboard & Run-Evidence Viewer running at: http://localhost:${port}`);
+    const address = server.address();
+    const boundPort = address && typeof address === 'object' ? address.port : port;
+    logger.success(`AirlockQA dashboard running at http://localhost:${boundPort}`);
   });
 
   return server;

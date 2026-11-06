@@ -6,13 +6,19 @@ import { chromium } from 'playwright-core';
 import { loadConfig } from '../src/config/loader.js';
 import { TraceRecorder } from '../src/compiler/trace-recorder.js';
 import { AstGenerator } from '../src/compiler/ast-generator.js';
+import { InteractionRecorder, REDACTED_VALUE } from '../src/compiler/interaction-recorder.js';
 import { AirlockRunner } from '../src/runner/airlock-runner.js';
+import { executeWorkflow } from '../src/runner/workflow-executor.js';
+import { loadWorkflow, WorkflowStepSchema } from '../src/config/workflow-schema.js';
+import { runPlaywrightSpecs, type LocalTestRunResult } from '../src/router/local-test-runner.js';
+import { buildForkPlan, runForkVariation } from '../src/forker/fork-plan.js';
 import { AttestationEngine } from '../src/compliance/attestation.js';
 import { DatasetCollector } from '../src/healer/dataset-collector.js';
 import { startDashboardServer } from '../src/dashboard/server.js';
 import { ensureDir, readJsonFile, writeJsonFile } from '../src/utils/files.js';
 import { logger } from '../src/utils/logger.js';
-import type { ComplianceProofBundle, ExecutionTrace, ForkVariation } from '../src/types/index.js';
+import { z } from 'zod';
+import type { ComplianceProofBundle, ExecutionTrace } from '../src/types/index.js';
 
 const program = new Command();
 
@@ -48,14 +54,17 @@ program
       },
       secrets: {
         STRIPE_SECRET_KEY: {
-          real: 'sk_test_live_sample_51M001AcmeProductionSecretKey9900',
+          // The real value is read from this environment variable at load time.
+          realFromEnv: 'STRIPE_SECRET_KEY',
+          real: 'REPLACE_ME_REAL_SECRET',
           phantom: 'ph_sec_stripe_test_8f2a1c',
           allowedHosts: ['localhost', '127.0.0.1', 'api.stripe.com'],
           allowedMethods: ['GET', 'POST'],
           blockedPaths: ['*/refunds*', '*/wipe*', '*/transfers*'],
         },
         ADMIN_AUTH_TOKEN: {
-          real: 'jwt_admin_supersecret_production_session_bearer_token',
+          realFromEnv: 'ADMIN_AUTH_TOKEN',
+          real: 'REPLACE_ME_REAL_SECRET',
           phantom: 'ph_auth_bearer_9901_admin',
           allowedHosts: ['localhost', '127.0.0.1'],
           blockedPaths: ['/api/admin/wipe-data'],
@@ -98,8 +107,8 @@ program
         checkpointsDir: './.airlock/checkpoints',
         maxParallelForks: 5,
       },
+      // signingKey is intentionally left unset; supply it via config or environment (see docs).
       compliance: {
-        signingKey: 'airlock-hmac-master-key-32-chars-long!',
         outputDir: './.airlock/compliance',
         generateHtmlReport: true,
       },
@@ -120,86 +129,70 @@ program
 // ==========================================
 program
   .command('explore [url]')
-  .description('Run an exploration session to record high-fidelity DOM and network traces')
-  .option('-n, --name <name>', 'Test suite name', 'checkout-flow')
+  .description('Open a browser and record your clicks, typing, key presses and selections into a trace')
+  .option('-n, --name <name>', 'Suite name for the trace (default: derived from the URL host)')
+  .option('-o, --out <path>', 'Trace output path (default: .airlock/traces/<name>-trace.json)')
+  .option('--output <path>', 'Alias for --out')
+  .option('--headless', 'Record without a visible window (for scripted sessions)')
   .action(async (urlArg, opts) => {
     logger.banner();
     const config = loadConfig();
     const targetUrl = urlArg || config.baseUrl;
-    const suiteName = opts.name;
+    const suiteName = opts.name || suiteNameFromUrl(targetUrl);
+    const tracePath = path.resolve(process.cwd(), opts.out || opts.output || `.airlock/traces/${suiteName}-trace.json`);
 
-    logger.moat(2, 'Exploration Phase', `Exploring ${targetUrl} to generate trace for deterministic compilation...`);
+    logger.moat(2, 'Recording Session', `Opening ${targetUrl}. Use the browser; close the window or press Ctrl+C here to save the trace.`);
 
     const browser = await chromium.launch({
       executablePath: config.browser?.executablePath,
-      headless: config.browser?.headless,
+      headless: Boolean(opts.headless),
+      // Keep the browser alive on Ctrl+C so pending input can be flushed before saving.
+      handleSIGINT: false,
+      handleSIGTERM: false,
     });
+    const context = await browser.newContext({ viewport: config.browser?.viewport });
+    const trace = new TraceRecorder(suiteName, targetUrl);
+    const recorder = new InteractionRecorder(trace);
+    await recorder.attach(context);
 
-    const context = await browser.newContext({
-      viewport: config.browser?.viewport,
+    const finished = new Promise<string>((resolve) => {
+      const onPageClose = () => {
+        if (context.pages().every((p) => p.isClosed())) resolve('all browser windows closed');
+      };
+      context.on('page', (p) => p.on('close', onPageClose));
+      context.on('close', () => resolve('browser context closed'));
+      browser.on('disconnected', () => resolve('browser closed'));
+      process.once('SIGINT', () => resolve('Ctrl+C'));
+      process.once('SIGTERM', () => resolve('SIGTERM'));
     });
 
     const page = await context.newPage();
-    const recorder = new TraceRecorder(suiteName, targetUrl);
-
     try {
-      // 1. Navigate to target
       await page.goto(targetUrl, { waitUntil: 'domcontentloaded' });
-      await recorder.recordStep(page, 'goto', { url: targetUrl });
-
-      // Heuristic exploration of interactive elements
-      // Click demo login button if present
-      const loginBtn = await page.$('button[type="submit"], button#login-btn, [data-testid="login-btn"]');
-      if (loginBtn) {
-        await recorder.recordStep(page, 'click', { selector: 'button[type="submit"]' });
-        await loginBtn.click();
-        await page.waitForTimeout(500);
-      }
-
-      // Checkpoint Post-Auth
-      await recorder.recordStep(page, 'checkpoint', { checkpointName: 'post_auth' });
-
-      // Add product to cart if available
-      const addCartBtn = await page.$('[data-testid="add-to-cart"], .add-cart-btn, button:has-text("Add")');
-      if (addCartBtn) {
-        await recorder.recordStep(page, 'click', { selector: '[data-testid="add-to-cart"]' });
-        await addCartBtn.click();
-        await page.waitForTimeout(400);
-      }
-
-      // Checkpoint Cart
-      await recorder.recordStep(page, 'checkpoint', { checkpointName: 'cart_filled' });
-
-      // Fill coupon if input exists
-      const couponInput = await page.$('input[name="coupon"], [data-testid="coupon-input"]');
-      if (couponInput) {
-        await recorder.recordStep(page, 'fill', { selector: '[data-testid="coupon-input"]', value: 'SAVE20' });
-        await couponInput.fill('SAVE20');
-        await page.waitForTimeout(200);
-
-        const applyBtn = await page.$('[data-testid="apply-coupon-btn"]');
-        if (applyBtn) {
-          await recorder.recordStep(page, 'click', { selector: '[data-testid="apply-coupon-btn"]' });
-          await applyBtn.click();
-          await page.waitForTimeout(400);
-        }
-      }
-
-      // Assert total price visible
-      const totalDisplay = await page.$('[data-testid="cart-total"]');
-      if (totalDisplay) {
-        await recorder.recordStep(page, 'assert_visible', { selector: '[data-testid="cart-total"]' });
-      }
-
-      const trace = recorder.getTrace();
-      const tracePath = path.resolve(process.cwd(), `.airlock/traces/${suiteName}-trace.json`);
-      writeJsonFile(tracePath, trace);
-
-      logger.success(`Exploration complete! Recorded ${trace.steps.length} steps. Trace saved to: ${tracePath}`);
-      logger.info(`Next step: Compile this trace into deterministic Playwright code with: npx airlock compile ${tracePath}`);
-    } finally {
-      await browser.close();
+    } catch (err) {
+      logger.error(`Could not open ${targetUrl}: ${err instanceof Error ? err.message.split('\n')[0] : String(err)}`);
+      process.exitCode = 1;
+      await browser.close().catch(() => {});
+      return;
     }
+
+    const reason = await finished;
+    await recorder.flush(context);
+    await browser.close().catch(() => {});
+
+    const recorded = trace.getTrace();
+    writeJsonFile(tracePath, recorded);
+    const actions = recorded.steps.filter((s) => s.type !== 'goto').length;
+    logger.success(`Recording stopped (${reason}). Saved ${recorded.steps.length} steps (${actions} interactions) to ${tracePath}`);
+    if (recorded.steps.some((s) => s.value === REDACTED_VALUE)) {
+      logger.warn('Password fields were recorded as a placeholder. Replace it before running the compiled spec.');
+    }
+    if (actions === 0) {
+      logger.warn('No interactions were captured.');
+    } else {
+      logger.info(`Next: airlock compile ${path.relative(process.cwd(), tracePath)}`);
+    }
+    process.exit(process.exitCode ?? 0);
   });
 
 // ==========================================
@@ -207,34 +200,51 @@ program
 // ==========================================
 program
   .command('compile <tracePath>')
-  .description('Compile an exploration trace into strict, zero-token deterministic Playwright code')
+  .description('Compile a recorded trace into a Playwright spec')
   .option('-o, --out <path>', 'Output spec file path')
+  .option('--output <path>', 'Alias for --out')
   .action((tracePath, opts) => {
     logger.banner();
     const config = loadConfig();
     const resolvedTracePath = path.resolve(process.cwd(), tracePath);
     if (!fs.existsSync(resolvedTracePath)) {
       logger.error(`Trace file not found: ${resolvedTracePath}`);
+      process.exitCode = 1;
       return;
     }
 
-    const trace = readJsonFile<ExecutionTrace>(resolvedTracePath);
-    const compiler = new AstGenerator();
-    const compiledCode = compiler.compileToSpec(trace, {
-      suiteTitle: trace.suiteName,
-      defaultTimeoutMs: config.compiler?.defaultTimeoutMs,
-      includeAriaFallbacks: config.compiler?.emitAriaFallbacks,
-    });
+    let trace: ExecutionTrace;
+    try {
+      trace = readJsonFile<ExecutionTrace>(resolvedTracePath);
+      if (!trace || !Array.isArray(trace.steps) || typeof trace.suiteName !== 'string') {
+        throw new Error('expected a trace object with "suiteName" and "steps"');
+      }
+    } catch (err) {
+      logger.error(`Could not read trace ${resolvedTracePath}: ${err instanceof Error ? err.message : String(err)}`);
+      process.exitCode = 1;
+      return;
+    }
 
-    const outDir = config.compiler?.outputDir || './examples/tests';
-    ensureDir(outDir);
-    const outPath = opts.out ? path.resolve(process.cwd(), opts.out) : path.join(outDir, `${trace.suiteName}.spec.ts`);
+    try {
+      const compiler = new AstGenerator();
+      const compiledCode = compiler.compileToSpec(trace, {
+        suiteTitle: trace.suiteName,
+        defaultTimeoutMs: config.compiler?.defaultTimeoutMs,
+        includeAriaFallbacks: config.compiler?.emitAriaFallbacks,
+      });
 
-    fs.writeFileSync(outPath, compiledCode, 'utf8');
+      const outOption = opts.out || opts.output;
+      const outDir = config.compiler?.outputDir || './tests/generated';
+      const outPath = outOption ? path.resolve(process.cwd(), outOption) : path.resolve(process.cwd(), outDir, `${trace.suiteName}.spec.ts`);
+      ensureDir(path.dirname(outPath));
+      fs.writeFileSync(outPath, compiledCode, 'utf8');
 
-    logger.moat(2, 'Deterministic Test Spec Compiled', `Trace compiled to zero-token deterministic test!`);
-    logger.success(`Output saved to: ${outPath}`);
-    logger.info(`Execution Speed: <800ms | Token Cost: $0.00 | Stochastic Flakiness: 0%`);
+      logger.success(`Compiled ${trace.steps.length} trace steps to ${outPath}`);
+      logger.info(`Run it with: airlock test --local ${path.relative(process.cwd(), outPath)}`);
+    } catch (err) {
+      logger.error(`Compilation failed: ${err instanceof Error ? err.message : String(err)}`);
+      process.exitCode = 1;
+    }
   });
 
 // ==========================================
@@ -242,20 +252,29 @@ program
 // ==========================================
 program
   .command('test [specPath]')
-  .description('Run locally or submit a run request to the configured Airlock Cloud API')
+  .description('Run spec files locally with Playwright Test, or submit a run request to Airlock Cloud')
   .option('-l, --local', 'Run locally without submitting to a Cloud API')
   .option('-c, --cloud', 'Submit a run request to Airlock Cloud (requires AIRLOCK_API_KEY)')
   .option('-u, --url <url>', 'Target base URL')
+  .option('-s, --suite <name>', 'Suite name sent to Airlock Cloud (default: spec file name, then projectName)')
   .action(async (specPath, opts) => {
     logger.banner();
     try {
       const { ExecutionTargetRouter } = await import('../src/router/execution-router.js');
-      await ExecutionTargetRouter.routeAndExecute({
+      const { target, result } = await ExecutionTargetRouter.routeAndExecute({
         local: opts.local,
         cloud: opts.cloud,
         specPath,
+        suiteName: opts.suite,
         targetUrl: opts.url,
       });
+      if (target === 'LOCAL') {
+        const exitCode = (result as LocalTestRunResult).exitCode;
+        if (exitCode !== 0) process.exitCode = exitCode;
+      } else {
+        const status = (result as { status?: string }).status;
+        if (status === 'FAILED' || status === 'POLICY_VIOLATION') process.exitCode = 1;
+      }
     } catch (error) {
       logger.error(error instanceof Error ? error.message : String(error));
       process.exitCode = 1;
@@ -266,104 +285,69 @@ program
 // COMMAND: RUN
 // ==========================================
 program
-  .command('run')
-  .description('Run the configured local browser workflow and generate run evidence')
+  .command('run [specPath]')
+  .description('Run the workflow defined in airlock.config.json (or a spec file) and generate run evidence')
   .option('-u, --url <url>', 'Target base URL')
-  .action(async (opts) => {
+  .option('-w, --workflow <file>', 'JSON file containing a workflow (instead of the "workflow" key in the config)')
+  .action(async (specPath, opts) => {
     logger.banner();
-    const config = loadConfig();
-    const targetUrl = opts.url || config.baseUrl;
-
-    logger.moat(1, 'Local Credential Substitution Initialized', 'Applying configured phantom placeholders and local request policy.');
-    for (const [name, secret] of Object.entries(config.secrets)) {
-      logger.info(`  Secret [${name}]: sandbox placeholder '${secret.phantom}'`);
-    }
-
-    const runner = new AirlockRunner(config);
-
-    const browser = await chromium.launch({
-      executablePath: config.browser?.executablePath,
-      headless: config.browser?.headless,
-    });
-
-    const context = await browser.newContext({
-      viewport: config.browser?.viewport,
-    });
-
-    const page = await context.newPage();
-
     try {
-      await runner.initialize(context, page);
+      const config = loadConfig();
+      const targetUrl = opts.url || config.baseUrl;
 
-      // Step 1: Navigate
-      runner.step('GOTO', targetUrl);
-      await page.goto(targetUrl, { waitUntil: 'domcontentloaded' });
-
-      // Step 2: Login with credentials (phantom token injected in sandbox)
-      runner.step('FILL', 'input[name="email"]');
-      await page.fill('input[name="email"]', 'admin@acme.com');
-
-      runner.step('FILL', 'input[name="password"]');
-      await page.fill('input[name="password"]', 'password123');
-
-      runner.step('CLICK', 'button#login-btn');
-      await page.click('button#login-btn');
-      await page.waitForTimeout(300);
-
-      // Checkpoint 1: Post-Auth warm state
-      await runner.checkpoint('post_auth', page, context);
-
-      // Step 3: Add Pro Subscription to Cart
-      runner.step('CLICK', '[data-testid="add-pro-plan"]');
-      await page.click('[data-testid="add-pro-plan"]');
-      await page.waitForTimeout(300);
-
-      // Checkpoint 2: Cart Ready state
-      await runner.checkpoint('cart_ready', page, context);
-
-      // Step 4: Apply discount code
-      runner.step('FILL', '[data-testid="coupon-input"]');
-      await page.fill('[data-testid="coupon-input"]', 'AIRLOCK20');
-
-      runner.step('CLICK', '[data-testid="apply-coupon-btn"]');
-      await page.click('[data-testid="apply-coupon-btn"]');
-      await page.waitForTimeout(300);
-
-      // Step 5: Trigger checkout with phantom token
-      runner.step('CLICK', '[data-testid="checkout-btn"]');
-      await page.click('[data-testid="checkout-btn"]');
-      await page.waitForTimeout(400);
-
-      // Step 6: Test unauthorized destructive mutation (attempt refund or wipe)
-      // The deterministic egress firewall should intercept and block this!
-      logger.moat(1, 'Egress Policy Guard: Intercepting Unauthorized Mutation');
-      const refundAttempt = await page.evaluate(async (phantomToken) => {
-        try {
-          const res = await fetch('/api/admin/refund', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${phantomToken}`,
-            },
-            body: JSON.stringify({ chargeId: 'ch_12345', amount: 5000 }),
-          });
-          return { status: res.status, ok: res.ok };
-        } catch (e: any) {
-          return { error: e.message };
+      if (specPath) {
+        const result = await runPlaywrightSpecs({ specPath, targetUrl, config });
+        if (result.exitCode !== 0) {
+          logger.error(`Spec run failed (${result.passed} passed, ${result.failed} failed)`);
+          process.exitCode = result.exitCode;
+        } else {
+          logger.success(`Spec run passed (${result.passed} passed)`);
         }
-      }, config.secrets.STRIPE_SECRET_KEY.phantom);
+        return;
+      }
 
-      logger.info(`Mutation Interception Test: Upstream status ${refundAttempt.status} (Correctly blocked with 403 Forbidden)`);
+      const workflow = loadWorkflow(opts.workflow);
+      if (!workflow) {
+        logger.error('No workflow to run. Add a "workflow" section to airlock.config.json, pass --workflow <file>, or pass a spec path.');
+        process.exitCode = 1;
+        return;
+      }
 
-      // Finalize and generate cryptographic attestation bundle
-      const bundle = await runner.finalize();
+      logger.moat(1, `Running workflow '${workflow.name}'`, `${workflow.steps.length} steps against ${targetUrl}`);
+      for (const [name, secret] of Object.entries(config.secrets)) {
+        logger.info(`  Secret [${name}]: browser sees placeholder '${secret.phantom}'`);
+      }
 
-      logger.moat(4, 'Cryptographic Proof & Compliance Bundle Created');
-      console.log(runner.generatePRComment(bundle));
-    } catch (err: any) {
-      logger.error('Test run failed:', err);
-    } finally {
-      await browser.close();
+      const runner = new AirlockRunner(config);
+      const browser = await chromium.launch({
+        executablePath: config.browser?.executablePath,
+        headless: config.browser?.headless,
+        slowMo: config.browser?.slowMo || undefined,
+      });
+
+      try {
+        const context = await browser.newContext({ viewport: config.browser?.viewport });
+        const page = await context.newPage();
+        await runner.initialize(context, page);
+
+        const result = await executeWorkflow(workflow, { page, context, runner, config, baseUrl: targetUrl });
+        const bundle = await runner.finalize();
+
+        const passed = result.steps.filter((s) => s.ok).length;
+        if (result.ok) {
+          logger.success(`Workflow '${workflow.name}' passed: ${passed}/${workflow.steps.length + (workflow.startUrl ? 1 : 0)} steps`);
+        } else {
+          const failed = result.steps.find((s) => !s.ok);
+          logger.error(`Workflow '${workflow.name}' failed at step ${failed?.index} (${failed?.action}): ${failed?.error}`);
+          process.exitCode = 1;
+        }
+        console.log(runner.generatePRComment(bundle));
+      } finally {
+        await browser.close();
+      }
+    } catch (err) {
+      logger.error(`Run failed: ${err instanceof Error ? err.message : String(err)}`);
+      process.exitCode = 1;
     }
   });
 
@@ -372,49 +356,59 @@ program
 // ==========================================
 program
   .command('fork <checkpointName>')
-  .description('Sub-second parallel state forking from a warm checkpoint without repeating prior steps')
-  .option('-w, --workers <count>', 'Number of parallel clones', '5')
+  .description('Restore a saved checkpoint into parallel browser contexts and try one input value in each')
+  .option('-v, --variations <file>', 'JSON file with variations (and optionally inputSelector, actionSelector, expect)')
+  .option('--values <list>', 'Comma-separated input values; one variation per value')
+  .option('-i, --input <selector>', 'Selector of the field to fill')
+  .option('-a, --action <selector>', 'Selector to click after filling')
+  .option('--expect-selector <selector>', 'Selector that must be visible after the action (with --expect-text: element whose text is checked)')
+  .option('--expect-text <text>', 'Text that must appear after the action')
+  .option('-w, --workers <count>', 'Maximum number of variations to run')
   .action(async (checkpointName, opts) => {
     logger.banner();
-    const config = loadConfig();
-    const count = parseInt(opts.workers, 10);
-
-    const runner = new AirlockRunner(config);
-
-    const browser = await chromium.launch({
-      executablePath: config.browser?.executablePath,
-      headless: config.browser?.headless,
-    });
-
     try {
-      const variations: ForkVariation[] = [
-        { id: 'var_valid_coupon', description: 'Test valid discount VIP50', inputOverrides: { coupon: 'VIP50' }, expectedOutcome: 'pass' as const },
-        { id: 'var_expired_coupon', description: 'Test expired coupon EXPIRED2020', inputOverrides: { coupon: 'EXPIRED2020' }, expectedOutcome: 'edge_handled' as const },
-        { id: 'var_empty_coupon', description: 'Test empty coupon submission', inputOverrides: { coupon: '' }, expectedOutcome: 'edge_handled' as const },
-        { id: 'var_sql_injection', description: "Test SQL injection attack in coupon field: ' OR 1=1--", inputOverrides: { coupon: "' OR 1=1--" }, expectedOutcome: 'edge_handled' as const },
-        { id: 'var_oversized_coupon', description: 'Test 500-char buffer overflow coupon string', inputOverrides: { coupon: 'A'.repeat(500) }, expectedOutcome: 'edge_handled' as const },
-      ].slice(0, count);
-
-      const results = await runner.fork(browser, checkpointName, variations, async ({ variation, page }) => {
-        // We are already at the warm state! No login or navigation needed!
-        const input = await page.$('[data-testid="coupon-input"]');
-        if (input) {
-          await input.fill(variation.inputOverrides.coupon);
-          const applyBtn = await page.$('[data-testid="apply-coupon-btn"]');
-          if (applyBtn) await applyBtn.click();
-          await page.waitForTimeout(100);
-        }
-
-        return {
-          success: true,
-          assertionsPassed: 1,
-          assertionsTotal: 1,
-        };
+      const config = loadConfig();
+      const plan = buildForkPlan({
+        variationsFile: opts.variations,
+        values: opts.values,
+        input: opts.input,
+        action: opts.action,
+        expectSelector: opts.expectSelector,
+        expectText: opts.expectText,
+        workers: opts.workers ? parseInt(opts.workers, 10) : undefined,
       });
 
-      logger.success(`Completed ${results.length} parallel time-travel forks!`);
-    } finally {
-      await browser.close();
+      const runner = new AirlockRunner(config);
+      const browser = await chromium.launch({
+        executablePath: config.browser?.executablePath,
+        headless: config.browser?.headless,
+      });
+
+      try {
+        const byId = new Map(plan.variations.map((v) => [v.id, v]));
+        const timeout = config.compiler?.defaultTimeoutMs ?? 5000;
+        const results = await runner.fork(browser, checkpointName, plan.variations, ({ variation, page }) =>
+          runForkVariation(page, plan, byId.get(variation.id)!, timeout)
+        );
+
+        const failed = results.filter((r) => !r.success);
+        for (const r of results) {
+          const line = `${r.variationId}: ${r.assertionsPassed}/${r.assertionsTotal} checks passed${r.error ? ` (${r.error})` : ''}`;
+          if (r.success) logger.success(line);
+          else logger.error(line);
+        }
+        if (failed.length > 0) {
+          logger.error(`${failed.length} of ${results.length} variations failed`);
+          process.exitCode = 1;
+        } else {
+          logger.success(`All ${results.length} variations passed`);
+        }
+      } finally {
+        await browser.close();
+      }
+    } catch (err) {
+      logger.error(err instanceof Error ? err.message : String(err));
+      process.exitCode = 1;
     }
   });
 
@@ -516,29 +510,82 @@ program
   });
 
 // ==========================================
-// COMMAND: CHAOS (Race-Condition & Idempotency Hunter)
+// COMMAND: CHAOS (Mutation observer)
 // ==========================================
 program
   .command('chaos [url]')
-  .description('Run deterministic 4-clone chaos race hunter against critical mutations')
-  .action(async (urlArg) => {
+  .description('Trigger one mutation (e.g. a checkout) and report whether it carries an idempotency key')
+  .option('-a, --action <selector>', 'Selector of the element that triggers the mutation')
+  .option('-e, --endpoint <regex>', 'Regular expression matching the mutation request URL')
+  .option('-f, --file <json>', 'JSON file: { "url"?, "actionSelector", "endpointPattern"?, "setup"?: [workflow steps] }')
+  .action(async (urlArg, opts) => {
     logger.banner();
-    const config = loadConfig();
-    const targetUrl = urlArg || config.baseUrl;
-    const { ChaosHunter } = await import('../src/chaos/chaos-hunter.js');
-    const hunter = new ChaosHunter();
-
-    const browser = await chromium.launch({ headless: config.browser?.headless });
-    const page = await browser.newPage();
     try {
-      await page.goto(targetUrl, { waitUntil: 'domcontentloaded' });
-      const report = await hunter.auditMutation(page, async () => {
-        const btn = await page.$('button[type="submit"], button#checkout-btn, button#pay-btn');
-        if (btn) await btn.click();
+      const config = loadConfig();
+      const fileOpts = opts.file ? loadChaosFile(opts.file) : {};
+      const targetUrl = urlArg || fileOpts.url || config.baseUrl;
+      const actionSelector: string | undefined = opts.action || fileOpts.actionSelector;
+      const endpointPattern: string | undefined = opts.endpoint || fileOpts.endpointPattern;
+      if (!actionSelector) {
+        throw new Error('No action selector. Pass --action <selector> or set "actionSelector" in --file.');
+      }
+
+      const { ChaosHunter } = await import('../src/chaos/chaos-hunter.js');
+      const hunter = new ChaosHunter();
+      const runner = new AirlockRunner(config);
+      const browser = await chromium.launch({
+        executablePath: config.browser?.executablePath,
+        headless: config.browser?.headless,
       });
-      console.log(ChaosHunter.formatReport(report));
-    } finally {
-      await browser.close();
+      try {
+        const context = await browser.newContext({ viewport: config.browser?.viewport });
+        const page = await context.newPage();
+        await runner.initialize(context, page);
+        await page.goto(targetUrl, { waitUntil: 'domcontentloaded' });
+
+        if (fileOpts.setup?.length) {
+          const setup = await executeWorkflow(
+            { name: 'chaos-setup', steps: fileOpts.setup },
+            { page, context, runner, config, baseUrl: targetUrl }
+          );
+          if (!setup.ok) throw new Error('Setup steps failed; mutation was not triggered.');
+        }
+
+        let actionError: string | undefined;
+        const timeout = config.compiler?.defaultTimeoutMs ?? 5000;
+        const report = await hunter.auditMutation(
+          page,
+          async () => {
+            try {
+              await page.locator(actionSelector).click({ timeout });
+              await page.waitForLoadState('networkidle', { timeout }).catch(() => {});
+            } catch (err) {
+              actionError = err instanceof Error ? err.message.split('\n')[0] : String(err);
+              throw err;
+            }
+          },
+          endpointPattern ? { endpointPattern: new RegExp(endpointPattern) } : {}
+        );
+        console.log(ChaosHunter.formatReport(report));
+
+        if (actionError) {
+          logger.error(`Could not trigger the mutation: ${actionError}`);
+          process.exitCode = 1;
+        } else if (!report.targetEndpoint) {
+          logger.error('No matching mutation request was observed. Check --action and --endpoint.');
+          process.exitCode = 1;
+        } else if (report.status === 'RISK_INDICATED') {
+          logger.error(`FAIL: ${report.targetEndpoint} was sent without an idempotency key.`);
+          process.exitCode = 1;
+        } else {
+          logger.success(`PASS: ${report.targetEndpoint} carried an idempotency key.`);
+        }
+      } finally {
+        await browser.close();
+      }
+    } catch (err) {
+      logger.error(err instanceof Error ? err.message : String(err));
+      process.exitCode = 1;
     }
   });
 
@@ -547,23 +594,59 @@ program
 // ==========================================
 program
   .command('teleport <capsulePath>')
-  .description('Rehydrate a production crash capsule and synthesize a deterministic Playwright repro spec')
+  .description('Synthesize a Playwright repro spec from a browser-state capsule')
   .option('-o, --out <outPath>', 'Destination repro spec file')
+  .option('--output <outPath>', 'Alias for --out')
   .action(async (capsulePath, opts) => {
     logger.banner();
-    const { CapsuleManager } = await import('../src/teleport/capsule.js');
     const fullPath = path.resolve(process.cwd(), capsulePath);
     if (!fs.existsSync(fullPath)) {
       logger.error(`Capsule file not found: ${fullPath}`);
+      process.exitCode = 1;
       return;
     }
-    const raw = fs.readFileSync(fullPath, 'utf8');
-    const capsule = JSON.parse(raw);
-    const spec = CapsuleManager.synthesizeReproSpec(capsule);
-    const outPath = opts.out || `./examples/tests/repro-${capsule.capsuleId}.spec.ts`;
-    fs.mkdirSync(path.dirname(path.resolve(process.cwd(), outPath)), { recursive: true });
-    fs.writeFileSync(outPath, spec, 'utf8');
-    logger.success(`Reproduction spec synthesized: ${outPath}`);
+    try {
+      const { CapsuleManager } = await import('../src/teleport/capsule.js');
+      const capsule = JSON.parse(fs.readFileSync(fullPath, 'utf8'));
+      const spec = CapsuleManager.synthesizeReproSpec(capsule);
+      const config = loadConfig();
+      const outPath = path.resolve(
+        process.cwd(),
+        opts.out || opts.output || path.join(config.compiler?.outputDir || './tests/generated', `repro-${capsule.capsuleId}.spec.ts`)
+      );
+      ensureDir(path.dirname(outPath));
+      fs.writeFileSync(outPath, spec, 'utf8');
+      logger.success(`Reproduction spec synthesized: ${outPath}`);
+    } catch (err) {
+      logger.error(`Could not synthesize a repro spec from ${fullPath}: ${err instanceof Error ? err.message : String(err)}`);
+      process.exitCode = 1;
+    }
   });
+
+function suiteNameFromUrl(url: string): string {
+  try {
+    const host = new URL(url).hostname.replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '');
+    return host ? `explore-${host}` : 'explore';
+  } catch {
+    return 'explore';
+  }
+}
+
+const ChaosFileSchema = z.object({
+  url: z.string().optional(),
+  actionSelector: z.string().min(1).optional(),
+  endpointPattern: z.string().optional(),
+  setup: z.array(WorkflowStepSchema).optional(),
+});
+
+function loadChaosFile(file: string): z.infer<typeof ChaosFileSchema> {
+  const full = path.resolve(process.cwd(), file);
+  if (!fs.existsSync(full)) throw new Error(`Chaos file not found: ${full}`);
+  const parsed = ChaosFileSchema.safeParse(JSON.parse(fs.readFileSync(full, 'utf8')));
+  if (!parsed.success) {
+    throw new Error(`Invalid chaos file ${full}: ${parsed.error.issues.map((i) => `${i.path.join('.') || '(root)'}: ${i.message}`).join('; ')}`);
+  }
+  return parsed.data;
+}
 
 program.parse(process.argv);

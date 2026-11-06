@@ -14,3 +14,10 @@ artifacts/gui-qa/marketing-final.png
 
 
 
+
+# Generated QA artifacts (committed PR evidence lives under artifacts/gui-qa/pr/)
+artifacts/gui-qa/*.png
+artifacts/gui-qa/*.webm
+artifacts/*.webm
+tests/generated/
+*.tgz

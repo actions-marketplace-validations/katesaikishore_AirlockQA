@@ -20,7 +20,7 @@ export class DatasetCollector {
     };
 
     appendJsonlFile(this.datasetFilePath, fullEntry);
-    logger.info(`Compounding Dataset: Logged UI mutation patch ${fullEntry.id} (${(fullEntry.confidence * 100).toFixed(1)}% confidence)`);
+    logger.info(`Selector dataset: recorded patch ${fullEntry.id} (${(fullEntry.confidence * 100).toFixed(1)}% confidence)`);
     return fullEntry;
   }
 

@@ -78,24 +78,44 @@ npx airlock init
 
 ### 3. Record & Compile a Test
 
-Record an exploratory browser session against your staging application:
+Open a browser on your app and record what you do. Close the window (or press Ctrl+C) to save the trace:
 
 ```bash
-npx airlock explore http://localhost:3000
+npx airlock explore http://localhost:3000 --name checkout
 ```
 
-Compile the recorded trace into a deterministic test spec:
+Compile the recorded trace into a Playwright spec:
 
 ```bash
-npx airlock compile trace.json --output ./tests/checkout.spec.ts
+npx airlock compile .airlock/traces/checkout-trace.json --out ./tests/checkout.spec.ts
 ```
+
+(`--output` is accepted as an alias for `--out`.)
 
 ### 4. Run Tests
 
-Execute the compiled test suite locally:
+Run specs locally with Playwright Test. This needs `@playwright/test` (a peer dependency). The command exits non-zero when a test fails:
 
 ```bash
-npx airlock test --local
+npm install --save-dev @playwright/test
+npx airlock test --local ./tests/checkout.spec.ts --url http://localhost:3000
+```
+
+Import `test` from the Airlock fixture to attach the request gateway and a signed evidence bundle to every test:
+
+```ts
+import { test, expect } from 'airlockqa/dist/src/testing/airlock-test.js';
+
+test('checkout', async ({ page, airlock }) => {
+  await page.goto('/');
+  await page.getByTestId('checkout-btn').click();
+});
+```
+
+Or run the workflow defined in the `workflow` section of `airlock.config.json` (see [Workflows](#workflows)):
+
+```bash
+npx airlock run --url http://localhost:3000
 ```
 
 Or connect to an Airlock Cloud runner:
@@ -132,7 +152,8 @@ AirlockQA is configured via `airlock.config.json` in the root of your repository
   },
   "secrets": {
     "API_TOKEN": {
-      "real": "sec_live_prod_actual_key_12345",
+      "realFromEnv": "API_TOKEN",
+      "real": "REPLACE_ME_REAL_SECRET",
       "phantom": "ph_sec_test_dummy_token",
       "allowedHosts": ["api.example.com"],
       "allowedMethods": ["GET", "POST"],
@@ -153,27 +174,54 @@ AirlockQA is configured via `airlock.config.json` in the root of your repository
     ]
   },
   "compliance": {
-    "signingKey": "your-secret-signing-key-32-chars",
     "outputDir": "./.airlock/compliance",
     "generateHtmlReport": true
   }
 }
 ```
 
+`compliance.signingKey` has no default and is intentionally left out of the sample: keep it out of committed files and supply it from a local, untracked config. Each secret's real value is read from the environment variable named by `realFromEnv`; the literal `real` value is only a fallback placeholder. Set `browser.executablePath` or `AIRLOCK_CHROME_PATH` to use a specific Chrome build. Set `AIRLOCK_CHECKPOINT_KEY` to encrypt saved browser-state checkpoints (they contain cookies and storage).
+
+---
+
+## Workflows
+
+`airlock run` executes an optional `workflow` section of `airlock.config.json` in one browser with the gateway attached, then signs an evidence bundle. It stops at the first failing step and exits with code 1.
+
+```json
+"workflow": {
+  "name": "checkout",
+  "steps": [
+    { "action": "goto", "url": "/" },
+    { "action": "fill", "selector": "input[name=\"email\"]", "value": "${env:QA_EMAIL}" },
+    { "action": "click", "selector": "button[type=\"submit\"]" },
+    { "action": "checkpoint", "name": "post_auth" },
+    { "action": "expectText", "selector": "#cart-total", "text": "$50.00" },
+    { "action": "request", "method": "POST", "url": "/api/admin/refund", "phantomSecret": "API_TOKEN", "expectStatus": 403 }
+  ]
+}
+```
+
+Step actions are `goto`, `click`, `fill`, `press`, `select`, `waitFor`, `expectVisible`, `expectText`, `checkpoint` and `request`. `${env:NAME}` reads credentials from the environment so they stay out of the config file. A `request` step with `expectStatus` fails unless the response has exactly that status. See [docs/HOW-TO-USE.md](docs/HOW-TO-USE.md#airlock-run-specpath) for every field.
+
 ---
 
 ## CLI Reference
 
+Commands exit with a non-zero code when they fail (missing files, failed tests or steps, failed variations).
+
 | Command | Description |
 | :--- | :--- |
 | `airlock init` | Initialize default configuration and sample policy |
-| `airlock explore [url]` | Launch an interactive browser session to record DOM actions |
-| `airlock compile <trace>` | Convert exploration trace into Playwright-oriented code |
-| `airlock test [options]` | Run tests locally (`--local`) or via cloud cluster (`--cloud`) |
-| `airlock fork <checkpoint>` | Create isolated Playwright browser contexts from a saved browser-state checkpoint |
+| `airlock explore [url]` | Open a browser and record your clicks, typing, key presses and selections into a trace (`--name`, `--out`) |
+| `airlock compile <trace>` | Convert a recorded trace into a Playwright spec (`--out`, alias `--output`) |
+| `airlock test [spec] --local` | Run spec file(s) with Playwright Test (default: `compiler.outputDir`); `--url` sets `baseURL` |
+| `airlock test [spec] --cloud` | Submit a run request to Airlock Cloud; the suite name comes from `--suite`, the spec file name or `projectName` |
+| `airlock run [spec]` | Run the configured `workflow` (or `--workflow <file>`), or a spec, and sign an evidence bundle |
+| `airlock fork <checkpoint>` | Restore a checkpoint into parallel contexts and try one value per context (`--input`, `--action`, `--values` or `--variations <file>`, `--expect-*`) |
 | `airlock warp <duration>` | Apply the current browser time-warp prototype (`+14 days`, `+1 hour`); see limitations below |
-| `airlock chaos [url]` | Generate a prototype mutation/race-condition audit report; scenarios are not yet executed as kernel or VM faults |
-| `airlock teleport <capsule>` | Load a state-capsule prototype and synthesize a basic Playwright reproduction spec |
+| `airlock chaos [url]` | Click `--action` once and fail if the mutation request has no idempotency key; scenarios are not replayed |
+| `airlock teleport <capsule>` | Synthesize a basic Playwright reproduction spec from a state capsule (`--out`, alias `--output`) |
 | `airlock audit [bundle]` | Verify cryptographic signature and Merkle root of an audit bundle |
 | `airlock dataset` | View logged UI mutation patches and selector healing accuracy |
 | `airlock serve` | Launch the local dashboard and run-evidence viewer |
