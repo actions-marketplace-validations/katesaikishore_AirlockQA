@@ -1,17 +1,17 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as yaml from 'js-yaml';
-import type { AirlockConfig } from '../types/index.js';
 import { loadConfig } from '../config/loader.js';
-import { AirlockRunner } from '../runner/airlock-runner.js';
-import { chromium } from 'playwright-core';
 import { logger } from '../utils/logger.js';
 import { createCloudRunPayload, submitCloudRun } from './cloud-run-client.js';
+import { runPlaywrightSpecs, suiteNameFromSpec } from './local-test-runner.js';
 
 export interface RouteRunOptions {
   local?: boolean;
   cloud?: boolean;
   specPath?: string;
+  /** Cloud suite name. Defaults to the spec file name, then `projectName` from the config. */
+  suiteName?: string;
   targetUrl?: string;
   cloudApiUrl?: string;
   apiKey?: string;
@@ -39,37 +39,24 @@ export class ExecutionTargetRouter {
     if (!shouldRunCloud) {
       logger.moat(
         1,
-        'Execution Target: Local Test Runner',
-        'Running local browser context with client-side credential proxy.'
+        'Execution Target: Local Playwright Test',
+        'Running spec files with the Airlock gateway attached through the airlockTest fixture.'
       );
 
       const config = loadConfig();
-      const runner = new AirlockRunner(config);
-      const targetUrl = options.targetUrl || config.baseUrl;
-
-      const browser = await chromium.launch({
-        executablePath: config.browser?.executablePath,
-        headless: config.browser?.headless ?? true,
+      const result = await runPlaywrightSpecs({
+        specPath: options.specPath,
+        targetUrl: options.targetUrl,
+        config,
       });
 
-      const context = await browser.newContext({
-        viewport: config.browser?.viewport,
-      });
-
-      const page = await context.newPage();
-
-      try {
-        await runner.initialize(context, page);
-        runner.step('GOTO', targetUrl);
-        await page.goto(targetUrl, { waitUntil: 'domcontentloaded' });
-        await page.waitForTimeout(300);
-
-        const bundle = await runner.finalize();
-        logger.success(`Local test execution completed successfully in ${bundle.summary.durationMs}ms`);
-        return { target: 'LOCAL', result: bundle };
-      } finally {
-        await browser.close();
+      const summary = `${result.passed} passed, ${result.failed} failed, ${result.flaky} flaky, ${result.skipped} skipped`;
+      if (result.exitCode === 0) {
+        logger.success(`Local test run passed (${summary})`);
+      } else {
+        logger.error(`Local test run failed with exit code ${result.exitCode} (${summary})`);
       }
+      return { target: 'LOCAL', result };
     } else {
       const cloudApiUrl = options.cloudApiUrl || process.env.AIRLOCK_CLOUD_URL || 'https://api.qbrin.cloud';
       if (!apiKey?.trim()) {
@@ -83,7 +70,8 @@ export class ExecutionTargetRouter {
       );
 
       const config = loadConfig();
-      const payload = createCloudRunPayload(config, options.targetUrl || config.baseUrl);
+      const suiteName = options.suiteName || suiteNameFromSpec(options.specPath, config.projectName);
+      const payload = createCloudRunPayload(config, options.targetUrl || config.baseUrl, suiteName);
 
       const cloudResult = await submitCloudRun({
         apiUrl: cloudApiUrl,
