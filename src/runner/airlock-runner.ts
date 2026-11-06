@@ -52,8 +52,16 @@ export class AirlockRunner {
   private recordedNetworkRequests: InterceptedRequest[] = [];
 
   constructor(customConfig?: Partial<AirlockConfig>) {
-    const base = loadConfig();
-    this.config = { ...base, ...customConfig };
+    // A complete config (e.g. one the caller already got from loadConfig()) is used as-is.
+    // Only a partial config is layered over the config loaded from disk/defaults.
+    const isFullConfig = !!customConfig
+      && typeof customConfig.projectName === 'string'
+      && typeof customConfig.baseUrl === 'string'
+      && customConfig.secrets !== undefined
+      && customConfig.policy !== undefined;
+    this.config = isFullConfig
+      ? (customConfig as AirlockConfig)
+      : { ...loadConfig(), ...customConfig };
     this.gateway = new AirlockGateway(this.config);
     this.ledger = new AirlockLedger();
     this.checkpointManager = new CheckpointManager(this.config.forker?.checkpointsDir);

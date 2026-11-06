@@ -77,9 +77,14 @@ cd AirlockQA
 bun install
 ```
 
-Install the Playwright browser binary:
+Install the Playwright browser binary (skip this if `browser.executablePath` points at an installed Chrome; on macOS the CLI uses `/Applications/Google Chrome.app` automatically):
 ```bash
 bunx playwright install chromium
+```
+
+`airlock test --local` and `airlock run <specPath>` run specs with Playwright Test, so install `@playwright/test` as well:
+```bash
+bun add -d @playwright/test
 ```
 
 Build the TypeScript distribution:
@@ -112,7 +117,8 @@ Running `bun run cli init` (or `npx airlock init`) generates a default configura
   },
   "secrets": {
     "STRIPE_KEY": {
-      "real": "sk_live_actual_production_secret_key",
+      "realFromEnv": "STRIPE_SECRET_KEY",
+      "real": "REPLACE_ME_REAL_SECRET",
       "phantom": "ph_sec_stripe_test_placeholder",
       "allowedHosts": ["localhost", "127.0.0.1", "api.stripe.com"],
       "allowedMethods": ["GET", "POST"],
@@ -150,16 +156,22 @@ Running `bun run cli init` (or `npx airlock init`) generates a default configura
     "maxParallelForks": 5
   },
   "compliance": {
-    "signingKey": "airlock-hmac-master-key-32-chars-long!",
     "outputDir": "./.airlock/compliance",
     "generateHtmlReport": true
   }
 }
 ```
 
-### Security Rules:
-1. **Never send real secrets over the network**: Real secret values are kept exclusively in runner memory or edge vaults. The browser test runtime only sees `phantom` placeholders (e.g. `ph_sec_stripe_test_placeholder`).
-2. **Egress Firewall**: Outbound HTTP/HTTPS requests that attempt to invoke blocked paths (like `*/refund*` or `*/wipe*`) are immediately aborted with a 403 status.
+`compliance.signingKey` has no default and is intentionally left out of the sample: keep it out of committed files and supply it from a local, untracked config. Each secret's real value is read from the environment variable named by `realFromEnv`; the literal `real` value is only a fallback placeholder. Set `browser.executablePath` or `AIRLOCK_CHROME_PATH` to use a specific Chrome build. Set `AIRLOCK_CHECKPOINT_KEY` to encrypt saved browser-state checkpoints (they contain cookies and storage).
+
+### Request policy rules
+1. **Phantom placeholders in the browser**: the browser only sees `phantom` values. The real value lives in the runner process and is substituted by the gateway after policy allows the request. Real values are sent upstream by the runner's own HTTP client (`context.request.fetch`), never by the browser. If that forwarding fails, the browser request is aborted and reported; it is not retried through the browser.
+2. **Secret host binding**: a request that carries a phantom token for a host outside that secret's `allowedHosts` is blocked with 403. An empty `allowedHosts` list allows no host.
+3. **Path and method rules**: requests that match blocked paths (like `*/refund*` or `*/wipe*`) or disallowed methods get a 403 response.
+4. **Value validation**: `real` and `phantom` must each be at least 8 characters, and no configured value may contain another. Invalid secrets fail at startup.
+5. **Host patterns**: `api.example.com` (that host, any port), `*.example.com` (the domain and its subdomains, any port), `host:port` (that port only; a URL without a port uses 80/443), or `*`.
+
+What it does not do: substitution and sanitizing are exact string matches in text bodies (`text/*`, JSON, form, XML, JavaScript). Binary bodies pass through unchanged, and encoded or transformed secrets are not detected. Only traffic routed through the Playwright context or the standalone proxy is covered. See the README section "Request policy limits" for the proxy and container details.
 
 ---
 
@@ -177,36 +189,66 @@ bun run cli init
 ---
 
 ### `airlock explore [url]`
-Spawns an interactive browser session, explores user workflows (authentication, cart actions, checkout forms), and records a complete DOM & network trace into `.airlock/traces/<suite>-trace.json`.
+Opens a visible Chromium window at `url` (default: `baseUrl`) and records what you do in it: clicks, typing (one `fill` per field with its final value), special key presses (Enter, Tab, Escape, arrows, shortcuts) and `<select>` changes. Each step stores a selector that matches exactly the element you used, plus an element fingerprint (tag, role, test id, text, attributes, position). URLs you open directly are recorded as `goto` steps. Text typed into password fields is saved as `<redacted-password>`.
+
+Close the browser window, or press Ctrl+C in the terminal, to stop. The trace is then written to `.airlock/traces/<name>-trace.json`.
 
 ```bash
 bun run cli explore http://localhost:3000 --name checkout-flow
+bun run cli explore http://localhost:3000 --out ./traces/checkout.json
 ```
+
+| Option | Description |
+| :--- | :--- |
+| `-n, --name <name>` | Suite name stored in the trace (default: `explore-<host>`) |
+| `-o, --out <path>` / `--output <path>` | Trace output path |
+| `--headless` | Record without a visible window (for scripted sessions) |
 
 ---
 
 ### `airlock compile <tracePath>`
-Compiles a recorded trace into zero-token, high-speed, deterministic Playwright TypeScript code with resilient multi-attribute fallback locators.
+Compiles a recorded trace into a Playwright TypeScript spec with multi-attribute fallback locators. Writes to `compiler.outputDir/<suite>.spec.ts` unless `--out` (or `--output`) is given. Exits with code 1 when the trace is missing or invalid.
 
 ```bash
-bun run cli compile .airlock/traces/checkout-flow-trace.json -o ./examples/tests/checkout.spec.ts
+bun run cli compile .airlock/traces/checkout-flow-trace.json --out ./tests/checkout.spec.ts
 ```
 
 ---
 
-### `airlock test [--local | --cloud]`
-Routes test execution to either your local Playwright browser or the remote Airlock Cloud API:
+### `airlock test [specPath] [--local | --cloud]`
+Routes test execution to Playwright Test on your machine or to the remote Airlock Cloud API.
 
-#### 1. Local Run (Free, 100% offline):
+#### 1. Local run
+Runs the spec file or directory with Playwright Test (default: `compiler.outputDir`). `--url` sets Playwright's `baseURL`, so `page.goto('/')` opens your app. The command exits with Playwright's exit code, so it is non-zero when any test fails.
+
+`@playwright/test` must be installed next to `airlockqa` (it is a peer dependency):
 ```bash
-bun run cli test --local
+bun add -d @playwright/test
+bun run cli test --local ./tests/checkout.spec.ts --url http://localhost:3000
 ```
+
+To get the Airlock gateway (phantom credential swap, request policy) and a signed evidence bundle in every test, import `test` from the Airlock fixture instead of `@playwright/test`:
+
+```ts
+import { test, expect } from 'airlockqa/dist/src/testing/airlock-test.js';
+
+test('checkout', async ({ page, airlock }) => {
+  await page.goto('/');
+  airlock.step('CLICK', 'checkout');            // optional: record a step in the ledger
+  await page.getByTestId('checkout-btn').click();
+  await expect(page.getByTestId('status')).toContainText('Paid');
+});
+```
+
+The fixture is automatic, so the gateway is attached even when a test does not use `airlock`. After each test the bundle is attached to the Playwright result as `airlock-evidence`. Playwright output goes to `.airlock/playwright/` (JSON results in `results.json`).
 
 #### 2. Cloud Run (Requires `AIRLOCK_API_KEY`):
 ```bash
 export AIRLOCK_API_KEY="air_live_your_project_key"
-bun run cli test --cloud
+bun run cli test ./tests/checkout.spec.ts --cloud
 ```
+
+The suite name sent to the API is `--suite <name>`, else the spec file name (`checkout`), else `projectName` from the config. A run reported as `FAILED` or `POLICY_VIOLATION` sets exit code 1.
 
 *Note: The CLI transmits your token only via `Authorization: Bearer <token>` over HTTPS. Real application secrets are automatically stripped from the cloud payload.*
 
@@ -219,25 +261,82 @@ bun run cli test --cloud
 
 ---
 
-### `airlock run`
-Executes your full end-to-end integration test locally, demonstrating:
-- Phantom credential substitution
-- Egress firewall policy blocking destructive mutations
-- Parallel state forking from saved checkpoints
-- Generation of the signed run-evidence bundle (spec 2.0.0, with the ledger embedded); see [`airlock audit`](#airlock-audit-bundlepath) for signing keys
+### `airlock run [specPath]`
+Runs the `workflow` defined in `airlock.config.json` (or in a file passed with `--workflow`) in one browser with the Airlock gateway attached, then writes a signed evidence bundle. With a `specPath` it runs that spec with Playwright Test instead, like `test --local`.
+
+Execution stops at the first failing step and the command exits with code 1.
+
+```json
+{
+  "workflow": {
+    "name": "checkout",
+    "steps": [
+      { "action": "goto", "url": "/" },
+      { "action": "fill", "selector": "input[name=\"email\"]", "value": "${env:QA_EMAIL}" },
+      { "action": "fill", "selector": "input[name=\"password\"]", "value": "${env:QA_PASSWORD}" },
+      { "action": "click", "selector": "button[type=\"submit\"]" },
+      { "action": "checkpoint", "name": "post_auth" },
+      { "action": "click", "selector": "[data-testid=\"add-pro-plan\"]" },
+      { "action": "expectText", "selector": "[data-testid=\"cart-total\"]", "text": "$50.00" },
+      { "action": "checkpoint", "name": "cart_ready" },
+      { "action": "request", "method": "POST", "url": "/api/admin/refund",
+        "phantomSecret": "STRIPE_SECRET_KEY", "body": { "chargeId": "ch_1" }, "expectStatus": 403 }
+    ]
+  }
+}
+```
+
+| Step | Fields | Fails when |
+| :--- | :--- | :--- |
+| `goto` | `url` (relative to `baseUrl` or absolute) | navigation fails |
+| `click`, `fill`, `press`, `select` | `selector`, plus `value` / `key` | the element is not found or not actionable |
+| `waitFor` | `selector`, `state` (`visible` by default) | the state is not reached |
+| `expectVisible` | `selector` | the element is not visible |
+| `expectText` | `selector`, `text` | the element's text does not contain `text` |
+| `checkpoint` | `name` | the checkpoint cannot be saved (used later by `airlock fork`) |
+| `request` | `url`, `method`, `headers`, `body`, `phantomSecret`, `expectStatus` | the status differs from `expectStatus`, or the request errors |
+
+`request` steps are sent with `fetch` from the page, so they pass through the gateway. Use `expectStatus: 403` to prove that a destructive endpoint is blocked. `${env:NAME}` in any string is replaced with the environment variable; an unset variable fails the step. Step logs show the uninterpolated value.
+
+The step timeout is `compiler.defaultTimeoutMs`.
+
+The evidence bundle uses spec 2.0.0 with the ledger embedded; see [`airlock audit`](#airlock-audit-bundlepath) for signing keys.
 
 ```bash
-bun run cli run
+QA_EMAIL=qa@example.com QA_PASSWORD=... bun run cli run --url http://localhost:3000
+bun run cli run --workflow ./workflows/refund-guard.json
 ```
 
 ---
 
 ### `airlock fork <checkpointName>`
-Instantly branches execution into parallel browser contexts from a warm checkpoint (such as post-login or cart-filled) **without** repeating the preceding navigation and login steps.
+Restores a saved checkpoint (for example `cart_ready` from a `run` workflow) into parallel browser contexts and tries one input value per context, without repeating login or navigation. Each variation fills `--input`, clicks `--action` and then checks the expectation. Every action and expectation counts as a check; the command exits with code 1 if any variation fails.
 
 ```bash
-bun run cli fork cart_ready --workers 5
+bun run cli fork cart_ready \
+  --input '[data-testid="coupon-input"]' --action '[data-testid="apply-coupon-btn"]' \
+  --values 'AIRLOCK20,VIP50,EXPIRED2020' --expect-selector '#coupon-status' --expect-text '✔'
 ```
+
+Or describe the variations in a JSON file (flags override file values):
+
+```json
+{
+  "inputSelector": "[data-testid=\"coupon-input\"]",
+  "actionSelector": "[data-testid=\"apply-coupon-btn\"]",
+  "expect": { "selector": "#coupon-status", "text": "applied" },
+  "variations": [
+    { "id": "vip", "value": "VIP50" },
+    { "id": "expired", "value": "EXPIRED2020", "expect": { "selector": "#coupon-status", "text": "Invalid" } }
+  ]
+}
+```
+
+```bash
+bun run cli fork cart_ready --variations ./coupon-variations.json --workers 2
+```
+
+`--workers <n>` limits how many variations are run.
 
 ---
 
@@ -252,19 +351,22 @@ bun run cli warp "+1 hour"
 ---
 
 ### `airlock chaos [url]`
-Launches a 4-clone parallel chaos test against mutation buttons (checkout, submit, pay) to detect idempotency vulnerabilities, double-spend risks, and race conditions.
+Clicks `--action` once (after optional setup steps), observes the matching mutation request and reports whether it carried an idempotency key (`Idempotency-Key` or `X-Idempotency-Key`). It does not replay requests or inject faults. The command exits with code 1 if the click fails, no matching request is seen, or the request has no idempotency key.
 
 ```bash
-bun run cli chaos http://localhost:3000
+bun run cli chaos http://localhost:3000 --action '[data-testid="checkout-btn"]' --endpoint '/api/checkout'
+bun run cli chaos --file ./chaos-checkout.json
 ```
+
+The JSON file can set `url`, `actionSelector`, `endpointPattern` (a regular expression) and `setup`, a list of `run` workflow steps executed first (for example login and add-to-cart).
 
 ---
 
 ### `airlock teleport <capsulePath>`
-Ingests a production bug capsule (containing masked state and ring-buffer network/DOM logs) and generates a deterministic Playwright reproduction test.
+Reads a browser-state capsule and generates a Playwright reproduction spec in `compiler.outputDir` (or `--out` / `--output`). Exits with code 1 when the capsule is missing or invalid.
 
 ```bash
-bun run cli teleport .airlock/traces/crash-capsule.json -o ./examples/tests/repro-bug.spec.ts
+bun run cli teleport .airlock/traces/crash-capsule.json --out ./tests/repro-bug.spec.ts
 ```
 
 ---

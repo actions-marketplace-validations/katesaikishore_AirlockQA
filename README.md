@@ -44,7 +44,7 @@ AirlockQA is an early-stage TypeScript browser testing runtime. It includes expl
 
 ## Key Features
 
-- **🛡️ Request Policy Prototype:** The Playwright-context gateway can inspect configured phantom tokens, apply host/path/method rules, substitute configured values, and sanitize matching upstream responses. This is browser-request interception; it is not a general OS-level egress firewall or a guarantee that production credentials never enter the runner process.
+- **🛡️ Request Policy Prototype:** The Playwright-context gateway can inspect configured phantom tokens, apply host/path/method rules, substitute configured values, and sanitize matching upstream responses. This is browser-request interception; it is not a general OS-level egress firewall or a guarantee that production credentials never enter the runner process. See [Request policy limits](#request-policy-limits).
 - **⚡ Trace Compilation:** Converts recorded browser actions into Playwright-oriented test code. Runtime and stability depend on the application and environment.
 - **🔄 Locator Recovery Prototype:** A similarity-based helper can suggest or resolve candidate locators from available DOM features; review recovered selectors in your application’s test context.
 - **⏱️ Browser Checkpoints:** Saves browser storage state, session storage, URL, and a DOM snapshot/hash, then can restore that data into a browser context. It does not snapshot process or VM memory.
@@ -78,24 +78,44 @@ npx airlock init
 
 ### 3. Record & Compile a Test
 
-Record an exploratory browser session against your staging application:
+Open a browser on your app and record what you do. Close the window (or press Ctrl+C) to save the trace:
 
 ```bash
-npx airlock explore http://localhost:3000
+npx airlock explore http://localhost:3000 --name checkout
 ```
 
-Compile the recorded trace into a deterministic test spec:
+Compile the recorded trace into a Playwright spec:
 
 ```bash
-npx airlock compile trace.json --output ./tests/checkout.spec.ts
+npx airlock compile .airlock/traces/checkout-trace.json --out ./tests/checkout.spec.ts
 ```
+
+(`--output` is accepted as an alias for `--out`.)
 
 ### 4. Run Tests
 
-Execute the compiled test suite locally:
+Run specs locally with Playwright Test. This needs `@playwright/test` (a peer dependency). The command exits non-zero when a test fails:
 
 ```bash
-npx airlock test --local
+npm install --save-dev @playwright/test
+npx airlock test --local ./tests/checkout.spec.ts --url http://localhost:3000
+```
+
+Import `test` from the Airlock fixture to attach the request gateway and a signed evidence bundle to every test:
+
+```ts
+import { test, expect } from 'airlockqa/dist/src/testing/airlock-test.js';
+
+test('checkout', async ({ page, airlock }) => {
+  await page.goto('/');
+  await page.getByTestId('checkout-btn').click();
+});
+```
+
+Or run the workflow defined in the `workflow` section of `airlock.config.json` (see [Workflows](#workflows)):
+
+```bash
+npx airlock run --url http://localhost:3000
 ```
 
 Or connect to an Airlock Cloud runner:
@@ -132,7 +152,8 @@ AirlockQA is configured via `airlock.config.json` in the root of your repository
   },
   "secrets": {
     "API_TOKEN": {
-      "real": "sec_live_prod_actual_key_12345",
+      "realFromEnv": "API_TOKEN",
+      "real": "REPLACE_ME_REAL_SECRET",
       "phantom": "ph_sec_test_dummy_token",
       "allowedHosts": ["api.example.com"],
       "allowedMethods": ["GET", "POST"],
@@ -153,7 +174,6 @@ AirlockQA is configured via `airlock.config.json` in the root of your repository
     ]
   },
   "compliance": {
-    "signingKey": "your-secret-signing-key-32-chars",
     "outputDir": "./.airlock/compliance",
     "generateHtmlReport": true
   }
@@ -162,20 +182,48 @@ AirlockQA is configured via `airlock.config.json` in the root of your repository
 
 **Evidence signing keys.** Prefer setting `AIRLOCK_SIGNING_KEY` from a secret store over committing `compliance.signingKey`. Set `AIRLOCK_SIGNING_ALGORITHM=Ed25519`, or supply a PEM private key, to sign with Ed25519; the bundle then carries the public key, and verifiers can pin it with `AIRLOCK_TRUSTED_PUBLIC_KEY`. With no key configured, runs fail when `CI` is set. Locally they fall back to a labelled, insecure development key, print a warning, and mark the bundle `insecureDevKey: true`. Bundles from v1 (`specVersion: 1.0.0`) are rejected. See [docs/HOW-TO-USE.md](docs/HOW-TO-USE.md#airlock-audit-bundlepath).
 
+`compliance.signingKey` has no default and is intentionally left out of the sample: keep it out of committed files and supply it from a local, untracked config. Each secret's real value is read from the environment variable named by `realFromEnv`; the literal `real` value is only a fallback placeholder. Set `browser.executablePath` or `AIRLOCK_CHROME_PATH` to use a specific Chrome build. Set `AIRLOCK_CHECKPOINT_KEY` to encrypt saved browser-state checkpoints (they contain cookies and storage).
+
+---
+
+## Workflows
+
+`airlock run` executes an optional `workflow` section of `airlock.config.json` in one browser with the gateway attached, then signs an evidence bundle. It stops at the first failing step and exits with code 1.
+
+```json
+"workflow": {
+  "name": "checkout",
+  "steps": [
+    { "action": "goto", "url": "/" },
+    { "action": "fill", "selector": "input[name=\"email\"]", "value": "${env:QA_EMAIL}" },
+    { "action": "click", "selector": "button[type=\"submit\"]" },
+    { "action": "checkpoint", "name": "post_auth" },
+    { "action": "expectText", "selector": "#cart-total", "text": "$50.00" },
+    { "action": "request", "method": "POST", "url": "/api/admin/refund", "phantomSecret": "API_TOKEN", "expectStatus": 403 }
+  ]
+}
+```
+
+Step actions are `goto`, `click`, `fill`, `press`, `select`, `waitFor`, `expectVisible`, `expectText`, `checkpoint` and `request`. `${env:NAME}` reads credentials from the environment so they stay out of the config file. A `request` step with `expectStatus` fails unless the response has exactly that status. See [docs/HOW-TO-USE.md](docs/HOW-TO-USE.md#airlock-run-specpath) for every field.
+
 ---
 
 ## CLI Reference
 
+Commands exit with a non-zero code when they fail (missing files, failed tests or steps, failed variations).
+
 | Command | Description |
 | :--- | :--- |
 | `airlock init` | Initialize default configuration and sample policy |
-| `airlock explore [url]` | Launch an interactive browser session to record DOM actions |
-| `airlock compile <trace>` | Convert exploration trace into Playwright-oriented code |
-| `airlock test [options]` | Run tests locally (`--local`) or via cloud cluster (`--cloud`) |
-| `airlock fork <checkpoint>` | Create isolated Playwright browser contexts from a saved browser-state checkpoint |
+| `airlock explore [url]` | Open a browser and record your clicks, typing, key presses and selections into a trace (`--name`, `--out`) |
+| `airlock compile <trace>` | Convert a recorded trace into a Playwright spec (`--out`, alias `--output`) |
+| `airlock test [spec] --local` | Run spec file(s) with Playwright Test (default: `compiler.outputDir`); `--url` sets `baseURL` |
+| `airlock test [spec] --cloud` | Submit a run request to Airlock Cloud; the suite name comes from `--suite`, the spec file name or `projectName` |
+| `airlock run [spec]` | Run the configured `workflow` (or `--workflow <file>`), or a spec, and sign an evidence bundle |
+| `airlock fork <checkpoint>` | Restore a checkpoint into parallel contexts and try one value per context (`--input`, `--action`, `--values` or `--variations <file>`, `--expect-*`) |
 | `airlock warp <duration>` | Apply the current browser time-warp prototype (`+14 days`, `+1 hour`); see limitations below |
-| `airlock chaos [url]` | Generate a prototype mutation/race-condition audit report; scenarios are not yet executed as kernel or VM faults |
-| `airlock teleport <capsule>` | Load a state-capsule prototype and synthesize a basic Playwright reproduction spec |
+| `airlock chaos [url]` | Click `--action` once and fail if the mutation request has no idempotency key; scenarios are not replayed |
+| `airlock teleport <capsule>` | Synthesize a basic Playwright reproduction spec from a state capsule (`--out`, alias `--output`) |
 | `airlock audit [bundle]` | Verify a run-evidence bundle: recompute the hash chain and Merkle root, check the signature over the whole bundle, and exit 1 on failure |
 | `airlock dataset` | View logged UI mutation patches and selector healing accuracy |
 | `airlock serve` | Launch the local dashboard and run-evidence viewer |
@@ -185,6 +233,18 @@ AirlockQA is configured via `airlock.config.json` in the root of your repository
 ## Prototype capabilities and limitations
 
 The commands below are early prototypes. Their current names do not imply kernel clock control, VM snapshots, network-wide capture, or production crash replay. Track the implementation gates in [`docs/five-impossible-moats-implementation-plan.md`](docs/five-impossible-moats-implementation-plan.md).
+
+### Request policy limits
+
+The request gateway has two entry points that apply the same leak check, policy and substitution:
+
+- **Playwright context (`attachToBrowserContext`)**: routes every request in the context. Allowed requests are forwarded by the runner's own HTTP client with phantom tokens swapped for real values. Redirects come back to the browser, so each hop is checked against policy again. If forwarding fails, the request is aborted and reported (`forwardError`); it is never continued through the browser with real values. Response bodies are decompressed. Text bodies are sanitized and returned without the stale `content-encoding` or `content-length` headers. Binary bodies are returned byte-for-byte.
+- **Standalone HTTP proxy (`startHttpProxy`)**: listens on `127.0.0.1` by default and only accepts absolute-form `http://` request URIs (`HTTP_PROXY`). The target comes from the request URI, and a request whose `Host` header does not match it is rejected with 400. Request bodies over `maxBodyBytes` (default 10 MiB) get 413. Binary responses are streamed through; text responses are buffered (with the same cap) so they can be sanitized.
+- **HTTPS through the proxy**: `CONNECT` is denied with 403 by default because the proxy cannot see inside a TLS tunnel, so it cannot swap tokens, detect leaks or sanitize responses. Hosts listed in the `connectAllowHosts` gateway option (or the `AIRLOCK_CONNECT_ALLOW_HOSTS` environment variable in the container) are tunnelled without inspection. AirlockQA does not ship a TLS-terminating proxy.
+
+Phantom tokens only work for the hosts in that secret's `allowedHosts`. A request carrying the token to any other host is blocked. Substitution and sanitizing are exact string matches in text content (`text/*`, JSON, form, XML, JavaScript). Binary, encoded or transformed values are not rewritten.
+
+**Container egress firewall.** `container/egress-firewall.sh` sets a default-deny `OUTPUT` filter. It allows loopback traffic, replies on established connections, and traffic from the dedicated `airlock-proxy` user only. It refuses to exempt uid 0. Direct port 80/443 traffic from other users is rejected, not redirected. Start the image with `AIRLOCK_EGRESS_FIREWALL=1` and `NET_ADMIN`. The entrypoint then applies the rules, runs the proxy as `airlock-proxy` and runs the CLI as `airlock` with `HTTP_PROXY`/`HTTPS_PROXY` set. This is a packet-filter backstop for one container, not proof of isolation: root can remove the rules, and code running as the proxy user is not constrained. It is off in `docker-compose.yml` because the `run` command forwards browser traffic from its own process (same user as the browser), and Playwright's request client does not use `HTTP_PROXY`, so that traffic would be rejected.
 
 ### Browser clock override
 

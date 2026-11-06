@@ -1,37 +1,59 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# AirlockQA Deterministic Egress Firewall (Linux iptables / nftables)
-# Forces all outbound TCP 80/443 traffic through the Airlock Proxy on 127.0.0.1:8899.
-# Blocks any direct network egress bypass at the kernel packet filter level.
+# AirlockQA egress firewall (Linux iptables / ip6tables, filter table)
+#
+# Default-deny outbound traffic for every process in the container except:
+#   * loopback traffic (so sandboxed clients can reach the proxy on 127.0.0.1),
+#   * replies on connections that were opened *to* the container,
+#   * the dedicated proxy user (AIRLOCK_PROXY_USER, never root/uid 0).
+#
+# Sandboxed clients must send HTTP through the Airlock proxy with HTTP_PROXY.
+# HTTPS clients would use HTTPS_PROXY + CONNECT, which the proxy DENIES by default
+# because a TLS tunnel cannot be inspected (no phantom-token swap, no response
+# sanitizing). Hosts may be opted in for uninspected tunnelling with
+# AIRLOCK_CONNECT_ALLOW_HOSTS. Direct 443 is REJECTED; it is never redirected to the
+# plain-HTTP proxy. Inspecting HTTPS would need a TLS-terminating proxy with its own
+# CA trusted by the sandbox; AirlockQA does not ship one.
+#
+# Limits: this is a packet-filter backstop for one container, not a proof of
+# isolation. Anything running as AIRLOCK_PROXY_USER, or root (which can flush these
+# rules), is not constrained. Run sandboxed code as a different, unprivileged user.
 # ==============================================================================
 
 set -euo pipefail
 
-AIRLOCK_PROXY_PORT=${AIRLOCK_PROXY_PORT:-8899}
-AIRLOCK_PROXY_USER=${AIRLOCK_PROXY_USER:-root}
+AIRLOCK_PROXY_USER=${AIRLOCK_PROXY_USER:-airlock-proxy}
 
-echo "🛡️  Initializing Airlock OS-Level Deterministic Egress Firewall..."
+if ! PROXY_UID=$(id -u "$AIRLOCK_PROXY_USER" 2>/dev/null); then
+  echo "egress-firewall: proxy user '$AIRLOCK_PROXY_USER' does not exist" >&2
+  exit 1
+fi
+if [ "$PROXY_UID" = "0" ]; then
+  echo "egress-firewall: refusing to exempt uid 0; run the proxy as a dedicated unprivileged user" >&2
+  exit 1
+fi
 
-# Flush existing custom chain if present
-iptables -t nat -F AIRLOCK_EGRESS 2>/dev/null || true
-iptables -t nat -X AIRLOCK_EGRESS 2>/dev/null || true
+apply_rules() {
+  local ipt="$1"
+  command -v "$ipt" >/dev/null 2>&1 || { echo "egress-firewall: $ipt not found, skipping"; return 0; }
 
-# Create custom chain
-iptables -t nat -N AIRLOCK_EGRESS
+  "$ipt" -D OUTPUT -j AIRLOCK_EGRESS 2>/dev/null || true
+  "$ipt" -F AIRLOCK_EGRESS 2>/dev/null || true
+  "$ipt" -X AIRLOCK_EGRESS 2>/dev/null || true
+  "$ipt" -N AIRLOCK_EGRESS
 
-# Exclude traffic originating from proxy itself to prevent redirect loops
-iptables -t nat -A AIRLOCK_EGRESS -m owner --uid-owner "$AIRLOCK_PROXY_USER" -j RETURN
+  "$ipt" -A AIRLOCK_EGRESS -o lo -j ACCEPT
+  "$ipt" -A AIRLOCK_EGRESS -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+  "$ipt" -A AIRLOCK_EGRESS -m owner --uid-owner "$PROXY_UID" -j ACCEPT
+  "$ipt" -A AIRLOCK_EGRESS -p tcp -j REJECT --reject-with tcp-reset
+  "$ipt" -A AIRLOCK_EGRESS -j REJECT
 
-# Exclude loopback interface (localhost traffic within container)
-iptables -t nat -A AIRLOCK_EGRESS -d 127.0.0.1/32 -j RETURN
+  "$ipt" -I OUTPUT 1 -j AIRLOCK_EGRESS
+}
 
-# Redirect all outbound HTTP (80) and HTTPS (443) to local Airlock Proxy
-iptables -t nat -A AIRLOCK_EGRESS -p tcp --dport 80 -j REDIRECT --to-ports "$AIRLOCK_PROXY_PORT"
-iptables -t nat -A AIRLOCK_EGRESS -p tcp --dport 443 -j REDIRECT --to-ports "$AIRLOCK_PROXY_PORT"
+echo "Applying AirlockQA egress firewall (proxy user: $AIRLOCK_PROXY_USER, uid $PROXY_UID)..."
+apply_rules iptables
+apply_rules ip6tables
 
-# Hook into OUTPUT chain
-iptables -t nat -A OUTPUT -p tcp -j AIRLOCK_EGRESS
-
-echo "✔ Egress firewall active: All TCP 80/443 redirected to port ${AIRLOCK_PROXY_PORT}"
-echo "✔ Unfiltered outbound socket bypass: MATHEMATICALLY BLOCKED"
-
+echo "Egress firewall active: outbound traffic is rejected except loopback, established replies,"
+echo "and uid $PROXY_UID. Direct TCP 80/443 from other users is rejected; use HTTP_PROXY."

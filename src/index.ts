@@ -14,7 +14,7 @@ export { DatasetCollector } from './healer/dataset-collector.js';
 export { stringSimilarity, levenshteinDistance, tokenOverlap } from './healer/dom-diff.js';
 
 // 3: Browser Checkpoints and Parallel Contexts
-export { CheckpointManager } from './forker/checkpoint-manager.js';
+export { CheckpointManager, encryptCheckpoint, decryptCheckpoint } from './forker/checkpoint-manager.js';
 export { StateForker, type ForkWorkerContext, type ForkWorkerFunction } from './forker/state-forker.js';
 
 // 4: Cryptographic Ledger & Compliance Bundles
@@ -44,7 +44,7 @@ export { airlockLocator, type ResilientLocatorConfig } from './runner/locator.js
 export { ExecutionTargetRouter, type RouteRunOptions } from './router/execution-router.js';
 
 // Config & Utilities
-export { loadConfig } from './config/loader.js';
+export { loadConfig, ConfigError } from './config/loader.js';
 export { AirlockConfigSchema } from './config/schema.js';
 export { sha256, generatePhantomToken, signHmac, verifyHmac, redactSecrets } from './utils/crypto.js';
 export { logger } from './utils/logger.js';

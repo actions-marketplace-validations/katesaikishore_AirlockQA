@@ -37,12 +37,17 @@ class Logger {
     console.error(pc.red('✖') + ' ' + pc.bold(pc.red(msg)), ...args);
   }
 
-  moat(num: number, title: string, detail?: string): void {
-    const badge = pc.bgCyan(pc.black(` AIRLOCK `));
-    console.log(`\n${badge} ${pc.bold(title)}`);
+  /** Print a plain step label with an optional detail line. */
+  stage(title: string, detail?: string): void {
+    console.log(`\n${pc.cyan('▸')} ${pc.bold(title)}`);
     if (detail) {
       console.log(pc.dim(`  └─ ${detail}`));
     }
+  }
+
+  /** @deprecated Use {@link stage}. The number argument is ignored. */
+  moat(_num: number, title: string, detail?: string): void {
+    this.stage(title, detail);
   }
 
   step(stepIndex: number, action: string, target?: string): void {
@@ -54,7 +59,7 @@ class Logger {
   }
 
   securityViolation(reason: string, details?: Record<string, unknown>): void {
-    console.log(pc.bgRed(pc.white(' 🚨 AIRLOCK POLICY VIOLATION BLOCKED 🚨 ')));
+    console.log(pc.red(pc.bold('✖ Request blocked by policy')));
     console.log(pc.red(`  Reason: ${reason}`));
     if (details) {
       console.log(pc.dim(JSON.stringify(details, null, 2)));

@@ -1,5 +1,8 @@
 import type { PhantomSecretConfig } from '../types/index.js';
-import { redactSecrets } from '../utils/crypto.js';
+import { matchAnyHost } from './host-match.js';
+
+/** Minimum length for both real and phantom values, so substring leak checks stay meaningful. */
+export const MIN_SECRET_LENGTH = 8;
 
 export interface TokenSwapResult {
   modifiedHeaders: Record<string, string>;
@@ -20,11 +23,51 @@ export class PhantomEngine {
   }
 
   registerSecrets(secretsConfig: Record<string, PhantomSecretConfig>): void {
+    PhantomEngine.validateSecrets({ ...Object.fromEntries(this.secrets), ...secretsConfig });
     for (const [key, config] of Object.entries(secretsConfig)) {
       this.secrets.set(key, config);
       this.phantomToConfig.set(config.phantom, config);
       this.realToConfig.set(config.real, config);
     }
+  }
+
+  /**
+   * Reject configurations that would make substitution or leak detection unsafe:
+   * values shorter than MIN_SECRET_LENGTH, and any configured value (real or phantom,
+   * from any secret) that contains another one. Without this, a short value such as
+   * "a" would match almost every request and response.
+   */
+  static validateSecrets(secretsConfig: Record<string, PhantomSecretConfig>): void {
+    const values: Array<{ label: string; value: string }> = [];
+    for (const [key, config] of Object.entries(secretsConfig)) {
+      for (const kind of ['real', 'phantom'] as const) {
+        const value = config[kind];
+        if (typeof value !== 'string' || value.length < MIN_SECRET_LENGTH) {
+          throw new Error(
+            `Secret '${key}': ${kind} value must be at least ${MIN_SECRET_LENGTH} characters long`
+          );
+        }
+        values.push({ label: `${key}.${kind}`, value });
+      }
+    }
+    for (let i = 0; i < values.length; i++) {
+      for (let j = 0; j < values.length; j++) {
+        if (i === j) continue;
+        const a = values[i];
+        const b = values[j];
+        if (a.value.includes(b.value) && !(a.value === b.value && i > j)) {
+          throw new Error(
+            `Secret values must not contain one another: '${a.label}' contains '${b.label}'`
+          );
+        }
+      }
+    }
+  }
+
+  /** True when the secret may be used against this host (shared matcher with the policy engine). */
+  static isHostAllowed(config: PhantomSecretConfig, targetHost: string, defaultPort?: number): boolean {
+    const allowed = config.allowedHosts || [];
+    return allowed.length > 0 && matchAnyHost(targetHost, allowed, defaultPort);
   }
 
   /**
@@ -88,7 +131,8 @@ export class PhantomEngine {
   swapPhantomToReal(
     headers: Record<string, string>,
     body?: string,
-    targetHost?: string
+    targetHost?: string,
+    defaultPort?: number
   ): TokenSwapResult {
     const modifiedHeaders = { ...headers };
     let modifiedBody = body;
@@ -98,21 +142,10 @@ export class PhantomEngine {
     for (const [phantom, config] of this.phantomToConfig.entries()) {
       let swappedForThis = false;
 
-      // Verify host restriction if configured
-      if (targetHost && config.allowedHosts && config.allowedHosts.length > 0) {
-        const hostWithoutPort = targetHost.split(':')[0];
-        const isAllowed = config.allowedHosts.some(
-          (h) =>
-            targetHost === h ||
-            hostWithoutPort === h ||
-            targetHost.endsWith(`.${h}`) ||
-            hostWithoutPort.endsWith(`.${h}`) ||
-            h === '*'
-        );
-        if (!isAllowed) {
-          // Cannot swap to real for disallowed host
-          continue;
-        }
+      // Never substitute for a host outside the secret's allowedHosts. An empty
+      // list permits no host. The policy engine blocks such requests before this point.
+      if (targetHost !== undefined && !PhantomEngine.isHostAllowed(config, targetHost, defaultPort)) {
+        continue;
       }
 
       // Check headers

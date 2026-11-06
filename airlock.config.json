@@ -14,7 +14,8 @@
   },
   "secrets": {
     "STRIPE_SECRET_KEY": {
-      "real": "sk_test_live_sample_51M001AcmeProductionSecretKey9900",
+      "realFromEnv": "STRIPE_SECRET_KEY",
+      "real": "REPLACE_ME_REAL_SECRET",
       "phantom": "ph_sec_stripe_test_8f2a1c",
       "allowedHosts": [
         "localhost",
@@ -32,7 +33,8 @@
       ]
     },
     "ADMIN_AUTH_TOKEN": {
-      "real": "jwt_admin_supersecret_production_session_bearer_token",
+      "realFromEnv": "ADMIN_AUTH_TOKEN",
+      "real": "REPLACE_ME_REAL_SECRET",
       "phantom": "ph_auth_bearer_9901_admin",
       "allowedHosts": [
         "localhost",
@@ -96,8 +98,75 @@
     "maxParallelForks": 5
   },
   "compliance": {
-    "signingKey": "airlock-hmac-master-key-32-chars-long!",
     "outputDir": "./.airlock/compliance",
     "generateHtmlReport": true
+  },
+  "workflow": {
+    "name": "demo-store-checkout",
+    "steps": [
+      {
+        "action": "goto",
+        "url": "/"
+      },
+      {
+        "action": "click",
+        "selector": "[data-testid=\"login-btn\"]"
+      },
+      {
+        "action": "expectVisible",
+        "selector": "[data-testid=\"add-pro-plan\"]"
+      },
+      {
+        "action": "checkpoint",
+        "name": "post_auth"
+      },
+      {
+        "action": "click",
+        "selector": "[data-testid=\"add-pro-plan\"]"
+      },
+      {
+        "action": "expectText",
+        "selector": "[data-testid=\"cart-total\"]",
+        "text": "$50.00"
+      },
+      {
+        "action": "checkpoint",
+        "name": "cart_ready"
+      },
+      {
+        "action": "fill",
+        "selector": "[data-testid=\"coupon-input\"]",
+        "value": "AIRLOCK20"
+      },
+      {
+        "action": "click",
+        "selector": "[data-testid=\"apply-coupon-btn\"]"
+      },
+      {
+        "action": "expectText",
+        "selector": "[data-testid=\"cart-total\"]",
+        "text": "$40.00"
+      },
+      {
+        "action": "click",
+        "selector": "[data-testid=\"checkout-btn\"]"
+      },
+      {
+        "action": "expectText",
+        "selector": "#checkout-status",
+        "text": "charge created"
+      },
+      {
+        "action": "request",
+        "method": "POST",
+        "url": "/api/admin/refund",
+        "phantomSecret": "STRIPE_SECRET_KEY",
+        "body": {
+          "chargeId": "ch_12345",
+          "amount": 5000
+        },
+        "expectStatus": 403
+      }
+    ]
   }
 }

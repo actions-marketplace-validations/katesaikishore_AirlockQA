@@ -9,8 +9,19 @@
     "airlock": "./bin/airlock.js",
     "airlockqa": "./bin/airlock.js"
   },
+  "files": [
+    "bin/airlock.js",
+    "dist",
+    "public",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "build": "tsc",
+    "prepublishOnly": "npm run build",
     "test": "bun test",
     "qa:gui": "bash scripts/gui-smoke.sh",
     "qa": "bun run build && bun test && bun run qa:gui",
@@ -18,27 +29,36 @@
     "demo:server": "bun ./examples/demo-store/server.ts"
   },
   "keywords": [
-    "ai-qa",
     "playwright",
-    "zero-trust",
-    "phantom-credentials",
-    "self-healing-tests",
-    "time-travel-debugging",
+    "browser-testing",
+    "e2e-testing",
+    "request-policy",
+    "test-evidence",
     "merkle-tree",
-    "compliance-soc2",
-    "egress-firewall"
+    "typescript"
   ],
   "author": "AirlockQA Core Team",
   "license": "MIT",
   "dependencies": {
-    "@types/express": "^5.0.6",
-    "@types/node": "^26.6.6",
     "commander": "^15.0.0",
-    "express": "^5.3.0",
     "js-yaml": "^5.5.0",
     "picocolors": "^1.1.1",
     "playwright-core": "^1.65.0",
-    "typescript": "^7.0.2",
     "zod": "^4.6.7"
+  },
+  "peerDependencies": {
+    "@playwright/test": "^1.65.0"
+  },
+  "peerDependenciesMeta": {
+    "@playwright/test": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@playwright/test": "1.65.0",
+    "@types/express": "^5.0.6",
+    "@types/node": "^26.6.6",
+    "express": "^5.3.0",
+    "typescript": "^7.0.2"
   }
 }

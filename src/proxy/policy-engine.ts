@@ -5,6 +5,7 @@ import type {
   InterceptedRequest,
   PhantomSecretConfig,
 } from '../types/index.js';
+import { defaultPortForUrl, matchHost } from './host-match.js';
 
 export interface PolicyVerdict {
   allowed: boolean;
@@ -25,19 +26,12 @@ export class PolicyEngine {
   }
 
   /**
-   * Helper to match host against glob pattern (e.g. "*.stripe.com" or "localhost")
+   * Match host against a pattern ("*", "api.x.com", "*.x.com", optionally with ":port").
+   * The request's port is stripped before hostname comparison for every pattern type;
+   * "host:port" patterns additionally require the port to match.
    */
-  private matchHost(host: string, pattern: string): boolean {
-    if (pattern === '*') return true;
-    if (pattern === host) return true;
-    if (pattern.startsWith('*.')) {
-      const suffix = pattern.substring(2);
-      return host === suffix || host.endsWith('.' + suffix);
-    }
-    // Remove port for comparison if needed
-    const hostWithoutPort = host.split(':')[0];
-    const patternWithoutPort = pattern.split(':')[0];
-    return hostWithoutPort === patternWithoutPort;
+  private matchHost(host: string, pattern: string, defaultPort?: number): boolean {
+    return matchHost(host, pattern, defaultPort);
   }
 
   /**
@@ -66,15 +60,18 @@ export class PolicyEngine {
       method: HttpMethod;
       headers: Record<string, string>;
       body?: string;
+      /** Actual body size in bytes; preferred over the length of `body` when given. */
+      bodyBytes?: number;
       url: string;
     },
     attachedSecretConfigs: PhantomSecretConfig[] = []
   ): Promise<PolicyVerdict> {
     const { host, path, method, body } = req;
+    const defaultPort = defaultPortForUrl(req.url);
 
     // 1. Check blocked egress hosts explicitly
     for (const blockedHost of this.config.blockedEgressHosts) {
-      if (this.matchHost(host, blockedHost)) {
+      if (this.matchHost(host, blockedHost, defaultPort)) {
         return {
           allowed: false,
           verdict: 'BLOCKED',
@@ -85,6 +82,21 @@ export class PolicyEngine {
 
     // 2. Secret-level deterministic constraints
     for (const secretConfig of attachedSecretConfigs) {
+      // A phantom token may only travel to the hosts its secret allows. An empty
+      // allowedHosts list permits no host. Without this check the token would be
+      // forwarded unswapped to any host the general policy allows.
+      const allowedHosts = secretConfig.allowedHosts || [];
+      if (!allowedHosts.some((p) => this.matchHost(host, p, defaultPort))) {
+        return {
+          allowed: false,
+          verdict: 'BLOCKED',
+          reason:
+            allowedHosts.length === 0
+              ? `Request carries a phantom token whose secret has an empty allowedHosts list; host '${host}' is not permitted`
+              : `Request carries a phantom token that is not permitted for host '${host}' (secret allowedHosts: ${allowedHosts.join(', ')})`,
+        };
+      }
+
       // Check allowed methods for this secret
       if (secretConfig.allowedMethods && secretConfig.allowedMethods.length > 0) {
         if (!secretConfig.allowedMethods.includes(method)) {
@@ -112,7 +124,7 @@ export class PolicyEngine {
 
     // 3. Evaluate specific configured EgressRules
     for (const rule of this.config.rules) {
-      if (!this.matchHost(host, rule.hostPattern)) {
+      if (!this.matchHost(host, rule.hostPattern, defaultPort)) {
         continue;
       }
 
@@ -151,7 +163,8 @@ export class PolicyEngine {
       }
 
       // Check max payload size
-      if (rule.maxPayloadBytes && body && Buffer.byteLength(body, 'utf8') > rule.maxPayloadBytes) {
+      const payloadBytes = req.bodyBytes ?? (body ? Buffer.byteLength(body, 'utf8') : 0);
+      if (rule.maxPayloadBytes && payloadBytes > rule.maxPayloadBytes) {
         return {
           allowed: false,
           verdict: 'BLOCKED',
@@ -183,7 +196,7 @@ export class PolicyEngine {
 
     // 4. Fallback to host whitelist and default action
     const isWhitelisted = this.config.allowedEgressHosts.some((pattern) =>
-      this.matchHost(host, pattern)
+      this.matchHost(host, pattern, defaultPort)
     );
 
     if (isWhitelisted) {

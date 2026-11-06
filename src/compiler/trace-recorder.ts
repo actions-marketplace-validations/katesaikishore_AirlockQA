@@ -96,6 +96,37 @@ export class TraceRecorder {
   }
 
   /**
+   * Record a step whose element fingerprint was captured in the page at the moment the user
+   * acted (see InteractionRecorder). Unlike recordStep, it does not re-query the DOM, which may
+   * already have changed or navigated away.
+   */
+  recordCapturedStep(
+    action: TraceActionType,
+    params: {
+      target?: ElementFingerprint;
+      value?: string;
+      url?: string;
+      domSnapshotAfter?: string;
+    }
+  ): TraceStep {
+    const stepIndex = ++this.stepCounter;
+    const step: TraceStep = {
+      index: stepIndex,
+      type: action,
+      target: params.target,
+      value: params.value,
+      url: params.url,
+      timestamp: new Date().toISOString(),
+      domSnapshotAfter: params.domSnapshotAfter,
+      screenshotHash: params.domSnapshotAfter ? sha256(params.domSnapshotAfter) : undefined,
+    };
+    this.trace.steps.push(step);
+    const label = action === 'fill' && params.value !== undefined ? `${params.target?.css} = ${JSON.stringify(params.value)}` : params.target?.css || params.url;
+    logger.step(stepIndex, action.toUpperCase(), label);
+    return step;
+  }
+
+  /**
    * Record a trace action step
    */
   async recordStep(

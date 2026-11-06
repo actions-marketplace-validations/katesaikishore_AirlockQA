@@ -3,7 +3,7 @@
  * Type contracts for browser testing, request policy, checkpoints, and evidence prototypes.
  */
 
-export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'HEAD' | 'OPTIONS';
+export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'HEAD' | 'OPTIONS' | 'CONNECT';
 
 // ==========================================
 // 1: PHANTOM CREDENTIALS & POLICY TYPES
@@ -12,6 +12,8 @@ export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'HEAD' | 
 export interface PhantomSecretConfig {
   /** Configured secret used by the trusted proxy for an allowed substitution. */
   real: string;
+  /** Environment variable the loader read `real` from, when configured that way. */
+  realFromEnv?: string;
   /** The dummy phantom token injected into the sandbox */
   phantom: string;
   /** Permitted destination hosts for this secret */
@@ -59,6 +61,8 @@ export interface InterceptedRequest {
   realTokensSwapped: string[];
   policyVerdict: 'ALLOWED' | 'BLOCKED' | 'SANITIZED';
   policyReason?: string;
+  /** Set when the policy allowed the request but the trusted forwarder failed and the request was aborted. */
+  forwardError?: string;
 }
 
 export interface InterceptedResponse {
