@@ -58,9 +58,6 @@ jobs:
           cat /tmp/airlockqa-demo-store.log
           exit 1
 
-      - name: Run automated tests
-        run: bun test
-
       - name: Provide evidence signing key
         env:
           REPO_SIGNING_KEY: ${{ secrets.AIRLOCK_SIGNING_KEY }}
@@ -69,6 +66,9 @@ jobs:
           key="${REPO_SIGNING_KEY:-$(openssl rand -hex 32)}"
           echo "::add-mask::$key"
           echo "AIRLOCK_SIGNING_KEY=$key" >> "$GITHUB_ENV"
+
+      - name: Run automated tests
+        run: bun test
 
       - name: Run CLI against demo store
         run: bun ./bin/airlock.ts run --url http://127.0.0.1:3900
