@@ -10,6 +10,23 @@ export interface HtmlReportData {
   networkRequests?: InterceptedRequest[];
 }
 
+/** Escape a value for safe insertion into HTML text or a quoted attribute. */
+export function escapeHtml(value: unknown): string {
+  const str = value === null || value === undefined ? '' : typeof value === 'string' ? value : String(value);
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+const e = escapeHtml;
+
+function display(value: number | null | undefined, suffix = ''): string {
+  return value === null || value === undefined ? 'not measured' : `${escapeHtml(value)}${suffix}`;
+}
+
 export class HtmlReporter {
   static generateReport(data: HtmlReportData, outputPath: string): void {
     const { bundle, trace, ledgerBlocks = [], networkRequests = [] } = data;
@@ -22,7 +39,7 @@ export class HtmlReporter {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AirlockQA Run Evidence - ${bundle.runId}</title>
+  <title>AirlockQA Run Evidence - ${e(bundle.runId)}</title>
   <style>
     :root {
       --bg: #090d16;
@@ -142,8 +159,9 @@ export class HtmlReporter {
         <span class="badge badge-tag">Signed run evidence · not a compliance assessment</span>
       </div>
       <div style="text-align: right; font-size: 0.85rem; color: var(--text-dim);">
-        <div>Run ID: <code>${bundle.runId}</code></div>
-        <div>Generated: ${bundle.timestamp}</div>
+        <div>Run ID: <code>${e(bundle.runId)}</code></div>
+        <div>Generated: ${e(bundle.timestamp)}</div>
+        <div>Spec: ${e(bundle.specVersion)} · Key: <code>${e(bundle.publicKeyOrKeyId)}</code></div>
       </div>
     </header>
 
@@ -151,26 +169,26 @@ export class HtmlReporter {
     <div class="grid-4">
       <div class="card">
         <div class="card-title">Request policy</div>
-        <div class="card-val" style="color: var(--emerald);">${bundle.policyAudit.egressBlockedCount} blocked</div>
-        <div class="card-desc">${tokenSwapCount} configured-token substitutions observed | ${bundle.policyAudit.egressAllowedCount} browser requests allowed</div>
+        <div class="card-val" style="color: var(--emerald);">${display(bundle.policyAudit.egressBlockedCount)} blocked</div>
+        <div class="card-desc">${e(tokenSwapCount)} configured-token substitutions observed | ${display(bundle.policyAudit.egressAllowedCount)} browser requests allowed</div>
       </div>
 
       <div class="card">
         <div class="card-title">Run duration</div>
-        <div class="card-val" style="color: var(--cyan);">${bundle.summary.durationMs}ms</div>
+        <div class="card-val" style="color: var(--cyan);">${display(bundle.summary.durationMs, 'ms')}</div>
         <div class="card-desc">Wall-clock duration recorded by this runner; step pass/fail is not assessed.</div>
       </div>
 
       <div class="card">
         <div class="card-title">Browser checkpoints</div>
-        <div class="card-val" style="color: var(--indigo);">${checkpointCount}</div>
+        <div class="card-val" style="color: var(--indigo);">${e(checkpointCount)}</div>
         <div class="card-desc">Checkpoint events recorded; these are browser state, not VM memory snapshots.</div>
       </div>
 
       <div class="card">
         <div class="card-title">Cryptographic Ledger</div>
-        <div class="card-val" style="color: var(--amber);">${bundle.blocksCount} Blocks</div>
-        <div class="card-desc">Hash-linked run entries with an HMAC-SHA256 signature; not a compliance certification.</div>
+        <div class="card-val" style="color: var(--amber);">${e(bundle.blocksCount)} Blocks</div>
+        <div class="card-desc">Hash-linked run entries with a ${e(bundle.signingAlgorithm)} signature; not a compliance certification.</div>
       </div>
     </div>
 
@@ -178,10 +196,10 @@ export class HtmlReporter {
     <h2>🔏 Signed run evidence</h2>
     <div class="card">
       <div style="font-size: 0.85rem; color: var(--text-dim); margin-bottom: 0.5rem;">Merkle Root Hash (SHA-256):</div>
-      <div class="merkle-box">${bundle.merkleRoot}</div>
+      <div class="merkle-box">${e(bundle.merkleRoot)}</div>
 
-      <div style="font-size: 0.85rem; color: var(--text-dim); margin-bottom: 0.5rem;">Digital Signature (${bundle.signingAlgorithm}):</div>
-      <div class="merkle-box" style="color: var(--amber);">${bundle.signature}</div>
+      <div style="font-size: 0.85rem; color: var(--text-dim); margin-bottom: 0.5rem;">Digital Signature (${e(bundle.signingAlgorithm)}):</div>
+      <div class="merkle-box" style="color: var(--amber);">${e(bundle.signature)}</div>
 
       <div style="font-size: 0.85rem; color: var(--text-dim);">
         CLI Verification Command: <code>npx airlock audit ./latest-attestation.json</code>
@@ -194,22 +212,22 @@ export class HtmlReporter {
     <div class="soc2-grid">
       <div class="soc2-item">
         <div class="soc2-title">CC6.1: Logical Access & Secrets</div>
-        <span class="badge badge-verified" style="margin: 0.35rem 0;">${bundle.soc2Mapping.cc6_1_logicalAccess}</span>
+        <span class="badge badge-verified" style="margin: 0.35rem 0;">${e(bundle.soc2Mapping.cc6_1_logicalAccess)}</span>
         <div class="soc2-desc">Not assessed. The runner does not comprehensively measure whether real secrets reached the browser process.</div>
       </div>
       <div class="soc2-item">
         <div class="soc2-title">CC6.6: Boundary & Egress Protection</div>
-        <span class="badge badge-verified" style="margin: 0.35rem 0;">${bundle.soc2Mapping.cc6_6_boundaryProtection}</span>
+        <span class="badge badge-verified" style="margin: 0.35rem 0;">${e(bundle.soc2Mapping.cc6_6_boundaryProtection)}</span>
         <div class="soc2-desc">Not assessed. The recorded policy events cover intercepted browser-context requests only.</div>
       </div>
       <div class="soc2-item">
         <div class="soc2-title">CC7.1: Deterministic Verification</div>
-        <span class="badge badge-verified" style="margin: 0.35rem 0;">${bundle.soc2Mapping.cc7_1_changeVerification}</span>
+        <span class="badge badge-verified" style="margin: 0.35rem 0;">${e(bundle.soc2Mapping.cc7_1_changeVerification)}</span>
         <div class="soc2-desc">Not assessed. Action dispatch records do not establish that assertions passed.</div>
       </div>
       <div class="soc2-item">
         <div class="soc2-title">CC8.1: Non-Repudiation</div>
-        <span class="badge badge-verified" style="margin: 0.35rem 0;">${bundle.soc2Mapping.cc8_1_nonRepudiation}</span>
+        <span class="badge badge-verified" style="margin: 0.35rem 0;">${e(bundle.soc2Mapping.cc8_1_nonRepudiation)}</span>
         <div class="soc2-desc">Not assessed as a control. The bundle includes a hash-chain validity result for these recorded entries.</div>
       </div>
     </div>
@@ -236,15 +254,15 @@ export class HtmlReporter {
             .map(
               (r) => `
           <tr>
-            <td style="color: var(--text-dim);">${r.timestamp.split('T')[1].slice(0, 8)}</td>
-            <td><b>${r.method}</b></td>
-            <td><code>${r.host}${r.path}</code></td>
+            <td style="color: var(--text-dim);">${e((r.timestamp.split('T')[1] || r.timestamp).slice(0, 8))}</td>
+            <td><b>${e(r.method)}</b></td>
+            <td><code>${e(r.host)}${e(r.path)}</code></td>
             <td>
               <span class="badge ${r.policyVerdict === 'ALLOWED' ? 'badge-verified' : 'badge-blocked'}">
-                ${r.policyVerdict}
-              </span>
+                ${e(r.policyVerdict)}
+              </span>${r.policyReason ? `<div class="card-desc">${e(r.policyReason)}</div>` : ''}
             </td>
-            <td>${r.phantomTokensDetected.length > 0 ? `<code>${r.phantomTokensDetected.join(', ')}</code>` : '<span style="color: var(--text-dim);">-</span>'}</td>
+            <td>${r.phantomTokensDetected.length > 0 ? `<code>${e(r.phantomTokensDetected.join(', '))}</code>` : '<span style="color: var(--text-dim);">-</span>'}</td>
             <td>${r.realTokensSwapped.length > 0 ? `<span style="color: var(--emerald);">✔ In-Flight Swap</span>` : '<span style="color: var(--text-dim);">-</span>'}</td>
           </tr>`
             )
@@ -277,11 +295,47 @@ export class HtmlReporter {
             .map(
               (s) => `
           <tr>
-            <td>#${s.index}</td>
-            <td><b>${s.type.toUpperCase()}</b></td>
-            <td><code>${s.target?.css || s.url || s.checkpointName || s.value || '-'}</code></td>
-            <td style="color: var(--text-dim);">${s.durationMs == null ? '—' : `${s.durationMs}ms`}</td>
-            <td><code>${(s.screenshotHash || '').substring(0, 10)}...</code></td>
+            <td>#${e(s.index)}</td>
+            <td><b>${e(String(s.type).toUpperCase())}</b></td>
+            <td><code>${e(s.target?.css || s.url || s.checkpointName || s.value || '-')}</code></td>
+            <td style="color: var(--text-dim);">${s.durationMs == null ? 'not measured' : `${e(s.durationMs)}ms`}</td>
+            <td><code>${e((s.screenshotHash || '').substring(0, 10))}...</code></td>
+          </tr>`
+            )
+            .join('')}
+        </tbody>
+      </table>
+    </div>
+    `
+        : ''
+    }
+
+    <!-- Ledger entries -->
+    ${
+      ledgerBlocks.length > 0
+        ? `
+    <h2>🧾 Ledger entries</h2>
+    <div class="card" style="padding: 0; overflow-x: auto;">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Type</th>
+            <th>Time</th>
+            <th>Payload</th>
+            <th>Block hash</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${ledgerBlocks
+            .map(
+              (b) => `
+          <tr>
+            <td>${e(b.index)}</td>
+            <td><b>${e(b.type)}</b></td>
+            <td style="color: var(--text-dim);">${e(b.timestamp)}</td>
+            <td><code>${e(JSON.stringify(b.payload))}</code></td>
+            <td><code>${e(String(b.blockHash).substring(0, 16))}...</code></td>
           </tr>`
             )
             .join('')}

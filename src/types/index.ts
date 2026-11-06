@@ -242,13 +242,25 @@ export interface LedgerBlock {
   blockHash: string;
 }
 
+/**
+ * Signed run-evidence bundle (spec v2).
+ *
+ * `signature` covers the canonical JSON of every other field in the bundle
+ * (including the embedded ledger blocks). v1 bundles, which signed only the
+ * Merkle root, are rejected by the verifier.
+ */
 export interface ComplianceProofBundle {
-  specVersion: '1.0.0';
+  specVersion: '2.0.0';
   runId: string;
   merkleRoot: string;
   signature: string;
   signingAlgorithm: 'HMAC-SHA256' | 'Ed25519';
+  /** HMAC: `hmac:<fingerprint>` or `INSECURE-DEV-KEY`; Ed25519: `ed25519:<fingerprint>`. */
   publicKeyOrKeyId: string;
+  /** SPKI PEM public key, present for Ed25519 bundles. */
+  publicKey?: string;
+  /** True when the bundle was signed with the built-in development key. Such evidence proves nothing. */
+  insecureDevKey: boolean;
   timestamp: string;
   summary: {
     totalSteps: number;
@@ -274,6 +286,8 @@ export interface ComplianceProofBundle {
   };
   blocksCount: number;
   ledgerVerificationStatus: 'VALID_CHAIN' | 'TAMPERED';
+  /** Full ledger, so verifiers can recompute the hash chain and Merkle root. */
+  ledgerBlocks: LedgerBlock[];
 }
 
 // ==========================================

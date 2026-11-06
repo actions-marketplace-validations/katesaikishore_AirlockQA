@@ -26,7 +26,13 @@ export interface CliResult {
 
 /** Run the Airlock CLI with Bun and capture its combined output. */
 export function runCli(args: string[], options: { cwd?: string; env?: Record<string, string | undefined> } = {}): Promise<CliResult> {
-  const env: Record<string, string | undefined> = { ...process.env, NO_COLOR: '1', ...options.env };
+  // A fixed test-only signing key, so CLI runs sign evidence even when CI=true refuses the dev key.
+  const env: Record<string, string | undefined> = {
+    ...process.env,
+    NO_COLOR: '1',
+    AIRLOCK_SIGNING_KEY: process.env.AIRLOCK_SIGNING_KEY || 'airlock-cli-tests-only-signing-key-0001',
+    ...options.env,
+  };
   for (const [key, value] of Object.entries(env)) if (value === undefined) delete env[key];
   return new Promise((resolve, reject) => {
     const child = spawn(process.execPath, [CLI, ...args], {

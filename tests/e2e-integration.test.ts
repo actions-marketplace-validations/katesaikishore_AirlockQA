@@ -17,10 +17,17 @@ describe('End-to-End AirlockQA Integration Test', () => {
   const macChromePath = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
   const chromePath = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH ||
     (fs.existsSync(macChromePath) ? macChromePath : undefined);
+  let previousSigningKey: string | undefined;
   const DEMO_PORT = 3999;
   const baseUrl = `http://127.0.0.1:${DEMO_PORT}`;
 
   beforeAll(async () => {
+    // AIRLOCK_SIGNING_KEY takes priority over compliance.signingKey; pin this test's key so the
+    // bundle verifies with it even when CI exports a different key.
+    previousSigningKey = process.env.AIRLOCK_SIGNING_KEY;
+    process.env.AIRLOCK_SIGNING_KEY = 'e2e-test-hmac-master-key-32-chars!';
+    // The demo store accepts whatever real key the runner substitutes; match this test's config.
+    process.env.STRIPE_SECRET_KEY = 'sk_test_live_sample_51M001AcmeProductionSecretKey9900';
     demoServer = await startDemoServer(DEMO_PORT);
     browser = await chromium.launch({
       executablePath: chromePath,
@@ -29,6 +36,8 @@ describe('End-to-End AirlockQA Integration Test', () => {
   });
 
   afterAll(async () => {
+    if (previousSigningKey === undefined) delete process.env.AIRLOCK_SIGNING_KEY;
+    else process.env.AIRLOCK_SIGNING_KEY = previousSigningKey;
     if (browser) await browser.close();
     if (demoServer) {
       await new Promise<void>((resolve) => demoServer.close(() => resolve()));

@@ -48,7 +48,7 @@ AirlockQA is an early-stage TypeScript browser testing runtime. It includes expl
 - **⚡ Trace Compilation:** Converts recorded browser actions into Playwright-oriented test code. Runtime and stability depend on the application and environment.
 - **🔄 Locator Recovery Prototype:** A similarity-based helper can suggest or resolve candidate locators from available DOM features; review recovered selectors in your application’s test context.
 - **⏱️ Browser Checkpoints:** Saves browser storage state, session storage, URL, and a DOM snapshot/hash, then can restore that data into a browser context. It does not snapshot process or VM memory.
-- **📜 Execution Evidence:** Builds hash-linked ledger entries and signed bundles that can be verified with the configured key. This is an evidence mechanism, not a compliance certification.
+- **📜 Execution Evidence:** Builds hash-linked ledger entries and signed bundles (spec 2.0.0) that embed the full ledger. The HMAC-SHA256 or Ed25519 signature covers every field of the bundle, and `airlock audit` recomputes the hash chain and Merkle root. This is an evidence mechanism, not a compliance certification.
 
 ---
 
@@ -153,7 +153,7 @@ AirlockQA is configured via `airlock.config.json` in the root of your repository
   "secrets": {
     "API_TOKEN": {
       "realFromEnv": "API_TOKEN",
-      "real": "REPLACE_ME_REAL_SECRET",
+      "real": "REPLACE_ME_API_TOKEN",
       "phantom": "ph_sec_test_dummy_token",
       "allowedHosts": ["api.example.com"],
       "allowedMethods": ["GET", "POST"],
@@ -179,6 +179,8 @@ AirlockQA is configured via `airlock.config.json` in the root of your repository
   }
 }
 ```
+
+**Evidence signing keys.** Prefer setting `AIRLOCK_SIGNING_KEY` from a secret store over committing `compliance.signingKey`. Set `AIRLOCK_SIGNING_ALGORITHM=Ed25519`, or supply a PEM private key, to sign with Ed25519; the bundle then carries the public key, and verifiers can pin it with `AIRLOCK_TRUSTED_PUBLIC_KEY`. With no key configured, runs fail when `CI` is set. Locally they fall back to a labelled, insecure development key, print a warning, and mark the bundle `insecureDevKey: true`. Bundles from v1 (`specVersion: 1.0.0`) are rejected. See [docs/HOW-TO-USE.md](docs/HOW-TO-USE.md#airlock-audit-bundlepath).
 
 `compliance.signingKey` has no default and is intentionally left out of the sample: keep it out of committed files and supply it from a local, untracked config. Each secret's real value is read from the environment variable named by `realFromEnv`; the literal `real` value is only a fallback placeholder. Set `browser.executablePath` or `AIRLOCK_CHROME_PATH` to use a specific Chrome build. Set `AIRLOCK_CHECKPOINT_KEY` to encrypt saved browser-state checkpoints (they contain cookies and storage).
 
@@ -222,7 +224,7 @@ Commands exit with a non-zero code when they fail (missing files, failed tests o
 | `airlock warp <duration>` | Apply the current browser time-warp prototype (`+14 days`, `+1 hour`); see limitations below |
 | `airlock chaos [url]` | Click `--action` once and fail if the mutation request has no idempotency key; scenarios are not replayed |
 | `airlock teleport <capsule>` | Synthesize a basic Playwright reproduction spec from a state capsule (`--out`, alias `--output`) |
-| `airlock audit [bundle]` | Verify cryptographic signature and Merkle root of an audit bundle |
+| `airlock audit [bundle]` | Verify a run-evidence bundle: recompute the hash chain and Merkle root, check the signature over the whole bundle, and exit 1 on failure |
 | `airlock dataset` | View logged UI mutation patches and selector healing accuracy |
 | `airlock serve` | Launch the local dashboard and run-evidence viewer |
 
