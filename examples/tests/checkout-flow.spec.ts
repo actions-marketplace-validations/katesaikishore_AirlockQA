@@ -1,6 +1,6 @@
 /**
  * AUTO-COMPILED BY AIRLOCK DETERMINISTIC COMPILER
- * Flywheel Moat: AI explores once -> Compiles to Zero-Token Deterministic Playwright
+ * Deterministic Spec: Exploration Trace -> Playwright TypeScript Spec
  * Execution Target: <800ms | Token Cost: $0.00
  * Trace ID: trace_65fb1d165de5
  * Generated: 2026-11-05T22:11:11.240Z
