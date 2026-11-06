@@ -18,7 +18,7 @@ import { AirlockLedger } from '../compliance/ledger.js';
 import { CheckpointManager } from '../forker/checkpoint-manager.js';
 import { StateForker, type ForkWorkerFunction } from '../forker/state-forker.js';
 import { SelfHealer } from '../healer/self-healer.js';
-import { AttestationEngine } from '../compliance/attestation.js';
+import { AttestationEngine, resolveSigningKey, warnDevSigningKey } from '../compliance/attestation.js';
 import { HtmlReporter } from '../compliance/html-reporter.js';
 import { Soc2Reporter } from '../compliance/soc2-reporter.js';
 import { TimeWarper } from '../timewarp/time-warper.js';
@@ -188,8 +188,14 @@ export class AirlockRunner {
       totalSteps: this.totalStepsCount,
     });
 
+    // Throws when CI is set and no real key is configured; locally falls back to a labelled dev key.
+    const signing = resolveSigningKey(this.config.compliance?.signingKey);
+    if (signing.isDevKey) warnDevSigningKey();
+
     const bundle = AttestationEngine.generateBundle(this.ledger, {
-      signingKey: this.config.compliance?.signingKey || 'airlock-default-signing-key',
+      signingKey: signing.key,
+      signingAlgorithm: signing.algorithm,
+      insecureDevKey: signing.isDevKey,
       outputDir: this.config.compliance?.outputDir,
       totalSteps: this.totalStepsCount,
       durationMs,

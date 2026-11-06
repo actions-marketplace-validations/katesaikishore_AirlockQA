@@ -423,8 +423,9 @@ program
 // ==========================================
 program
   .command('audit [bundlePath]')
-  .description('Cryptographically verify an attestation bundle and zero-leak compliance ledger')
-  .action((bundlePathArg) => {
+  .description('Verify a signed run-evidence bundle (hash chain, Merkle root and signature). Not a compliance assessment.')
+  .action(async (bundlePathArg) => {
+    const { resolveSigningKey, warnDevSigningKey } = await import('../src/compliance/attestation.js');
     logger.banner();
     const config = loadConfig();
     const targetPath = bundlePathArg
@@ -432,30 +433,63 @@ program
       : path.resolve(process.cwd(), config.compliance?.outputDir || './.airlock/compliance', 'latest-attestation.json');
 
     if (!fs.existsSync(targetPath)) {
-      logger.error(`Attestation bundle not found at: ${targetPath}`);
-      return;
-    }
-
-    const bundle = readJsonFile<ComplianceProofBundle>(targetPath);
-    const signingKey = config.compliance?.signingKey || 'airlock-hmac-master-key-32-chars-long!';
-
-    logger.moat(4, 'Verifying Tamper-Evident Attestation Ledger');
-    logger.info(`Run ID: ${bundle.runId}`);
-    logger.info(`Merkle Root: ${bundle.merkleRoot}`);
-    logger.info(`Signature: ${bundle.signature}`);
-
-    const result = AttestationEngine.verifyBundle(bundle, signingKey);
-
-    if (result.valid) {
-      logger.success('✔ CRYPTOGRAPHIC VERIFICATION PASSED');
-      logger.info('  ├─ Merkle root signature: VALID & UNTAMPERED');
-      logger.info(`  ├─ Zero-Leak Secret Guarantee: VERIFIED (${bundle.policyAudit.realSecretsExposedToSandbox} plaintext leaks)`);
-      logger.info(`  ├─ Egress Boundary Protection: VERIFIED (${bundle.policyAudit.egressBlockedCount} mutations blocked)`);
-      logger.info(`  └─ SOC 2 Criteria CC6.1, CC6.6, CC7.1, CC8.1: COMPLIANT`);
-    } else {
-      logger.error(`✖ CRYPTOGRAPHIC VERIFICATION FAILED: ${result.reason}`);
+      logger.error(`Evidence bundle not found at: ${targetPath}`);
       process.exit(1);
     }
+
+    let bundle: ComplianceProofBundle;
+    try {
+      bundle = readJsonFile<ComplianceProofBundle>(targetPath);
+    } catch (err) {
+      logger.error(`Cannot read evidence bundle: ${(err as Error).message}`);
+      process.exit(1);
+    }
+
+    const shown = (v: unknown) => (v === null || v === undefined ? 'not measured' : String(v));
+    logger.moat(4, 'Verifying signed run-evidence bundle');
+    logger.info(`File: ${targetPath}`);
+    logger.info(`Spec version: ${shown(bundle.specVersion)}`);
+    logger.info(`Run ID: ${shown(bundle.runId)}`);
+    logger.info(`Signing: ${shown(bundle.signingAlgorithm)} (key ${shown(bundle.publicKeyOrKeyId)})`);
+    logger.info(`Merkle root: ${shown(bundle.merkleRoot)}`);
+
+    // HMAC needs the shared secret. For Ed25519 the configured key (or AIRLOCK_TRUSTED_PUBLIC_KEY) pins the signer.
+    let verifyKey: string | undefined;
+    const trustedPublicKey = process.env.AIRLOCK_TRUSTED_PUBLIC_KEY || undefined;
+    try {
+      const signing = resolveSigningKey(config.compliance?.signingKey);
+      if (signing.isDevKey) {
+        warnDevSigningKey();
+        // Only an HMAC dev bundle can be checked with the dev key; never pin Ed25519 to it.
+        verifyKey = bundle.signingAlgorithm === 'HMAC-SHA256' ? signing.key : undefined;
+      } else {
+        verifyKey = signing.key;
+      }
+    } catch (err) {
+      if (bundle.signingAlgorithm !== 'Ed25519' || !trustedPublicKey) {
+        logger.error((err as Error).message);
+        process.exit(1);
+      }
+    }
+
+    const result = AttestationEngine.verifyBundle(bundle, { key: verifyKey, trustedPublicKey });
+    if (!result.valid) {
+      logger.error(`VERIFICATION FAILED: ${result.reason}`);
+      process.exit(1);
+    }
+
+    logger.success('Signature, hash chain and Merkle root verified');
+    logger.info(`  ├─ Ledger blocks: ${bundle.blocksCount} (chain recomputed: ${bundle.ledgerVerificationStatus})`);
+    logger.info(`  ├─ Steps dispatched: ${shown(bundle.summary.totalSteps)} | passed: ${shown(bundle.summary.passedSteps)} | failed: ${shown(bundle.summary.failedSteps)}`);
+    logger.info(`  ├─ Duration: ${bundle.summary.durationMs == null ? 'not measured' : `${bundle.summary.durationMs}ms`} | AI token cost: ${shown(bundle.summary.aiTokenCostUsd)}`);
+    logger.info(`  ├─ Requests blocked: ${shown(bundle.policyAudit.egressBlockedCount)} | allowed: ${shown(bundle.policyAudit.egressAllowedCount)} | mutations blocked: ${shown(bundle.policyAudit.unauthorizedMutationsPrevented)}`);
+    logger.info(`  ├─ Phantom tokens configured: ${shown(bundle.policyAudit.phantomTokensConfigured)} | real secrets exposed to sandbox: ${shown(bundle.policyAudit.realSecretsExposedToSandbox)}`);
+    logger.info(
+      `  └─ SOC 2 mapping: CC6.1 ${shown(bundle.soc2Mapping.cc6_1_logicalAccess)}, CC6.6 ${shown(bundle.soc2Mapping.cc6_6_boundaryProtection)}, ` +
+        `CC7.1 ${shown(bundle.soc2Mapping.cc7_1_changeVerification)}, CC8.1 ${shown(bundle.soc2Mapping.cc8_1_nonRepudiation)}`
+    );
+    for (const warning of result.warnings) logger.warn(warning);
+    logger.info('This bundle is signed run evidence, not a compliance assessment.');
   });
 
 // ==========================================

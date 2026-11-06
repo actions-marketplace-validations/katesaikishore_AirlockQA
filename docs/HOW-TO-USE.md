@@ -224,7 +224,7 @@ Executes your full end-to-end integration test locally, demonstrating:
 - Phantom credential substitution
 - Egress firewall policy blocking destructive mutations
 - Parallel state forking from saved checkpoints
-- Generation of the Merkle-tree cryptographic attestation bundle
+- Generation of the signed run-evidence bundle (spec 2.0.0, with the ledger embedded); see [`airlock audit`](#airlock-audit-bundlepath) for signing keys
 
 ```bash
 bun run cli run
@@ -270,11 +270,36 @@ bun run cli teleport .airlock/traces/crash-capsule.json -o ./examples/tests/repr
 ---
 
 ### `airlock audit [bundlePath]`
-Cryptographically verifies an attestation bundle's Merkle tree and HMAC signature, checking that no real secrets were leaked to the sandbox and all egress policies were enforced.
+Verifies a signed run-evidence bundle (spec **2.0.0**). It recomputes the ledger hash chain and the Merkle root from the blocks embedded in the bundle, then checks a signature that covers **every field** of the bundle (everything except `signature` itself). It exits with code `1` on any failure.
 
 ```bash
-bun run cli audit .airlock/compliance/latest-attestation.json
+AIRLOCK_SIGNING_KEY=... bun run cli audit .airlock/compliance/latest-attestation.json
 ```
+
+The output shows only what the bundle records: block count, dispatched-step count, durations, request-policy counts, and the SOC 2 mapping, which is always `NOT_ASSESSED`. Fields the runner does not measure (passed/failed steps, AI token cost, real secrets exposed to the sandbox) are printed as `not measured`. A valid bundle is signed run evidence, not a compliance assessment.
+
+#### Signing keys
+
+| Setting | Effect |
+| --- | --- |
+| `AIRLOCK_SIGNING_KEY` env var | Signing key (takes precedence over `compliance.signingKey`). |
+| `compliance.signingKey` | Signing key from config. Shipped placeholder values count as unset. |
+| `AIRLOCK_SIGNING_ALGORITHM` | `HMAC-SHA256` (default) or `Ed25519`. A PEM private key selects Ed25519 automatically. |
+| `AIRLOCK_TRUSTED_PUBLIC_KEY` | Ed25519 SPKI PEM public key that `audit` requires the bundle to be signed with. |
+
+- With no key and `CI` set, `run` and `audit` fail.
+- With no key locally, a clearly labelled development key is used, a loud warning is printed, and the bundle records `insecureDevKey: true`. Such a bundle proves nothing, because the dev key is public.
+- **HMAC-SHA256**: the verifier needs the same secret.
+- **Ed25519**: the bundle carries the public key (`publicKey`) and its id (`publicKeyOrKeyId: ed25519:<fingerprint>`). Use a PKCS#8 PEM private key, or any secret from which a key is derived. Pin the signer with `AIRLOCK_TRUSTED_PUBLIC_KEY` or the signing key; otherwise `audit` warns that the key is not pinned.
+
+Generate an Ed25519 key with `openssl genpkey -algorithm ed25519 -out airlock-signing.pem`.
+
+#### Bundle format (spec 2.0.0)
+
+- `ledgerBlocks`: the full ledger. Each block hash is SHA-256 over the canonical JSON of the block (keys sorted at every depth), so nested payload fields are covered.
+- `merkleRoot`: Merkle root over the block hashes, with domain separation (leaves `SHA-256(0x00 || leaf)`, inner nodes `SHA-256(0x01 || left || right)`). An unpaired node is promoted rather than duplicated.
+- `signature`: HMAC-SHA256 (hex) or Ed25519 (base64) over `"airlockqa-run-evidence-v2\n" + canonicalJson(bundle without signature)`.
+- v1 bundles (`specVersion: 1.0.0`) signed only the Merkle root and are rejected with a clear error. Re-run to produce a v2 bundle.
 
 ---
 
@@ -312,6 +337,9 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    env:
+      # Required: runs and audits fail in CI without a signing key.
+      AIRLOCK_SIGNING_KEY: ${{ secrets.AIRLOCK_SIGNING_KEY }}
     steps:
       - uses: actions/checkout@v4
 

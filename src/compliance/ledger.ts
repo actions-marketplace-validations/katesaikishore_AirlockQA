@@ -1,11 +1,12 @@
 import type { LedgerBlock } from '../types/index.js';
-import { sha256 } from '../utils/crypto.js';
+import { canonicalJson, sha256 } from '../utils/crypto.js';
 import { MerkleTree } from './merkle-tree.js';
 import { logger } from '../utils/logger.js';
 
 export class AirlockLedger {
   private blocks: LedgerBlock[] = [];
-  private genesisHash = '0000000000000000000000000000000000000000000000000000000000000000';
+  static readonly GENESIS_PREVIOUS_HASH = '0000000000000000000000000000000000000000000000000000000000000000';
+  private genesisHash = AirlockLedger.GENESIS_PREVIOUS_HASH;
 
   constructor() {
     this.initGenesis();
@@ -24,15 +25,34 @@ export class AirlockLedger {
     this.blocks.push(genesisBlock);
   }
 
+  /**
+   * Hash every field of a block (except blockHash) using canonical JSON, so nested
+   * payload fields at any depth are covered.
+   */
+  static computeBlockHash(block: Omit<LedgerBlock, 'blockHash'>): string {
+    return sha256(
+      canonicalJson({
+        v: 2,
+        index: block.index,
+        timestamp: block.timestamp,
+        type: block.type,
+        payload: block.payload,
+        previousHash: block.previousHash,
+      })
+    );
+  }
+
   private computeBlockHash(block: Omit<LedgerBlock, 'blockHash'>): string {
-    const payloadStr = JSON.stringify(block.payload, Object.keys(block.payload).sort());
-    return sha256(`${block.index}:${block.timestamp}:${block.type}:${payloadStr}:${block.previousHash}`);
+    return AirlockLedger.computeBlockHash(block);
   }
 
   append(type: LedgerBlock['type'], payload: Record<string, unknown>): LedgerBlock {
     const prevBlock = this.blocks[this.blocks.length - 1];
     const index = this.blocks.length;
     const timestamp = new Date().toISOString();
+    // Detach from the caller's object and normalise to plain JSON (e.g. NaN -> null),
+    // so the stored payload is exactly what gets hashed and exported.
+    payload = JSON.parse(JSON.stringify(payload ?? {}));
 
     const blockWithoutHash: Omit<LedgerBlock, 'blockHash'> = {
       index,
@@ -72,16 +92,30 @@ export class AirlockLedger {
    * Verify the integrity of the entire cryptographic hash chain
    */
   verifyChain(): { valid: boolean; tamperedIndex?: number; reason?: string } {
-    for (let i = 0; i < this.blocks.length; i++) {
-      const block = this.blocks[i];
+    return AirlockLedger.verifyBlocks(this.blocks);
+  }
+
+  /**
+   * Verify a hash chain from a list of blocks (e.g. blocks embedded in an evidence bundle).
+   */
+  static verifyBlocks(blocks: LedgerBlock[]): { valid: boolean; tamperedIndex?: number; reason?: string } {
+    if (!Array.isArray(blocks) || blocks.length === 0) {
+      return { valid: false, reason: 'Ledger has no blocks' };
+    }
+    for (let i = 0; i < blocks.length; i++) {
+      const block = blocks[i];
+
+      if (block.index !== i) {
+        return { valid: false, tamperedIndex: i, reason: `Block at position ${i} has index ${block.index}` };
+      }
 
       // 1. Verify previous hash pointer
       if (i === 0) {
-        if (block.previousHash !== this.genesisHash) {
+        if (block.previousHash !== AirlockLedger.GENESIS_PREVIOUS_HASH) {
           return { valid: false, tamperedIndex: 0, reason: 'Genesis previousHash is corrupted' };
         }
       } else {
-        const expectedPrevHash = this.blocks[i - 1].blockHash;
+        const expectedPrevHash = blocks[i - 1].blockHash;
         if (block.previousHash !== expectedPrevHash) {
           return {
             valid: false,
@@ -92,7 +126,12 @@ export class AirlockLedger {
       }
 
       // 2. Verify block hash calculation
-      const computedHash = this.computeBlockHash(block);
+      let computedHash: string;
+      try {
+        computedHash = AirlockLedger.computeBlockHash(block);
+      } catch (err) {
+        return { valid: false, tamperedIndex: i, reason: `Block ${i} cannot be hashed: ${(err as Error).message}` };
+      }
       if (computedHash !== block.blockHash) {
         return {
           valid: false,
@@ -105,4 +144,3 @@ export class AirlockLedger {
     return { valid: true };
   }
 }
-

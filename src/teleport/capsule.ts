@@ -7,7 +7,7 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import type { Page, BrowserContext } from 'playwright-core';
 import type { StateCapsule, TelemetryEvent } from '../types/index.js';
-import { sha256 } from '../utils/crypto.js';
+import { canonicalJson, sha256 } from '../utils/crypto.js';
 import { logger } from '../utils/logger.js';
 
 export class TelemetryRingBuffer {
@@ -159,7 +159,7 @@ export class CapsuleManager {
       checksum: '',
     };
 
-    capsule.checksum = sha256(JSON.stringify(capsule));
+    capsule.checksum = sha256(canonicalJson({ ...capsule, checksum: '' }));
     return capsule;
   }
 
@@ -235,31 +235,43 @@ export class CapsuleManager {
    * Synthesize a standalone deterministic Playwright test spec reproducing the crash
    */
   static synthesizeReproSpec(capsule: StateCapsule): string {
-    const escapedMsg = capsule.crash.message.replace(/'/g, "\\'");
+    // Every value is emitted as a JSON string literal; comment text cannot break out of the comment.
+    const lit = (v: unknown) =>
+      JSON.stringify(String(v ?? '')).replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');
+    const comment = (v: unknown) => String(v ?? '').replace(/[\r\n\u2028\u2029]+/g, ' ').replace(/\*\//g, '* /');
+    const storageLiteral = JSON.stringify(capsule.storage)
+      .replace(/\u2028/g, '\\u2028')
+      .replace(/\u2029/g, '\\u2029');
+    let pathname = '/';
+    try {
+      pathname = new URL(capsule.url).pathname;
+    } catch {
+      // keep '/'
+    }
     return `import { test, expect } from '@playwright/test';
 import { CapsuleManager } from 'airlockqa';
 
 /**
  * Auto-Synthesized Bug Reproduction Spec
- * Teleported from Production Crash: ${capsule.capsuleId}
- * Timestamp: ${capsule.timestamp}
- * Environment: ${capsule.environment}
- * Error: ${escapedMsg}
+ * Teleported from Production Crash: ${comment(capsule.capsuleId)}
+ * Timestamp: ${comment(capsule.timestamp)}
+ * Environment: ${comment(capsule.environment)}
+ * Error: ${comment(capsule.crash.message)}
  */
-test.describe('Reproduction: ${capsule.capsuleId}', () => {
+test.describe(${lit(`Reproduction: ${capsule.capsuleId}`)}, () => {
   test('deterministically reproduces production crash in headless browser', async ({ page, context }) => {
     // 1. Rehydrate storage state
     await page.addInitScript((storage) => {
       for (const [k, v] of Object.entries(storage.localStorage)) {
         window.localStorage.setItem(k, v);
       }
-    }, ${JSON.stringify(capsule.storage)});
+    }, ${storageLiteral});
 
     // 2. Navigate to reproduction target
-    await page.goto('${capsule.url}');
+    await page.goto(${lit(capsule.url)});
 
     // 3. Verify reproduction of the uncaught condition
-    expect(page.url()).toContain('${new URL(capsule.url).pathname}');
+    expect(page.url()).toContain(${lit(pathname)});
   });
 });
 `;
