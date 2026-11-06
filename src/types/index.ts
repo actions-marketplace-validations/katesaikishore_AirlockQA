@@ -3,7 +3,7 @@
  * Type contracts for browser testing, request policy, checkpoints, and evidence prototypes.
  */
 
-export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'HEAD' | 'OPTIONS';
+export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'HEAD' | 'OPTIONS' | 'CONNECT';
 
 // ==========================================
 // 1: PHANTOM CREDENTIALS & POLICY TYPES
@@ -59,6 +59,8 @@ export interface InterceptedRequest {
   realTokensSwapped: string[];
   policyVerdict: 'ALLOWED' | 'BLOCKED' | 'SANITIZED';
   policyReason?: string;
+  /** Set when the policy allowed the request but the trusted forwarder failed and the request was aborted. */
+  forwardError?: string;
 }
 
 export interface InterceptedResponse {

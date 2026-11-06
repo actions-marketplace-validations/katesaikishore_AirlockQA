@@ -44,7 +44,7 @@ AirlockQA is an early-stage TypeScript browser testing runtime. It includes expl
 
 ## Key Features
 
-- **🛡️ Request Policy Prototype:** The Playwright-context gateway can inspect configured phantom tokens, apply host/path/method rules, substitute configured values, and sanitize matching upstream responses. This is browser-request interception; it is not a general OS-level egress firewall or a guarantee that production credentials never enter the runner process.
+- **🛡️ Request Policy Prototype:** The Playwright-context gateway can inspect configured phantom tokens, apply host/path/method rules, substitute configured values, and sanitize matching upstream responses. This is browser-request interception; it is not a general OS-level egress firewall or a guarantee that production credentials never enter the runner process. See [Request policy limits](#request-policy-limits).
 - **⚡ Trace Compilation:** Converts recorded browser actions into Playwright-oriented test code. Runtime and stability depend on the application and environment.
 - **🔄 Locator Recovery Prototype:** A similarity-based helper can suggest or resolve candidate locators from available DOM features; review recovered selectors in your application’s test context.
 - **⏱️ Browser Checkpoints:** Saves browser storage state, session storage, URL, and a DOM snapshot/hash, then can restore that data into a browser context. It does not snapshot process or VM memory.
@@ -183,6 +183,18 @@ AirlockQA is configured via `airlock.config.json` in the root of your repository
 ## Prototype capabilities and limitations
 
 The commands below are early prototypes. Their current names do not imply kernel clock control, VM snapshots, network-wide capture, or production crash replay. Track the implementation gates in [`docs/five-impossible-moats-implementation-plan.md`](docs/five-impossible-moats-implementation-plan.md).
+
+### Request policy limits
+
+The request gateway has two entry points that apply the same leak check, policy and substitution:
+
+- **Playwright context (`attachToBrowserContext`)**: routes every request in the context. Allowed requests are forwarded by the runner's own HTTP client with phantom tokens swapped for real values. Redirects come back to the browser, so each hop is checked against policy again. If forwarding fails, the request is aborted and reported (`forwardError`); it is never continued through the browser with real values. Response bodies are decompressed. Text bodies are sanitized and returned without the stale `content-encoding` or `content-length` headers. Binary bodies are returned byte-for-byte.
+- **Standalone HTTP proxy (`startHttpProxy`)**: listens on `127.0.0.1` by default and only accepts absolute-form `http://` request URIs (`HTTP_PROXY`). The target comes from the request URI, and a request whose `Host` header does not match it is rejected with 400. Request bodies over `maxBodyBytes` (default 10 MiB) get 413. Binary responses are streamed through; text responses are buffered (with the same cap) so they can be sanitized.
+- **HTTPS through the proxy**: `CONNECT` is denied with 403 by default because the proxy cannot see inside a TLS tunnel, so it cannot swap tokens, detect leaks or sanitize responses. Hosts listed in the `connectAllowHosts` gateway option (or the `AIRLOCK_CONNECT_ALLOW_HOSTS` environment variable in the container) are tunnelled without inspection. AirlockQA does not ship a TLS-terminating proxy.
+
+Phantom tokens only work for the hosts in that secret's `allowedHosts`. A request carrying the token to any other host is blocked. Substitution and sanitizing are exact string matches in text content (`text/*`, JSON, form, XML, JavaScript). Binary, encoded or transformed values are not rewritten.
+
+**Container egress firewall.** `container/egress-firewall.sh` sets a default-deny `OUTPUT` filter. It allows loopback traffic, replies on established connections, and traffic from the dedicated `airlock-proxy` user only. It refuses to exempt uid 0. Direct port 80/443 traffic from other users is rejected, not redirected. Start the image with `AIRLOCK_EGRESS_FIREWALL=1` and `NET_ADMIN`. The entrypoint then applies the rules, runs the proxy as `airlock-proxy` and runs the CLI as `airlock` with `HTTP_PROXY`/`HTTPS_PROXY` set. This is a packet-filter backstop for one container, not proof of isolation: root can remove the rules, and code running as the proxy user is not constrained. It is off in `docker-compose.yml` because the `run` command forwards browser traffic from its own process (same user as the browser), and Playwright's request client does not use `HTTP_PROXY`, so that traffic would be rejected.
 
 ### Browser clock override
 

@@ -5,6 +5,7 @@ services:
     build:
       context: ..
       dockerfile: container/Dockerfile
+    user: airlock
     entrypoint: ["bun", "./examples/demo-store/server.ts"]
     ports:
       - "3900:3900"
@@ -20,11 +21,17 @@ services:
     environment:
       - BASE_URL=http://demo-store:3900
       - AIRLOCK_PROXY_PORT=8899
+      # Set to 1 to apply the default-deny egress firewall and route the sandbox user's
+      # traffic through the Airlock proxy (HTTP only; CONNECT denied unless listed in
+      # AIRLOCK_CONNECT_ALLOW_HOSTS). Off by default: the `run` command forwards browser
+      # requests from its own process, which the firewall would reject. See README
+      # "Request policy limits".
+      - AIRLOCK_EGRESS_FIREWALL=0
+      - AIRLOCK_CONNECT_ALLOW_HOSTS=
     cap_add:
       - NET_ADMIN
     ports:
       - "4100:4100"
-      - "8899:8899"
     networks:
       - airlock-isolated-net
     command: ["run", "--url", "http://demo-store:3900"]

@@ -157,9 +157,14 @@ Running `bun run cli init` (or `npx airlock init`) generates a default configura
 }
 ```
 
-### Security Rules:
-1. **Never send real secrets over the network**: Real secret values are kept exclusively in runner memory or edge vaults. The browser test runtime only sees `phantom` placeholders (e.g. `ph_sec_stripe_test_placeholder`).
-2. **Egress Firewall**: Outbound HTTP/HTTPS requests that attempt to invoke blocked paths (like `*/refund*` or `*/wipe*`) are immediately aborted with a 403 status.
+### Request policy rules
+1. **Phantom placeholders in the browser**: the browser only sees `phantom` values. The real value lives in the runner process and is substituted by the gateway after policy allows the request. Real values are sent upstream by the runner's own HTTP client (`context.request.fetch`), never by the browser. If that forwarding fails, the browser request is aborted and reported; it is not retried through the browser.
+2. **Secret host binding**: a request that carries a phantom token for a host outside that secret's `allowedHosts` is blocked with 403. An empty `allowedHosts` list allows no host.
+3. **Path and method rules**: requests that match blocked paths (like `*/refund*` or `*/wipe*`) or disallowed methods get a 403 response.
+4. **Value validation**: `real` and `phantom` must each be at least 8 characters, and no configured value may contain another. Invalid secrets fail at startup.
+5. **Host patterns**: `api.example.com` (that host, any port), `*.example.com` (the domain and its subdomains, any port), `host:port` (that port only; a URL without a port uses 80/443), or `*`.
+
+What it does not do: substitution and sanitizing are exact string matches in text bodies (`text/*`, JSON, form, XML, JavaScript). Binary bodies pass through unchanged, and encoded or transformed secrets are not detected. Only traffic routed through the Playwright context or the standalone proxy is covered. See the README section "Request policy limits" for the proxy and container details.
 
 ---
 
