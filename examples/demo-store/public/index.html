@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Acme Cloud Store - AirlockQA Target App</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --text: #f8fafc;
+      --cyan: #0ea5e9;
+      --emerald: #10b981;
+      --border: #334155;
+    }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      margin: 0;
+      padding: 2rem;
+    }
+    .container { max-width: 800px; margin: 0 auto; }
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    input, button {
+      padding: 0.6rem 1rem;
+      border-radius: 6px;
+      font-size: 0.95rem;
+    }
+    input {
+      background: #0f172a;
+      border: 1px solid var(--border);
+      color: #fff;
+      margin-right: 0.5rem;
+    }
+    button {
+      background: var(--cyan);
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    button:hover { opacity: 0.9; }
+    .hidden { display: none; }
+    .success { color: var(--emerald); font-weight: 600; margin-top: 0.5rem; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🚀 Acme Cloud SaaS Store</h1>
+    <p style="color: #94a3b8; margin-bottom: 2rem;">AirlockQA Demonstration Sandbox Application</p>
+
+    <!-- Section 1: Auth -->
+    <div id="auth-section" class="card">
+      <h2>Step 1: Test Authentication</h2>
+      <form id="login-form">
+        <input type="email" name="email" value="admin@acme.com" placeholder="Email" required />
+        <input type="password" name="password" value="password123" placeholder="Password" required />
+        <button id="login-btn" data-testid="login-btn" type="submit">Log In to Sandbox</button>
+      </form>
+      <div id="auth-status" class="hidden success">Logged in as admin@acme.com (Session token generated)</div>
+    </div>
+
+    <!-- Section 2: Products & Cart -->
+    <div id="shop-section" class="card hidden">
+      <h2>Step 2: Subscriptions & Cart</h2>
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 1rem;">
+        <div>
+          <h3>Acme Pro Cloud Tier</h3>
+          <p style="color: #94a3b8;">High-speed AI microVM execution cluster</p>
+        </div>
+        <div style="text-align: right;">
+          <div style="font-size: 1.25rem; font-weight: 700;">$50.00 / mo</div>
+          <button id="add-btn" data-testid="add-pro-plan" style="margin-top: 0.5rem;">Add to Cart</button>
+        </div>
+      </div>
+
+      <div style="margin-top: 1.5rem;">
+        <h3>Cart Summary</h3>
+        <p>Items in cart: <b id="cart-count">0</b></p>
+        <p>Subtotal: <b id="subtotal">$0.00</b></p>
+        <p>Discount: <b id="discount" style="color: var(--emerald);">$0.00</b></p>
+        <p style="font-size: 1.2rem; margin-top: 0.5rem;">Total: <b id="cart-total" data-testid="cart-total">$0.00</b></p>
+      </div>
+
+      <div style="margin-top: 1.5rem;">
+        <label><b>Promo Coupon:</b></label><br>
+        <input type="text" name="coupon" data-testid="coupon-input" placeholder="e.g. AIRLOCK20" />
+        <button id="apply-btn" data-testid="apply-coupon-btn" type="button">Apply Coupon</button>
+        <div id="coupon-status" class="hidden success"></div>
+      </div>
+
+      <!-- Checkout Button Container (Dynamic for testing self-healing!) -->
+      <div id="checkout-container" style="margin-top: 2rem;">
+        <button id="checkout-btn" data-testid="checkout-btn" style="background: var(--emerald); font-size: 1.1rem; width: 100%;">
+          Complete Checkout with Stripe
+        </button>
+      </div>
+      <div id="checkout-status" class="hidden success"></div>
+    </div>
+  </div>
+
+  <script>
+    let subtotal = 0;
+    let discount = 0;
+    const isBreakingUI = new URLSearchParams(window.location.search).has('breaking');
+
+    if (isBreakingUI) {
+      // Simulate UI refactor (e.g. Tailwind / Shadcn component rewrite)
+      const container = document.getElementById('checkout-container');
+      container.innerHTML = '<button class="btn-refactored-v2" aria-label="Complete Checkout" style="background: #10b981; color: #fff; width: 100%; padding: 0.8rem; font-weight: bold; border-radius: 6px; border: none; cursor: pointer;">Proceed to Payment</button>';
+    }
+
+    // Auto-restore session from warm storage state (Time-Travel Checkpoint Support)
+    if (localStorage.getItem("acme_user") || document.cookie.includes("acme_session")) {
+      document.getElementById('auth-status').classList.remove('hidden');
+      document.getElementById('shop-section').classList.remove('hidden');
+      subtotal = 50.00;
+      updateTotal();
+    }
+
+    // Login
+    document.getElementById('login-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      document.getElementById('auth-status').classList.remove('hidden');
+      document.getElementById('shop-section').classList.remove('hidden');
+      document.cookie = "acme_session=demo_valid_session_cookie_99; path=/";
+      localStorage.setItem("acme_user", JSON.stringify({ email: "admin@acme.com", role: "admin" }));
+      sessionStorage.setItem("acme_nav", "shop");
+    });
+
+    // Add pro plan
+    document.getElementById('add-btn').addEventListener('click', () => {
+      subtotal = 50.00;
+      updateTotal();
+      document.getElementById('cart-count').textContent = '1';
+    });
+
+    // Apply Coupon
+    document.getElementById('apply-btn').addEventListener('click', () => {
+      const code = document.querySelector('[data-testid="coupon-input"]').value.trim();
+      const status = document.getElementById('coupon-status');
+      if (code === 'AIRLOCK20') {
+        discount = 10.00;
+        status.textContent = '✔ 20% discount applied (-$10.00)';
+        status.classList.remove('hidden');
+      } else if (code === 'VIP50') {
+        discount = 25.00;
+        status.textContent = '✔ 50% VIP discount applied (-$25.00)';
+        status.classList.remove('hidden');
+      } else {
+        discount = 0;
+        status.textContent = '❌ Invalid or expired coupon code';
+        status.classList.remove('hidden');
+      }
+      updateTotal();
+    });
+
+    function updateTotal() {
+      const total = Math.max(0, subtotal - discount);
+      document.getElementById('subtotal').textContent = '$' + subtotal.toFixed(2);
+      document.getElementById('discount').textContent = '-$' + discount.toFixed(2);
+      document.getElementById('cart-total').textContent = '$' + total.toFixed(2);
+    }
+
+    // Checkout handler
+    document.addEventListener('click', async (e) => {
+      if (e.target.id === 'checkout-btn' || e.target.getAttribute('data-testid') === 'checkout-btn' || e.target.textContent.includes('Proceed to Payment') || e.target.textContent.includes('Checkout')) {
+        const status = document.getElementById('checkout-status');
+        status.textContent = 'Processing payment with Stripe...';
+        status.classList.remove('hidden');
+
+        try {
+          // Send request with dummy phantom token in Authorization header
+          const res = await fetch('/api/checkout', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer ph_sec_stripe_test_8f2a1c',
+            },
+            body: JSON.stringify({ amount: Math.round((subtotal - discount) * 100), currency: 'usd' }),
+          });
+          const data = await res.json();
+          if (res.ok) {
+            status.textContent = '✔ ' + data.message + ' (Payment ID: ' + data.chargeId + ')';
+          } else {
+            status.textContent = '✖ ' + (data.error || 'Payment failed');
+          }
+        } catch (err) {
+          status.textContent = '✖ Network error: ' + err.message;
+        }
+      }
+    });
+  </script>
+</body>
+</html>

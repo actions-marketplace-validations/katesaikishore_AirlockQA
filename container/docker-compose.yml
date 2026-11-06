@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  demo-store:
+    build:
+      context: ..
+      dockerfile: container/Dockerfile
+    entrypoint: ["bun", "./examples/demo-store/server.ts"]
+    ports:
+      - "3900:3900"
+    networks:
+      - airlock-isolated-net
+
+  airlock-runner:
+    build:
+      context: ..
+      dockerfile: container/Dockerfile
+    depends_on:
+      - demo-store
+    environment:
+      - BASE_URL=http://demo-store:3900
+      - AIRLOCK_PROXY_PORT=8899
+    cap_add:
+      - NET_ADMIN
+    ports:
+      - "4100:4100"
+      - "8899:8899"
+    networks:
+      - airlock-isolated-net
+    command: ["run", "--url", "http://demo-store:3900"]
+
+networks:
+  airlock-isolated-net:
+    driver: bridge
+

@@ -1,0 +1,103 @@
+{
+  "projectName": "Acme SaaS Airlock QA",
+  "baseUrl": "http://127.0.0.1:3900",
+  "browser": {
+    "headless": true,
+    "viewport": {
+      "width": 1280,
+      "height": 800
+    }
+  },
+  "proxy": {
+    "enabled": true,
+    "port": 8899
+  },
+  "secrets": {
+    "STRIPE_SECRET_KEY": {
+      "real": "sk_test_live_sample_51M001AcmeProductionSecretKey9900",
+      "phantom": "ph_sec_stripe_test_8f2a1c",
+      "allowedHosts": [
+        "localhost",
+        "127.0.0.1",
+        "api.stripe.com"
+      ],
+      "allowedMethods": [
+        "GET",
+        "POST"
+      ],
+      "blockedPaths": [
+        "*/refund*",
+        "*/wipe*",
+        "*/transfers*"
+      ]
+    },
+    "ADMIN_AUTH_TOKEN": {
+      "real": "jwt_admin_supersecret_production_session_bearer_token",
+      "phantom": "ph_auth_bearer_9901_admin",
+      "allowedHosts": [
+        "localhost",
+        "127.0.0.1"
+      ],
+      "blockedPaths": [
+        "/api/admin/wipe-data"
+      ]
+    }
+  },
+  "policy": {
+    "defaultAction": "BLOCK",
+    "allowedEgressHosts": [
+      "127.0.0.1",
+      "localhost",
+      "api.stripe.com"
+    ],
+    "blockedEgressHosts": [
+      "pastebin.com",
+      "webhook.site",
+      "transfer.sh"
+    ],
+    "rules": [
+      {
+        "id": "block-destructive-refunds",
+        "description": "Prevent accidental refunds or wipes during test runs",
+        "hostPattern": "*",
+        "blockedPaths": [
+          "*/refund*",
+          "*/wipe*",
+          "*/delete-all*"
+        ],
+        "action": "BLOCK"
+      },
+      {
+        "id": "allow-safe-charges",
+        "description": "Allow test charge creation",
+        "hostPattern": "api.stripe.com",
+        "allowedPaths": [
+          "/v1/charges",
+          "/v1/customers"
+        ],
+        "action": "ALLOW"
+      }
+    ],
+    "logPayloads": true
+  },
+  "compiler": {
+    "outputDir": "./examples/tests",
+    "defaultTimeoutMs": 10000,
+    "emitAriaFallbacks": true
+  },
+  "healer": {
+    "autoHeal": true,
+    "confidenceThreshold": 0.8,
+    "datasetDir": "./.airlock/dataset",
+    "saveMutations": true
+  },
+  "forker": {
+    "checkpointsDir": "./.airlock/checkpoints",
+    "maxParallelForks": 5
+  },
+  "compliance": {
+    "signingKey": "airlock-hmac-master-key-32-chars-long!",
+    "outputDir": "./.airlock/compliance",
+    "generateHtmlReport": true
+  }
+}
