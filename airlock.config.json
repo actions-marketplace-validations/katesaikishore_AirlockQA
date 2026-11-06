@@ -100,5 +100,73 @@
   "compliance": {
     "outputDir": "./.airlock/compliance",
     "generateHtmlReport": true
+  },
+  "workflow": {
+    "name": "demo-store-checkout",
+    "steps": [
+      {
+        "action": "goto",
+        "url": "/"
+      },
+      {
+        "action": "click",
+        "selector": "[data-testid=\"login-btn\"]"
+      },
+      {
+        "action": "expectVisible",
+        "selector": "[data-testid=\"add-pro-plan\"]"
+      },
+      {
+        "action": "checkpoint",
+        "name": "post_auth"
+      },
+      {
+        "action": "click",
+        "selector": "[data-testid=\"add-pro-plan\"]"
+      },
+      {
+        "action": "expectText",
+        "selector": "[data-testid=\"cart-total\"]",
+        "text": "$50.00"
+      },
+      {
+        "action": "checkpoint",
+        "name": "cart_ready"
+      },
+      {
+        "action": "fill",
+        "selector": "[data-testid=\"coupon-input\"]",
+        "value": "AIRLOCK20"
+      },
+      {
+        "action": "click",
+        "selector": "[data-testid=\"apply-coupon-btn\"]"
+      },
+      {
+        "action": "expectText",
+        "selector": "[data-testid=\"cart-total\"]",
+        "text": "$40.00"
+      },
+      {
+        "action": "click",
+        "selector": "[data-testid=\"checkout-btn\"]"
+      },
+      {
+        "action": "expectText",
+        "selector": "#checkout-status",
+        "text": "charge created"
+      },
+      {
+        "action": "request",
+        "method": "POST",
+        "url": "/api/admin/refund",
+        "phantomSecret": "STRIPE_SECRET_KEY",
+        "body": {
+          "chargeId": "ch_12345",
+          "amount": 5000
+        },
+        "expectStatus": 403
+      }
+    ]
   }
 }

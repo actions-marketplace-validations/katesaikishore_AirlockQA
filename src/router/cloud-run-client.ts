@@ -114,7 +114,7 @@ export class CloudApiError extends Error {
 }
 
 /** Build the public request shape without ever forwarding configured real credentials. */
-export function createCloudRunPayload(config: AirlockConfig, targetUrl: string): CloudRunPayload {
+export function createCloudRunPayload(config: AirlockConfig, targetUrl: string, suiteName?: string): CloudRunPayload {
   const phantomConfig: CloudRunRequest['phantomConfig'] = {};
 
   for (const [name, secret] of Object.entries(config.secrets || {})) {
@@ -128,7 +128,7 @@ export function createCloudRunPayload(config: AirlockConfig, targetUrl: string):
   }
 
   return {
-    suiteName: 'checkout-flow',
+    suiteName: suiteName || config.projectName,
     targetUrl,
     phantomConfig,
   };
