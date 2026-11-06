@@ -205,45 +205,7 @@ console.log(result.scope, result.affectedPageAPIs); // The current page's Date A
 
 ## Continuous Integration
 
-Add AirlockQA to your GitHub Actions workflow:
-
-```yaml
-# .github/workflows/airlock.yml
-name: AirlockQA Test Suite
-
-on:
-  pull_request:
-    branches: [main]
-  push:
-    branches: [main]
-
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-
-      - name: Install Dependencies
-        run: npm ci
-
-      - name: Install Playwright Browsers
-        run: npx playwright install chromium --with-deps
-
-      - name: Run AirlockQA Tests
-        run: npx airlock test --local
-
-      - name: Archive Compliance Report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: airlock-compliance-report
-          path: .airlock/compliance/
-```
+The included [GitHub Actions workflow](.github/workflows/airlock-ci.yml) builds the TypeScript package, runs automated tests and a local demo run, verifies the signed run-evidence bundle, and uploads the generated artifacts. The local GUI walkthrough is run separately with `bun run qa:gui` because it requires Chrome and `agent-browser`.
 
 ---
 

@@ -14,7 +14,9 @@ setDefaultTimeout(60_000);
 describe('End-to-End AirlockQA Integration Test', () => {
   let demoServer: http.Server;
   let browser: Browser;
-  const chromePath = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+  const macChromePath = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+  const chromePath = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH ||
+    (fs.existsSync(macChromePath) ? macChromePath : undefined);
   const DEMO_PORT = 3999;
   const baseUrl = `http://127.0.0.1:${DEMO_PORT}`;
 
