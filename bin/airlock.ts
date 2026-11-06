@@ -242,19 +242,24 @@ program
 // ==========================================
 program
   .command('test [specPath]')
-  .description('Execute test via Local Free Runner (--local) or Bare-Metal MicroVM Cloud (AIRLOCK_API_KEY)')
-  .option('-l, --local', 'Force 100% local free execution on your laptop')
-  .option('-c, --cloud', 'Force Bare-Metal Linux MicroVM Cloud execution')
+  .description('Run locally or submit a run request to the configured Airlock Cloud API')
+  .option('-l, --local', 'Run locally without submitting to a Cloud API')
+  .option('-c, --cloud', 'Submit a run request to Airlock Cloud (requires AIRLOCK_API_KEY)')
   .option('-u, --url <url>', 'Target base URL')
   .action(async (specPath, opts) => {
     logger.banner();
-    const { ExecutionTargetRouter } = await import('../src/router/execution-router.js');
-    await ExecutionTargetRouter.routeAndExecute({
-      local: opts.local,
-      cloud: opts.cloud,
-      specPath,
-      targetUrl: opts.url,
-    });
+    try {
+      const { ExecutionTargetRouter } = await import('../src/router/execution-router.js');
+      await ExecutionTargetRouter.routeAndExecute({
+        local: opts.local,
+        cloud: opts.cloud,
+        specPath,
+        targetUrl: opts.url,
+      });
+    } catch (error) {
+      logger.error(error instanceof Error ? error.message : String(error));
+      process.exitCode = 1;
+    }
   });
 
 // ==========================================
@@ -262,16 +267,16 @@ program
 // ==========================================
 program
   .command('run')
-  .description('Execute deterministic test suite with phantom credentials, time-travel snapshots, and compliance ledger')
+  .description('Run the configured local browser workflow and generate run evidence')
   .option('-u, --url <url>', 'Target base URL')
   .action(async (opts) => {
     logger.banner();
     const config = loadConfig();
     const targetUrl = opts.url || config.baseUrl;
 
-    logger.moat(1, 'Credential Isolation Initialized', `Injecting phantom tokens into test runtime. Plaintext secrets quarantined outside VM.`);
+    logger.moat(1, 'Local Credential Substitution Initialized', 'Applying configured phantom placeholders and local request policy.');
     for (const [name, secret] of Object.entries(config.secrets)) {
-      logger.info(`  Secret [${name}]: Sandbox sees '${secret.phantom}' -> Edge swaps to '${secret.real.substring(0, 8)}...'`);
+      logger.info(`  Secret [${name}]: sandbox placeholder '${secret.phantom}'`);
     }
 
     const runner = new AirlockRunner(config);

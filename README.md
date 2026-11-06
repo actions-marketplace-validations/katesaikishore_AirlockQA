@@ -13,6 +13,8 @@
 
 AirlockQA is an early-stage TypeScript browser testing runtime. It includes exploratory recording and compilation, Playwright-based execution, configurable request policy and phantom-token substitution, browser-state checkpoints, and audit artifacts. Cloud execution is submitted through `POST /v1/runs`; verify the capabilities enabled by your deployment before relying on them.
 
+📖 **Complete User Guide:** See [`docs/HOW-TO-USE.md`](docs/HOW-TO-USE.md) for detailed instructions on all CLI commands, state forking, virtual time warping, chaos hunting, web console, and CI integration.
+
 ```
                     ┌─────────────────────────┐
                     │     AirlockQA Test      │
@@ -99,9 +101,13 @@ npx airlock test --local
 Or connect to an Airlock Cloud runner:
 
 ```bash
-export AIRLOCK_API_KEY="your-api-key"
+export AIRLOCK_API_KEY="air_live_..."
 npx airlock test --cloud
 ```
+
+In GitHub Actions, store the key as an `AIRLOCK_API_KEY` repository, organization, or environment secret and pass it to the step with `env`. The CLI sends the key only as an HTTPS Bearer token. It never places the key or configured `real` app credentials in the run JSON body. `--local` remains keyless; `AIRLOCK_CLOUD_URL` can point the same open-source client at a separately configured Enterprise endpoint.
+
+The current repository contains the Cloud API client and static console preview, not the hosted account/key service, quota database, or worker queue. It therefore does not issue keys or enforce daily run limits. See [`docs/cloud-api-auth-and-quota.md`](docs/cloud-api-auth-and-quota.md) before offering hosted quotas or cloud-managed app credentials.
 
 ---
 

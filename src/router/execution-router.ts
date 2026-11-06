@@ -2,11 +2,11 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as yaml from 'js-yaml';
 import type { AirlockConfig } from '../types/index.js';
-import type { CloudRunResponse } from '../types/cloud-client.js';
 import { loadConfig } from '../config/loader.js';
 import { AirlockRunner } from '../runner/airlock-runner.js';
 import { chromium } from 'playwright-core';
 import { logger } from '../utils/logger.js';
+import { createCloudRunPayload, submitCloudRun } from './cloud-run-client.js';
 
 export interface RouteRunOptions {
   local?: boolean;
@@ -22,12 +22,16 @@ export class ExecutionTargetRouter {
    * Route execution to the local Playwright runner or the configured cloud API.
    */
   static async routeAndExecute(options: RouteRunOptions = {}): Promise<{
-    target: 'LOCAL_FREE' | 'CLOUD_ENTERPRISE';
+    target: 'LOCAL' | 'CLOUD_API';
     result: unknown;
   }> {
-    const apiKey = options.apiKey || process.env.AIRLOCK_API_KEY || process.env.CAGERUN_API_KEY;
+    const apiKey = options.apiKey || process.env.AIRLOCK_API_KEY;
     const forceLocal = options.local || false;
     const forceCloud = options.cloud || false;
+
+    if (forceLocal && forceCloud) {
+      throw new Error('Choose either --local or --cloud; the options cannot be used together.');
+    }
 
     // Check routing decision
     const shouldRunCloud = (forceCloud || (!forceLocal && Boolean(apiKey)));
@@ -62,57 +66,35 @@ export class ExecutionTargetRouter {
 
         const bundle = await runner.finalize();
         logger.success(`Local test execution completed successfully in ${bundle.summary.durationMs}ms`);
-        return { target: 'LOCAL_FREE', result: bundle };
+        return { target: 'LOCAL', result: bundle };
       } finally {
         await browser.close();
       }
     } else {
-      const cloudApiUrl = options.cloudApiUrl || process.env.AIRLOCK_CLOUD_URL || 'https://qbrin.cloud/api';
-      const effectiveKey = apiKey || 'demo_airlock_api_key';
+      const cloudApiUrl = options.cloudApiUrl || process.env.AIRLOCK_CLOUD_URL || 'https://api.qbrin.cloud';
+      if (!apiKey?.trim()) {
+        throw new Error('Cloud runs require AIRLOCK_API_KEY. Create a key in your Airlock Cloud workspace and store it in your CI secrets.');
+      }
 
       logger.moat(
         2,
-        'Execution Target: Airlock Cloud Cluster',
-        `Submitting a run to the configured cloud API (${cloudApiUrl})`
+        'Execution Target: Airlock Cloud API',
+        `Submitting a run request to the configured API (${cloudApiUrl})`
       );
 
       const config = loadConfig();
-      const payload = {
-        suiteName: 'checkout-flow',
-        targetUrl: options.targetUrl || config.baseUrl,
-        phantomConfig: config.secrets,
-        apiKey: effectiveKey,
-        options: {
-          enableTimeTravelCoW: true,
-          workersCount: 5,
-        },
-      };
+      const payload = createCloudRunPayload(config, options.targetUrl || config.baseUrl);
 
-      try {
-        const response = await fetch(`${cloudApiUrl}/v1/runs`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${effectiveKey}`,
-          },
-          body: JSON.stringify(payload),
-        });
+      const cloudResult = await submitCloudRun({
+        apiUrl: cloudApiUrl,
+        apiKey,
+        payload,
+      });
 
-        if (!response.ok) {
-          const errText = await response.text();
-          throw new Error(`Cloud API error [${response.status}]: ${errText}`);
-        }
+      logger.success(`Cloud API accepted run ${cloudResult.runId} with status ${cloudResult.status}.`);
+      if (cloudResult.githubPRComment) console.log('\n' + cloudResult.githubPRComment);
 
-        const cloudResult = (await response.json()) as CloudRunResponse;
-
-        logger.success(`Cloud API reported run status ${cloudResult.status} (reported execution: ${cloudResult.executionTimeMs}ms, reported boot: ${cloudResult.microVmBootMs}ms)`);
-        console.log('\n' + cloudResult.githubPRComment);
-
-        return { target: 'CLOUD_ENTERPRISE', result: cloudResult };
-      } catch (err: any) {
-        logger.error(`Cloud execution failed: ${err.message}`);
-        throw err;
-      }
+      return { target: 'CLOUD_API', result: cloudResult };
     }
   }
 

@@ -31,26 +31,30 @@ export interface CloudRunRequest {
   suiteName: string;
   compiledSpecContent?: string;
   targetUrl: string;
-  phantomConfig: Record<string, { phantom: string; allowedHosts: string[]; blockedPaths?: string[] }>;
+  /** Phantom placeholders and policy only. Real credentials must never be sent by the CLI. */
+  phantomConfig: Record<string, {
+    phantom: string;
+    allowedHosts: string[];
+    allowedMethods?: HttpMethod[];
+    blockedPaths?: string[];
+  }>;
   egressPolicyYaml?: string;
-  apiKey: string;
   options?: {
-    enableTimeTravelCoW?: boolean;
     workersCount?: number;
   };
 }
 
 export interface CloudRunResponse {
   runId: string;
-  tenantId: string;
-  status: 'SUCCESS' | 'FAILED' | 'POLICY_VIOLATION';
-  executionTimeMs: number;
-  microVmBootMs: number;
-  totalSteps: number;
-  passedSteps: number;
-  snapshots: CoWSnapshot[];
-  tapInspections: TapInspectionEvent[];
-  attestation: ComplianceProofBundle;
+  tenantId?: string;
+  status: 'ACCEPTED' | 'QUEUED' | 'RUNNING' | 'SUCCESS' | 'FAILED' | 'POLICY_VIOLATION';
+  executionTimeMs?: number;
+  microVmBootMs?: number;
+  totalSteps?: number;
+  passedSteps?: number;
+  snapshots?: CoWSnapshot[];
+  tapInspections?: TapInspectionEvent[];
+  attestation?: ComplianceProofBundle;
   liveInspectUrl?: string;
-  githubPRComment: string;
+  githubPRComment?: string;
 }
