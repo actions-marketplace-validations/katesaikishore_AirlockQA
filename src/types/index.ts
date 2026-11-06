@@ -231,6 +231,10 @@ export interface LedgerBlock {
     | 'CHECKPOINT_SAVED'
     | 'CHECKPOINT_RESTORED'
     | 'HEAL_APPLIED'
+    | 'TIMEWARP_ADVANCED'
+    | 'SHADOW_MODE_ACTIVE'
+    | 'CHAOS_AUDIT_COMPLETE'
+    | 'CAPSULE_REHYDRATED'
     | 'EXEC_COMPLETE';
   payload: Record<string, unknown>;
   previousHash: string;
@@ -268,6 +272,141 @@ export interface ComplianceProofBundle {
   };
   blocksCount: number;
   ledgerVerificationStatus: 'VALID_CHAIN' | 'TAMPERED';
+}
+
+// ==========================================
+// 5: TIME-WARP & SHADOW PRODUCTION TYPES
+// ==========================================
+
+export interface TimeWarpResult {
+  previousTimeIso: string;
+  targetTimeIso: string;
+  deltaMs: number;
+  durationString: string;
+  clockLayersSynchronized: string[];
+}
+
+export interface WireInteraction {
+  id: string;
+  timestamp: string;
+  method: string;
+  url: string;
+  host: string;
+  path: string;
+  requestHeaders: Record<string, string>;
+  requestBodyHash?: string;
+  responseStatus: number;
+  responseHeaders: Record<string, string>;
+  responseBody: string;
+  latencyMs: number;
+}
+
+// ==========================================
+// 6: DETERMINISTIC CHAOS & RACE HUNTER TYPES
+// ==========================================
+
+export interface CloneAuditResult {
+  cloneId: string;
+  name: string;
+  description: string;
+  status: 'PASSED' | 'FAILED' | 'VULNERABILITY_DETECTED';
+  durationMs: number;
+  httpStatus: number;
+  vulnerability: string | null;
+  recommendation: string | null;
+}
+
+export interface ChaosAuditReport {
+  id: string;
+  timestamp: string;
+  targetEndpoint: string;
+  status: 'PASSED' | 'VULNERABILITY_FOUND';
+  clones: CloneAuditResult[];
+  idempotencyEnforced: boolean;
+  doubleSpendDetected: boolean;
+  summary: string;
+}
+
+// ==========================================
+// 7: FULL-STACK CAUSAL X-RAY TYPES
+// ==========================================
+
+export interface XRayBackendDiagnostic {
+  errorClass?: string;
+  errorMessage?: string;
+  culpritFile?: string;
+  culpritLine?: number;
+  culpritFunction?: string;
+  codeSnippet?: string;
+  databaseQuery?: string;
+  databaseLockState?: string;
+}
+
+export interface XRayTrace {
+  traceId: string;
+  spanId: string;
+  timestamp: string;
+  stepName: string;
+  domAction?: {
+    action: string;
+    selector?: string;
+    value?: string;
+  };
+  network?: {
+    method: string;
+    url: string;
+    status: number;
+    latencyMs: number;
+    requestHeaders: Record<string, string>;
+    responseHeaders: Record<string, string>;
+    responseBodySnippet?: string;
+  };
+  backendDiagnostics?: XRayBackendDiagnostic;
+  kernelSyscalls?: Array<{
+    syscall: string;
+    count: number;
+    latencyUs: number;
+  }>;
+}
+
+export interface XRayDiagnosticBundle {
+  traceId: string;
+  failureReason: string;
+  step: string;
+  formattedTerminalBox: string;
+  traces: XRayTrace[];
+}
+
+// ==========================================
+// 8: PRODUCTION-TO-MICROVM BUG TELEPORTATION TYPES
+// ==========================================
+
+export interface TelemetryEvent {
+  type: 'console' | 'dom_click' | 'dom_input' | 'navigation' | 'network_req' | 'uncaught_error';
+  timestamp: number;
+  payload: Record<string, unknown>;
+}
+
+export interface StateCapsule {
+  capsuleId: string;
+  timestamp: string;
+  appVersion: string;
+  environment: 'production' | 'staging' | 'preview';
+  url: string;
+  userAgent: string;
+  viewport: { width: number; height: number };
+  events: TelemetryEvent[];
+  crash: {
+    message: string;
+    stack: string;
+    timestamp: number;
+  };
+  storage: {
+    localStorage: Record<string, string>;
+    sessionStorage: Record<string, string>;
+    cookies: Array<{ name: string; value: string; domain?: string; path?: string }>;
+  };
+  checksum: string;
 }
 
 // ==========================================

@@ -24,6 +24,20 @@ export { AttestationEngine, type AttestationOptions } from './compliance/attesta
 export { Soc2Reporter } from './compliance/soc2-reporter.js';
 export { HtmlReporter, type HtmlReportData } from './compliance/html-reporter.js';
 
+// 5: Virtual Time-Warp & Shadow Production
+export { TimeWarper } from './timewarp/time-warper.js';
+export { ShadowRecorder } from './shadow/shadow-recorder.js';
+export { ShadowSynthesizer } from './shadow/shadow-synthesizer.js';
+
+// 6: Deterministic Chaos & Race-Condition Hunter
+export { ChaosHunter, type ChaosAuditOptions } from './chaos/chaos-hunter.js';
+
+// 7: Full-Stack Causal X-Ray
+export { CausalXRay } from './telemetry/causal-xray.js';
+
+// 8: Bug Teleportation & State Capsules
+export { TelemetryRingBuffer, CapsuleManager } from './teleport/capsule.js';
+
 // Runner & Resilient Locators
 export { AirlockRunner } from './runner/airlock-runner.js';
 export { airlockLocator, type ResilientLocatorConfig } from './runner/locator.js';

@@ -165,9 +165,71 @@ AirlockQA is configured via `airlock.config.json` in the root of your repository
 | `airlock compile <trace>` | Convert exploration trace into deterministic Playwright code |
 | `airlock test [options]` | Run tests locally (`--local`) or via cloud cluster (`--cloud`) |
 | `airlock fork <checkpoint>` | Spawn parallel test workers from a warm memory checkpoint |
+| `airlock warp <duration>` | Fast-forward virtual clock across kernel, V8, and DOM simultaneously (`+14 days`, `+1 hour`) |
+| `airlock chaos [url]` | Run deterministic 4-clone race condition hunter against mutations to audit idempotency |
+| `airlock teleport <capsule>` | Rehydrate a production crash capsule and auto-synthesize a Playwright repro spec |
 | `airlock audit [bundle]` | Verify cryptographic signature and Merkle root of an audit bundle |
 | `airlock dataset` | View logged UI mutation patches and selector healing accuracy |
 | `airlock serve` | Launch local interactive dashboard and compliance viewer |
+
+---
+
+## Advanced Capabilities
+
+### 1. Virtual Time-Warp
+Fast-forward virtual clocks across the Linux kernel, V8 JavaScript runtime, and DOM reactive loops simultaneously. Test 14-day trials, 1-hour session timeouts, or monthly billing cycles in milliseconds without breaking TLS handshakes:
+
+```typescript
+import { AirlockRunner } from 'airlockqa';
+
+const runner = new AirlockRunner();
+await runner.initialize(context, page);
+
+// Fast-forward 14 days in ~10 milliseconds
+await runner.warpTime('+14 days');
+```
+
+Or via CLI:
+```bash
+npx airlock warp "+14 days"
+```
+
+### 2. Deterministic Chaos & Race-Condition Hunter
+Forks 4 parallel ghost microVM clones at mutation steps (e.g. checkout, transfer) to test:
+- **Clone 1:** Baseline normal execution.
+- **Clone 2:** 2ms rapid duplicate clicks (detects missing `Idempotency-Key` or double-spend race conditions).
+- **Clone 3:** Mid-stream TCP packet drop (tests half-committed states and retry resilience).
+- **Clone 4:** 502 Bad Gateway + delayed asynchronous webhook recovery.
+
+```bash
+npx airlock chaos http://localhost:3000
+```
+
+### 3. Full-Stack Causal X-Ray
+Injects W3C `traceparent` headers into browser sessions to correlate DOM assertion failures with network wire transactions, backend exceptions, and SQL queries to pinpoint the root cause down to the file and line number:
+
+```bash
+┌──────────────────────────────────────────────────────────────────────────┐
+│ 🧬 AIRLOCK CAUSAL X-RAY: ROOT-CAUSE DIAGNOSTIC                           │
+├──────────────────────────────────────────────────────────────────────────┤
+│ 💥 Failed Step:     Payment Verification Step                            │
+│ 🌐 Network Wire:    POST /api/v1/charge -> 500 Internal Server Error     │
+│ 🔑 Traceparent ID:  4bf92f3577b34da6a3ce929d0e0e4736                     │
+├──────────────────────────────────────────────────────────────────────────┤
+│ 📍 Culprit File:    src/controllers/checkout.ts:88:14                    │
+│ 🧩 Function / Class:chargeCustomerCard                                   │
+│ ⚠️ Root Cause:      Card declined: Insufficient funds                    │
+│ 🗄️ Database Query:  SELECT status FROM orders WHERE id = $1              │
+│    > await stripe.charges.create({ amount, currency });                  │
+└──────────────────────────────────────────────────────────────────────────┘
+```
+
+### 4. Production-to-MicroVM Bug Teleportation
+Client-side 3KB telemetry snippet with a rolling 15-second sanitized circular ring buffer (PII, cards, and secrets redacted). When an uncaught exception occurs in production, it exports a State Capsule that can be teleported and replayed locally:
+
+```bash
+npx airlock teleport ./capsules/capsule_crash.json --out ./tests/repro-crash.spec.ts
+```
 
 ---
 

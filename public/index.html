@@ -228,6 +228,11 @@
             <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/></svg>
             <span>SOC 2 Attestation</span>
           </button>
+          <button onclick="switchTab('moats')" id="tab-moats" class="pb-2.5 border-b-2 border-transparent text-slate-400 hover:text-white font-mono flex items-center gap-2">
+            <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+            <span>Kernel &amp; Wire Moats</span>
+            <span class="px-1.5 py-0.2 rounded text-[10px] bg-blue-500/10 text-blue-300 font-mono">5 active</span>
+          </button>
         </div>
 
         <!-- Panel 1: Live Terminal Log -->
@@ -327,6 +332,125 @@
                 <div class="text-[10px] text-slate-400">CC8.1 Non-Repudiation</div>
                 <div class="text-emerald-400 font-bold mt-0.5">COMPLIANT</div>
               </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Panel 5: Kernel & Wire Moats -->
+        <div id="panel-moats" class="hidden space-y-4">
+          <div class="p-4 rounded-lg bg-[#07080E] border border-white/[0.04]">
+            <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+              <div>
+                <div class="text-xs font-mono text-blue-400">Kernel &amp; Wire Layer Capabilities</div>
+                <h3 class="text-sm font-semibold text-white">Direct Interception via Linux TAP &amp; Virtual Clock</h3>
+              </div>
+              <span class="px-2 py-0.5 rounded text-[11px] font-mono bg-blue-500/10 text-blue-300 border border-blue-500/20">
+                5 Capabilities Online
+              </span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 text-xs">
+              
+              <!-- Moat 1: Virtual Time-Warp -->
+              <div class="p-3.5 rounded-lg bg-surface hairline-border space-y-2">
+                <div class="flex items-center justify-between">
+                  <span class="font-mono text-blue-400 font-medium">01 &bull; Virtual Time-Warp</span>
+                  <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-300">400ms SLA</span>
+                </div>
+                <p class="text-slate-400 text-[11px]">
+                  Fast-forwards Linux kernel vDSO, Chromium V8, and DOM reactive clocks simultaneously without breaking TLS.
+                </p>
+                <div class="flex items-center gap-1.5 pt-1">
+                  <button onclick="demoTimeWarp('+1 hour')" class="btn-press px-2 py-1 rounded text-[11px] font-mono bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10">+1h</button>
+                  <button onclick="demoTimeWarp('+14 days')" class="btn-press px-2 py-1 rounded text-[11px] font-mono bg-blue-600/30 hover:bg-blue-600/50 text-blue-200 border border-blue-500/30">+14 days</button>
+                  <button onclick="demoTimeWarp('+30 days')" class="btn-press px-2 py-1 rounded text-[11px] font-mono bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10">+30 days</button>
+                </div>
+                <div id="timewarpOutput" class="p-2 rounded bg-black/40 font-mono text-[10px] text-slate-300 space-y-0.5 border border-white/[0.04]">
+                  <div>Current virtual offset: <span class="text-emerald-400">+0.0 days</span></div>
+                  <div>Synced: V8 Date &bull; DOM &bull; Host Time Proxy</div>
+                </div>
+              </div>
+
+              <!-- Moat 2: Wire Shadow Production -->
+              <div class="p-3.5 rounded-lg bg-surface hairline-border space-y-2">
+                <div class="flex items-center justify-between">
+                  <span class="font-mono text-emerald-400 font-medium">02 &bull; Shadow Production</span>
+                  <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-300">0.2ms Wire</span>
+                </div>
+                <p class="text-slate-400 text-[11px]">
+                  Intercepts traffic at the TAP interface so backend Next.js and frontend requests receive hermetic stateful responses.
+                </p>
+                <div class="p-2 rounded bg-black/40 font-mono text-[10px] text-slate-300 space-y-0.5 border border-white/[0.04]">
+                  <div class="flex justify-between"><span>Live WAN:</span> <span class="text-slate-400">240ms (api.stripe.com)</span></div>
+                  <div class="flex justify-between"><span>Hermetic Shadow:</span> <span class="text-emerald-400 font-semibold">0.2ms (1,200x faster)</span></div>
+                  <div>Cache: <span class="text-blue-400">18 wire interactions cataloged</span></div>
+                </div>
+              </div>
+
+              <!-- Moat 3: Deterministic Chaos Hunter -->
+              <div class="p-3.5 rounded-lg bg-surface hairline-border space-y-2">
+                <div class="flex items-center justify-between">
+                  <span class="font-mono text-amber-400 font-medium">03 &bull; Chaos Race Hunter</span>
+                  <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-300">4 Ghost Clones</span>
+                </div>
+                <p class="text-slate-400 text-[11px]">
+                  Forks 4 parallel ghost microVMs on mutation clicks to detect double-spend race conditions in 18ms.
+                </p>
+                <div class="p-2 rounded bg-black/40 font-mono text-[10px] text-slate-300 space-y-0.5 border border-white/[0.04]">
+                  <div class="flex justify-between"><span>Clone 1 (Normal):</span> <span class="text-emerald-400">200 OK</span></div>
+                  <div class="flex justify-between"><span>Clone 2 (2ms Race):</span> <span class="text-amber-400">Idempotency Checked</span></div>
+                  <div class="flex justify-between"><span>Clone 3 (TCP Drop):</span> <span class="text-blue-400">Netem Reset</span></div>
+                  <div class="flex justify-between"><span>Clone 4 (502 Timeout):</span> <span class="text-slate-400">Webhook Polling</span></div>
+                </div>
+              </div>
+
+              <!-- Moat 4: Full-Stack Causal X-Ray -->
+              <div class="p-3.5 rounded-lg bg-surface hairline-border space-y-2">
+                <div class="flex items-center justify-between">
+                  <span class="font-mono text-blue-400 font-medium">04 &bull; Causal X-Ray</span>
+                  <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-300">W3C Traceparent</span>
+                </div>
+                <p class="text-slate-400 text-[11px]">
+                  Correlates DOM assertion failures with wire packets and backend stack traces to pinpoint the exact line of code.
+                </p>
+                <div class="p-2 rounded bg-black/40 font-mono text-[10px] text-slate-300 space-y-0.5 border border-white/[0.04]">
+                  <div>Trace: <span class="text-blue-400">00-4bf92f...-01</span></div>
+                  <div>Culprit: <span class="text-amber-400">controllers/checkout.ts:88</span></div>
+                  <div>DB: <span class="text-slate-400">Tx Rollback on account_balance</span></div>
+                </div>
+              </div>
+
+              <!-- Moat 5: Bug Teleportation -->
+              <div class="p-3.5 rounded-lg bg-surface hairline-border space-y-2">
+                <div class="flex items-center justify-between">
+                  <span class="font-mono text-emerald-400 font-medium">05 &bull; Bug Teleportation</span>
+                  <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-300">15s Ring Buffer</span>
+                </div>
+                <p class="text-slate-400 text-[11px]">
+                  Captures rolling 15s pre-crash state, redacts PII, and synthesizes a deterministic Playwright repro spec.
+                </p>
+                <div class="p-2 rounded bg-black/40 font-mono text-[10px] text-slate-300 space-y-0.5 border border-white/[0.04]">
+                  <div>Capsule: <span class="text-emerald-400">capsule_9f2a0b41.json</span></div>
+                  <div>PII Masking: <span class="text-slate-400">Cards &bull; Emails &bull; JWT Redacted</span></div>
+                  <div>Repro Spec: <span class="text-blue-400">repro-capsule-9f2a.spec.ts</span></div>
+                </div>
+              </div>
+
+              <!-- Quick Action Card -->
+              <div class="p-3.5 rounded-lg bg-surface hairline-border flex flex-col justify-between space-y-2">
+                <div>
+                  <div class="font-mono text-slate-300 font-medium">Run from Terminal</div>
+                  <p class="text-slate-400 text-[11px] mt-1">
+                    Execute these capabilities locally or on your microVM cluster via the open-source CLI:
+                  </p>
+                </div>
+                <div class="p-2 rounded bg-black/40 font-mono text-[10px] text-blue-300 border border-white/[0.04] space-y-1">
+                  <div>$ npx airlock warp "+14 days"</div>
+                  <div>$ npx airlock chaos http://localhost:3000</div>
+                  <div>$ npx airlock teleport capsule.json</div>
+                </div>
+              </div>
+
             </div>
           </div>
         </div>
@@ -486,7 +610,7 @@
   <!-- Application Logic -->
   <script>
     function switchTab(tabId) {
-      ['terminal', 'tap', 'snapshots', 'attestation'].forEach(t => {
+      ['terminal', 'tap', 'snapshots', 'attestation', 'moats'].forEach(t => {
         const btn = document.getElementById('tab-' + t);
         const panel = document.getElementById('panel-' + t);
         if (t === tabId) {
@@ -497,6 +621,23 @@
           panel.classList.add('hidden');
         }
       });
+    }
+
+    let currentVirtualDays = 0;
+    function demoTimeWarp(duration) {
+      if (duration === '+1 hour') currentVirtualDays += 1/24;
+      else if (duration === '+14 days') currentVirtualDays += 14;
+      else if (duration === '+30 days') currentVirtualDays += 30;
+      
+      const out = document.getElementById('timewarpOutput');
+      if (out) {
+        const targetDate = new Date(Date.now() + currentVirtualDays * 24 * 3600 * 1000);
+        out.innerHTML = `
+          <div>Advanced: <span class="text-emerald-400 font-semibold">+${currentVirtualDays.toFixed(1)} days</span> (${duration})</div>
+          <div>Virtual Clock: <span class="text-blue-300">${targetDate.toISOString()}</span></div>
+          <div>Synchronized: Host TAP Wire &bull; Chromium V8 &bull; DOM Event Loop</div>
+        `;
+      }
     }
 
     function setCliMode(mode) {

@@ -492,4 +492,73 @@ program
     startDashboardServer(config, port);
   });
 
+// ==========================================
+// COMMAND: WARP (Virtual Time-Warp)
+// ==========================================
+program
+  .command('warp <duration>')
+  .description('Fast-forward virtual clock across kernel, V8, and DOM simultaneously (e.g. "+14 days", "+1 hour")')
+  .action(async (duration) => {
+    logger.banner();
+    const { TimeWarper } = await import('../src/timewarp/time-warper.js');
+    const warper = new TimeWarper();
+    const result = await warper.warp(duration);
+    logger.moat(1, 'Virtual Time-Warp Applied');
+    console.log(`Previous Time: ${result.previousTimeIso}`);
+    console.log(`Advanced Time: ${result.targetTimeIso}`);
+    console.log(`Delta:         ${result.deltaMs > 0 ? '+' : ''}${(result.deltaMs / 1000 / 3600 / 24).toFixed(2)} days (${result.durationString})`);
+    console.log(`Synchronized:  ${result.clockLayersSynchronized.join(', ')}`);
+  });
+
+// ==========================================
+// COMMAND: CHAOS (Race-Condition & Idempotency Hunter)
+// ==========================================
+program
+  .command('chaos [url]')
+  .description('Run deterministic 4-clone chaos race hunter against critical mutations')
+  .action(async (urlArg) => {
+    logger.banner();
+    const config = loadConfig();
+    const targetUrl = urlArg || config.baseUrl;
+    const { ChaosHunter } = await import('../src/chaos/chaos-hunter.js');
+    const hunter = new ChaosHunter();
+
+    const browser = await chromium.launch({ headless: config.browser?.headless });
+    const page = await browser.newPage();
+    try {
+      await page.goto(targetUrl, { waitUntil: 'domcontentloaded' });
+      const report = await hunter.auditMutation(page, async () => {
+        const btn = await page.$('button[type="submit"], button#checkout-btn, button#pay-btn');
+        if (btn) await btn.click();
+      });
+      console.log(ChaosHunter.formatReport(report));
+    } finally {
+      await browser.close();
+    }
+  });
+
+// ==========================================
+// COMMAND: TELEPORT (Bug Rehydration & Spec Synthesis)
+// ==========================================
+program
+  .command('teleport <capsulePath>')
+  .description('Rehydrate a production crash capsule and synthesize a deterministic Playwright repro spec')
+  .option('-o, --out <outPath>', 'Destination repro spec file')
+  .action(async (capsulePath, opts) => {
+    logger.banner();
+    const { CapsuleManager } = await import('../src/teleport/capsule.js');
+    const fullPath = path.resolve(process.cwd(), capsulePath);
+    if (!fs.existsSync(fullPath)) {
+      logger.error(`Capsule file not found: ${fullPath}`);
+      return;
+    }
+    const raw = fs.readFileSync(fullPath, 'utf8');
+    const capsule = JSON.parse(raw);
+    const spec = CapsuleManager.synthesizeReproSpec(capsule);
+    const outPath = opts.out || `./examples/tests/repro-${capsule.capsuleId}.spec.ts`;
+    fs.mkdirSync(path.dirname(path.resolve(process.cwd(), outPath)), { recursive: true });
+    fs.writeFileSync(outPath, spec, 'utf8');
+    logger.success(`Reproduction spec synthesized: ${outPath}`);
+  });
+
 program.parse(process.argv);
