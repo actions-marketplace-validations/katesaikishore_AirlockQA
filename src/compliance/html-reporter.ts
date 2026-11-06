@@ -13,6 +13,8 @@ export interface HtmlReportData {
 export class HtmlReporter {
   static generateReport(data: HtmlReportData, outputPath: string): void {
     const { bundle, trace, ledgerBlocks = [], networkRequests = [] } = data;
+    const checkpointCount = ledgerBlocks.filter((block) => block.type === 'CHECKPOINT_SAVED').length;
+    const tokenSwapCount = networkRequests.reduce((count, request) => count + request.realTokensSwapped.length, 0);
     ensureDir(path.dirname(outputPath));
 
     const html = `<!DOCTYPE html>
@@ -20,7 +22,7 @@ export class HtmlReporter {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AirlockQA Cryptographic Compliance & Execution Audit - ${bundle.runId}</title>
+  <title>AirlockQA Run Evidence - ${bundle.runId}</title>
   <style>
     :root {
       --bg: #090d16;
@@ -137,7 +139,7 @@ export class HtmlReporter {
     <header>
       <div class="logo-badge">
         <h1 style="font-size: 1.6rem; font-weight: 800; color: #fff;">AirlockQA</h1>
-        <span class="badge badge-verified">🛡️ SOC 2 Verified Bundle</span>
+        <span class="badge badge-tag">Signed run evidence · not a compliance assessment</span>
       </div>
       <div style="text-align: right; font-size: 0.85rem; color: var(--text-dim);">
         <div>Run ID: <code>${bundle.runId}</code></div>
@@ -145,35 +147,35 @@ export class HtmlReporter {
       </div>
     </header>
 
-    <!-- Reliability & Security KPI Cards -->
+    <!-- Recorded run data -->
     <div class="grid-4">
       <div class="card">
-        <div class="card-title">Credential Isolation</div>
-        <div class="card-val" style="color: var(--emerald);">${bundle.policyAudit.realSecretsExposedToSandbox} Plaintext Leaks</div>
-        <div class="card-desc">${bundle.policyAudit.phantomTokensProtected} phantom tokens swapped in-flight | ${bundle.policyAudit.egressBlockedCount} mutations blocked</div>
+        <div class="card-title">Request policy</div>
+        <div class="card-val" style="color: var(--emerald);">${bundle.policyAudit.egressBlockedCount} blocked</div>
+        <div class="card-desc">${tokenSwapCount} configured-token substitutions observed | ${bundle.policyAudit.egressAllowedCount} browser requests allowed</div>
       </div>
 
       <div class="card">
-        <div class="card-title">Deterministic Execution</div>
+        <div class="card-title">Run duration</div>
         <div class="card-val" style="color: var(--cyan);">${bundle.summary.durationMs}ms</div>
-        <div class="card-desc">$0.00 Token Cost | Zero stochastic hallucination on repeated test passes</div>
+        <div class="card-desc">Wall-clock duration recorded by this runner; step pass/fail is not assessed.</div>
       </div>
 
       <div class="card">
-        <div class="card-title">State Checkpoints</div>
-        <div class="card-val" style="color: var(--indigo);">&lt; 150ms Fork</div>
-        <div class="card-desc">Warm memory snapshots enabled parallel clone execution without rerun</div>
+        <div class="card-title">Browser checkpoints</div>
+        <div class="card-val" style="color: var(--indigo);">${checkpointCount}</div>
+        <div class="card-desc">Checkpoint events recorded; these are browser state, not VM memory snapshots.</div>
       </div>
 
       <div class="card">
         <div class="card-title">Cryptographic Ledger</div>
         <div class="card-val" style="color: var(--amber);">${bundle.blocksCount} Blocks</div>
-        <div class="card-desc">Merkle-chained immutable audit trail signed with HMAC-SHA256</div>
+        <div class="card-desc">Hash-linked run entries with an HMAC-SHA256 signature; not a compliance certification.</div>
       </div>
     </div>
 
     <!-- Cryptographic Attestation Seal -->
-    <h2>🔏 Cryptographic Proof-of-Execution Seal</h2>
+    <h2>🔏 Signed run evidence</h2>
     <div class="card">
       <div style="font-size: 0.85rem; color: var(--text-dim); margin-bottom: 0.5rem;">Merkle Root Hash (SHA-256):</div>
       <div class="merkle-box">${bundle.merkleRoot}</div>
@@ -186,28 +188,29 @@ export class HtmlReporter {
       </div>
     </div>
 
-    <!-- SOC 2 & ISO 27001 Compliance Breakdown -->
-    <h2>📋 Enterprise Compliance Criteria (SOC 2 / ISO 27001)</h2>
+    <!-- Control labels are references only; this bundle does not assess compliance. -->
+    <h2>📋 Control mapping status</h2>
+    <p class="card-desc">SOC 2 and ISO 27001 controls have not been assessed by this run evidence bundle.</p>
     <div class="soc2-grid">
       <div class="soc2-item">
         <div class="soc2-title">CC6.1: Logical Access & Secrets</div>
         <span class="badge badge-verified" style="margin: 0.35rem 0;">${bundle.soc2Mapping.cc6_1_logicalAccess}</span>
-        <div class="soc2-desc">Sandbox operated strictly with phantom tokens. Real credentials remained outside test container boundary.</div>
+        <div class="soc2-desc">Not assessed. The runner does not comprehensively measure whether real secrets reached the browser process.</div>
       </div>
       <div class="soc2-item">
         <div class="soc2-title">CC6.6: Boundary & Egress Protection</div>
         <span class="badge badge-verified" style="margin: 0.35rem 0;">${bundle.soc2Mapping.cc6_6_boundaryProtection}</span>
-        <div class="soc2-desc">Outbound network proxy intercepted 100% of packets, enforcing path whitelist and blocking mutations.</div>
+        <div class="soc2-desc">Not assessed. The recorded policy events cover intercepted browser-context requests only.</div>
       </div>
       <div class="soc2-item">
         <div class="soc2-title">CC7.1: Deterministic Verification</div>
         <span class="badge badge-verified" style="margin: 0.35rem 0;">${bundle.soc2Mapping.cc7_1_changeVerification}</span>
-        <div class="soc2-desc">Compiled deterministic Playwright assertions passed with 0 token calls.</div>
+        <div class="soc2-desc">Not assessed. Action dispatch records do not establish that assertions passed.</div>
       </div>
       <div class="soc2-item">
         <div class="soc2-title">CC8.1: Non-Repudiation</div>
         <span class="badge badge-verified" style="margin: 0.35rem 0;">${bundle.soc2Mapping.cc8_1_nonRepudiation}</span>
-        <div class="soc2-desc">Execution hash chain mathematically verified. Zero tampering detected across all blocks.</div>
+        <div class="soc2-desc">Not assessed as a control. The bundle includes a hash-chain validity result for these recorded entries.</div>
       </div>
     </div>
 
@@ -253,11 +256,11 @@ export class HtmlReporter {
         : ''
     }
 
-    <!-- Deterministic Steps Log -->
+    <!-- Recorded browser actions -->
     ${
       trace && trace.steps.length > 0
         ? `
-    <h2>⚡ Deterministic Steps Timeline</h2>
+    <h2>⚡ Recorded browser actions</h2>
     <div class="card" style="padding: 0; overflow-x: auto;">
       <table>
         <thead>
@@ -277,7 +280,7 @@ export class HtmlReporter {
             <td>#${s.index}</td>
             <td><b>${s.type.toUpperCase()}</b></td>
             <td><code>${s.target?.css || s.url || s.checkpointName || s.value || '-'}</code></td>
-            <td style="color: var(--text-dim);">${s.durationMs || 0}ms</td>
+            <td style="color: var(--text-dim);">${s.durationMs == null ? '—' : `${s.durationMs}ms`}</td>
             <td><code>${(s.screenshotHash || '').substring(0, 10)}...</code></td>
           </tr>`
             )
@@ -290,7 +293,7 @@ export class HtmlReporter {
     }
 
     <footer style="margin-top: 3rem; text-align: center; color: var(--text-dim); font-size: 0.8rem; border-top: 1px solid var(--card-border); padding-top: 1.5rem;">
-      AirlockQA &bull; The Zero-Trust, Self-Compiling, Time-Traveling AI QA Engine &bull; Apache-2.0
+      AirlockQA &bull; Browser testing run evidence &bull; Apache-2.0
     </footer>
   </div>
 </body>

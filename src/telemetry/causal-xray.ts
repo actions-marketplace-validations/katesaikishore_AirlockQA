@@ -1,8 +1,7 @@
 /**
- * AirlockQA Full-Stack "Causal X-Ray" Engine
- * Injects W3C distributed tracing headers and correlates DOM events,
- * network wire traffic, eBPF syscalls, and backend stack traces to pinpoint
- * the exact root cause and line of code when a test fails.
+ * Browser trace diagnostics prototype.
+ * It records browser requests/responses and only reports service diagnostics
+ * explicitly included in an upstream error response.
  */
 
 import type { Page, Request, Response } from 'playwright-core';
@@ -73,18 +72,20 @@ export class CausalXRay {
             try {
               const parsed = JSON.parse(bodySnippet);
               backendDiag = {
-                errorClass: parsed.error || parsed.name || 'HttpError',
-                errorMessage: parsed.message || parsed.error_description || `HTTP ${status}`,
-                culpritFile: parsed.file || parsed.path || 'controllers/api.ts',
-                culpritLine: parsed.line || 42,
-                culpritFunction: parsed.fn || 'handleRequest',
-                databaseQuery: parsed.query || undefined,
+                errorClass: typeof parsed.error === 'string' ? parsed.error : typeof parsed.name === 'string' ? parsed.name : undefined,
+                errorMessage: typeof parsed.message === 'string'
+                  ? parsed.message
+                  : typeof parsed.error_description === 'string' ? parsed.error_description : `HTTP ${status}`,
+                culpritFile: typeof parsed.file === 'string'
+                  ? parsed.file
+                  : typeof parsed.path === 'string' ? parsed.path : undefined,
+                culpritLine: Number.isInteger(parsed.line) && parsed.line > 0 ? parsed.line : undefined,
+                culpritFunction: typeof parsed.fn === 'string' ? parsed.fn : undefined,
+                databaseQuery: typeof parsed.query === 'string' ? parsed.query : undefined,
               };
             } catch {
               backendDiag = {
-                errorMessage: bodySnippet.substring(0, 100),
-                culpritFile: 'server/api_handler.ts',
-                culpritLine: 1,
+                errorMessage: bodySnippet.substring(0, 100) || `HTTP ${status}`,
               };
             }
           } catch {
@@ -101,7 +102,7 @@ export class CausalXRay {
             method,
             url,
             status,
-            latencyMs: 12,
+            latencyMs: null,
             requestHeaders: req.headers(),
             responseHeaders: response.headers(),
             responseBodySnippet: bodySnippet || undefined,
@@ -153,7 +154,7 @@ export class CausalXRay {
   }
 
   /**
-   * Generate diagnostic bundle linking DOM action -> Wire packet -> Backend Line
+   * Generate a bundle from observed browser data without inventing service metadata.
    */
   generateFailureBundle(stepName: string, error: Error | string): XRayDiagnosticBundle {
     const errorMsg = typeof error === 'string' ? error : error.message;
@@ -165,11 +166,6 @@ export class CausalXRay {
     const diag = failingTrace?.backendDiagnostics || {
       errorClass: 'AssertionFailure',
       errorMessage: errorMsg,
-      culpritFile: 'src/components/CheckoutModal.tsx',
-      culpritLine: 128,
-      culpritFunction: 'handlePaymentSubmission',
-      databaseQuery: 'SELECT status FROM orders WHERE id = $1',
-      codeSnippet: 'await api.post("/checkout", payload);',
     };
 
     const terminalBox = CausalXRay.formatTerminalDiagnostic({
@@ -201,19 +197,22 @@ export class CausalXRay {
   }): string {
     const divider = '─'.repeat(74);
     const net = opts.failingTrace?.network;
-    const netStatusStr = net ? `${net.method} ${net.url} -> ${net.status}` : 'DOM Assertion Timeout';
+    const netStatusStr = net ? `${net.method} ${net.url} -> ${net.status}` : 'No failing HTTP response observed';
+    const location = opts.diag.culpritFile
+      ? `${opts.diag.culpritFile}${opts.diag.culpritLine ? `:${opts.diag.culpritLine}` : ''}`
+      : 'Unavailable (not supplied by the service)';
 
     const lines: string[] = [
       `┌${divider}┐`,
-      `│ 🧬 AIRLOCK CAUSAL X-RAY: ROOT-CAUSE DIAGNOSTIC                           │`,
+      `│ 🧬 AIRLOCK BROWSER TRACE DIAGNOSTICS                                    │`,
       `├${divider}┤`,
       `│ 💥 Failed Step:     ${opts.stepName.padEnd(52).substring(0, 52)} │`,
-      `│ 🌐 Network Wire:    ${netStatusStr.padEnd(52).substring(0, 52)} │`,
+      `│ 🌐 Browser response:${netStatusStr.padEnd(52).substring(0, 52)} │`,
       `│ 🔑 Traceparent ID:  ${opts.traceId.padEnd(52).substring(0, 52)} │`,
       `├${divider}┤`,
-      `│ 📍 Culprit File:    ${`${opts.diag.culpritFile || 'unknown'}:${opts.diag.culpritLine || 0}`.padEnd(52).substring(0, 52)} │`,
-      `│ 🧩 Function / Class:${`${opts.diag.culpritFunction || 'anonymous'}`.padEnd(52).substring(0, 52)} │`,
-      `│ ⚠️ Root Cause:      ${`${opts.diag.errorMessage || opts.errorMsg}`.padEnd(52).substring(0, 52)} │`,
+      `│ 📍 Culprit File:    ${location.padEnd(52).substring(0, 52)} │`,
+      `│ 🧩 Function / Class:${`${opts.diag.culpritFunction || 'Unavailable'}`.padEnd(52).substring(0, 52)} │`,
+      `│ ⚠️ Observed error:  ${`${opts.diag.errorMessage || opts.errorMsg}`.padEnd(52).substring(0, 52)} │`,
     ];
 
     if (opts.diag.databaseQuery) {

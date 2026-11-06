@@ -1,10 +1,7 @@
 /**
- * AirlockQA Deterministic Chaos & Race-Condition Hunter
- * Freezes microVM memory at critical mutation steps and executes parallel ghost clones:
- * 1. Clone 1: Normal execution (Happy path baseline).
- * 2. Clone 2: 2ms Rapid duplicate request (Tests idempotency & double-spend protection).
- * 3. Clone 3: Mid-stream TCP packet drop (Tests half-committed network states).
- * 4. Clone 4: 502 Bad Gateway + Delayed out-of-order webhook delivery.
+ * Observation-only prototype for mutation requests.
+ * It inspects one browser request and reports an idempotency-key risk indicator;
+ * it does not replay requests or inject network faults.
  */
 
 import type { Page } from 'playwright-core';
@@ -19,9 +16,7 @@ export interface ChaosAuditOptions {
 }
 
 export class ChaosHunter {
-  /**
-   * Run deterministic chaos audit against a critical mutation action
-   */
+  /** Observe one mutation action and report scenarios that still need execution. */
   async auditMutation(
     page: Page,
     action: () => Promise<void>,
@@ -32,9 +27,9 @@ export class ChaosHunter {
     let interceptedMutationUrl = '';
     let interceptedMethod = 'POST';
     let interceptedHeaders: Record<string, string> = {};
-    let interceptedBody: string | undefined;
+    let observedHttpStatus: number | null = null;
 
-    // Listen to outbound requests to capture the critical mutation signature
+    // Observe the matching browser request; no request will be replayed.
     const requestListener = (req: any) => {
       const url = req.url();
       const method = req.method();
@@ -42,120 +37,120 @@ export class ChaosHunter {
         interceptedMutationUrl = url;
         interceptedMethod = method;
         interceptedHeaders = req.headers();
-        interceptedBody = req.postData() || undefined;
       }
+    };
+    const responseListener = (response: any) => {
+      if (response.url() === interceptedMutationUrl) observedHttpStatus = response.status();
     };
 
     page.on('request', requestListener);
+    page.on('response', responseListener);
 
-    // 1. Execute initial action to observe the mutation baseline
-    logger.info('Chaos Hunter: Executing baseline mutation to capture payload signature...');
+    // Invoke the action once to observe its browser request.
+    logger.info('Mutation observer: invoking the browser action once.');
+    let actionCompleted = false;
     try {
       await action();
+      actionCompleted = true;
     } catch {
-      // Allow execution to continue if UI throws after action
+      // Preserve any request captured before the browser action failed.
     } finally {
       page.off('request', requestListener);
+      page.off('response', responseListener);
+    }
+    const observedDurationMs = Date.now() - startTime;
+
+    if (interceptedMutationUrl) {
+      logger.info(`Mutation observer: saw [${interceptedMethod}] ${interceptedMutationUrl}`);
+    } else {
+      logger.info('Mutation observer: no matching browser request was observed.');
     }
 
-    if (!interceptedMutationUrl) {
-      interceptedMutationUrl = page.url();
-    }
-
-    logger.info(`Chaos Hunter: Intercepted mutation endpoint -> [${interceptedMethod}] ${interceptedMutationUrl}`);
-
-    // Check if the application included an Idempotency-Key or X-Idempotency-Key
-    const hasIdempotencyKey = Boolean(
+    const scenarios: CloneAuditResult[] = [];
+    const idempotencyKeyObserved = Boolean(
       interceptedHeaders['idempotency-key'] ||
       interceptedHeaders['x-idempotency-key'] ||
       interceptedHeaders['idempotencykey']
     );
+    const idempotencyAssumed = options.simulatedBackendIdempotent === true;
+    const doubleSpendRiskIndicated = Boolean(interceptedMutationUrl) && !idempotencyKeyObserved && !idempotencyAssumed;
 
-    const clones: CloneAuditResult[] = [];
-
-    // -------------------------------------------------------------
-    // CLONE 1: Baseline Happy Path
-    // -------------------------------------------------------------
-    clones.push({
-      cloneId: 'clone_1_normal',
-      name: 'Clone 1: Normal Execution (Baseline)',
-      description: 'Standard mutation path under nominal datacenter latency',
-      status: 'PASSED',
-      durationMs: 142,
-      httpStatus: 200,
+    // This is the only executed path; no clone or fault scenario is run.
+    scenarios.push({
+      cloneId: 'scenario_1_observation',
+      scenarioId: 'scenario_1_observation',
+      name: 'Scenario 1: Browser action observation',
+      description: `Action callback ${actionCompleted ? 'completed' : 'failed'}; duration measures the callback, and status is from the observed response when available.`,
+      status: 'OBSERVED',
+      durationMs: observedDurationMs,
+      httpStatus: observedHttpStatus,
       vulnerability: null,
       recommendation: null,
     });
 
-    // -------------------------------------------------------------
-    // CLONE 2: 2ms Rapid Duplicate Request (Double-Spend / Idempotency Test)
-    // -------------------------------------------------------------
-    let clone2Status: 'PASSED' | 'VULNERABILITY_DETECTED' = 'PASSED';
-    let clone2Vulnerability: string | null = null;
-    let clone2Recommendation: string | null = null;
-
-    if (!hasIdempotencyKey && options.simulatedBackendIdempotent !== true) {
-      clone2Status = 'VULNERABILITY_DETECTED';
-      clone2Vulnerability = 'Double-Charge Race Condition: Mutation lacks an Idempotency-Key header. Rapid duplicate clicks (2ms apart) can charge the customer twice or create duplicate database records.';
-      clone2Recommendation = 'Inject standard Idempotency-Key: UUIDv4 header in the frontend client and enforce unique constraint/Redis lock on the server.';
-    }
-
-    clones.push({
-      cloneId: 'clone_2_rapid_duplicate',
-      name: 'Clone 2: Rapid 2ms Duplicate Request',
-      description: 'Simulates rapid double-click or replay packet within 2 milliseconds',
-      status: clone2Status,
-      durationMs: 18,
-      httpStatus: clone2Status === 'PASSED' ? 409 : 200,
-      vulnerability: clone2Vulnerability,
-      recommendation: clone2Recommendation,
+    scenarios.push({
+      cloneId: 'scenario_2_rapid_duplicate',
+      scenarioId: 'scenario_2_rapid_duplicate',
+      name: 'Scenario 2: Duplicate request (not executed)',
+      description: 'The baseline request is inspected for an idempotency key; no duplicate is sent.',
+      status: doubleSpendRiskIndicated ? 'RISK_INDICATED' : 'SIMULATED',
+      durationMs: null,
+      httpStatus: null,
+      vulnerability: doubleSpendRiskIndicated
+        ? 'No idempotency key was observed. Duplicate-request behavior and backend enforcement are unknown.'
+        : null,
+      recommendation: doubleSpendRiskIndicated
+        ? 'Add an idempotency key and verify server-side deduplication with an executed duplicate-request test.'
+        : 'Run an executed duplicate-request test to verify server-side deduplication.',
     });
 
-    // -------------------------------------------------------------
-    // CLONE 3: Mid-stream TCP Packet Drop (Half-Failed State)
-    // -------------------------------------------------------------
-    clones.push({
-      cloneId: 'clone_3_tcp_drop',
-      name: 'Clone 3: Mid-stream TCP Drop (Kernel Netem)',
-      description: 'Simulates client radio drop / connection reset mid-packet',
-      status: 'PASSED',
-      durationMs: 95,
-      httpStatus: 0,
+    scenarios.push({
+      cloneId: 'scenario_3_tcp_drop',
+      scenarioId: 'scenario_3_tcp_drop',
+      name: 'Scenario 3: Connection interruption (not executed)',
+      description: 'A TCP interruption or packet drop was not injected.',
+      status: 'SIMULATED',
+      durationMs: null,
+      httpStatus: null,
       vulnerability: null,
-      recommendation: 'Ensure frontend displays a retryable network banner without resetting form fields.',
+      recommendation: 'Run a controlled connection-interruption test and verify retry and form-state behavior.',
     });
 
-    // -------------------------------------------------------------
-    // CLONE 4: 502 Bad Gateway + Asynchronous Webhook Delay
-    // -------------------------------------------------------------
-    clones.push({
-      cloneId: 'clone_4_502_webhook_retry',
-      name: 'Clone 4: 502 Upstream Timeout + Delayed Webhook',
-      description: 'Simulates reverse proxy 502 Bad Gateway followed by delayed webhook arrival',
-      status: 'PASSED',
-      durationMs: 230,
-      httpStatus: 502,
+    scenarios.push({
+      cloneId: 'scenario_4_502_webhook_retry',
+      scenarioId: 'scenario_4_502_webhook_retry',
+      name: 'Scenario 4: 502 and delayed webhook (not executed)',
+      description: 'No proxy error was injected and no webhook was delayed or replayed.',
+      status: 'SIMULATED',
+      durationMs: null,
+      httpStatus: null,
       vulnerability: null,
-      recommendation: 'Ensure client polls order status or subscribes to SSE/WebSocket before prompting user to re-pay.',
+      recommendation: 'Test the 502 and delayed-webhook path with a controlled server fixture.',
     });
 
-    const hasVulnerability = clones.some((c) => c.status === 'VULNERABILITY_DETECTED');
     const reportId = `chaos_${sha256(interceptedMutationUrl + Date.now()).substring(0, 12)}`;
 
     const report: ChaosAuditReport = {
       id: reportId,
       timestamp: new Date().toISOString(),
-      targetEndpoint: interceptedMutationUrl,
-      status: hasVulnerability ? 'VULNERABILITY_FOUND' : 'PASSED',
-      clones,
-      idempotencyEnforced: hasIdempotencyKey || options.simulatedBackendIdempotent === true,
-      doubleSpendDetected: hasVulnerability,
-      summary: hasVulnerability
-        ? `CRITICAL: Detected double-spend race condition on mutation ${interceptedMutationUrl}. Missing idempotency token allows duplicate transactions.`
-        : `PASSED: Mutation endpoint ${interceptedMutationUrl} withstood 4 parallel chaos ghost clones without race conditions.`,
+      targetEndpoint: interceptedMutationUrl || 'Not observed',
+      status: doubleSpendRiskIndicated ? 'RISK_INDICATED' : interceptedMutationUrl ? 'OBSERVED' : 'SIMULATED',
+      executionMode: 'OBSERVATION_ONLY',
+      scenarios,
+      clones: scenarios,
+      idempotencyKeyObserved,
+      idempotencyAssumed,
+      idempotencyEnforced: false,
+      doubleSpendDetected: false,
+      doubleSpendRiskIndicated,
+      summary: doubleSpendRiskIndicated
+        ? `RISK INDICATED: No idempotency key was observed on ${interceptedMutationUrl}; no duplicate was sent and backend enforcement is unknown.`
+        : interceptedMutationUrl
+          ? `OBSERVED: One browser action request was observed at ${interceptedMutationUrl}; duplicate and network-fault scenarios were not executed.`
+          : 'SIMULATED: No matching mutation request was observed; no duplicate or network-fault scenario was executed.',
     };
 
-    logger.info(`Deterministic Chaos Audit Complete for ${interceptedMutationUrl} [${report.status}]`);
+    logger.info(`Mutation observation complete for ${interceptedMutationUrl} [${report.status}]; no chaos scenario was executed.`);
     return report;
   }
 
@@ -166,16 +161,17 @@ export class ChaosHunter {
     const divider = '─'.repeat(72);
     const lines: string[] = [
       `┌${divider}┐`,
-      `│ AIRLOCK DETERMINISTIC CHAOS & RACE-CONDITION AUDIT REPORT              │`,
+      `│ AIRLOCK MUTATION OBSERVATION REPORT                                     │`,
       `├${divider}┤`,
-      `│ Target Endpoint: ${report.targetEndpoint.padEnd(53).substring(0, 53)} │`,
-      `│ Status:          ${(report.status === 'PASSED' ? '✔ PASSED (Zero Race Conditions)' : '🚨 VULNERABILITY DETECTED').padEnd(53)} │`,
-      `│ Idempotency:     ${(report.idempotencyEnforced ? 'Enforced (Protected)' : 'MISSING / UNENFORCED').padEnd(53)} │`,
+      `│ Target Endpoint: ${(report.targetEndpoint || 'No matching request observed').padEnd(53).substring(0, 53)} │`,
+      `│ Status:          ${(report.status === 'RISK_INDICATED' ? '⚠ RISK INDICATED (NOT REPLAYED)' : report.status === 'OBSERVED' ? 'ℹ OBSERVED (SCENARIOS NOT RUN)' : 'ℹ SIMULATED (NO FAULTS APPLIED)').padEnd(53)} │`,
+      `│ Execution:       ${'OBSERVATION ONLY; scenarios not executed'.padEnd(53)} │`,
+      `│ Idempotency:     ${(report.idempotencyKeyObserved ? 'Key observed; backend not verified' : report.idempotencyAssumed ? 'Backend idempotency assumed' : 'No key observed; backend unknown').padEnd(53)} │`,
       `├${divider}┤`,
     ];
 
-    for (const c of report.clones) {
-      const statusIcon = c.status === 'PASSED' ? '✔ [PASS]' : '🚨 [FAIL]';
+    for (const c of report.scenarios) {
+      const statusIcon = c.status === 'OBSERVED' ? 'ℹ [OBSERVED]' : c.status === 'RISK_INDICATED' ? '⚠ [RISK]' : '– [NOT RUN]';
       lines.push(`│ ${statusIcon} ${c.name.padEnd(63).substring(0, 63)} │`);
       if (c.vulnerability) {
         lines.push(`│   ⚠️  Vulnerability: ${c.vulnerability.padEnd(51).substring(0, 51)} │`);

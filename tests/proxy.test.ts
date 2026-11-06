@@ -47,7 +47,7 @@ describe('Proxy Gateway: Phantom Credentials & Egress Policy', () => {
     expect(swapResult.modifiedHeaders.Authorization).toBe('Bearer ph_sec_stripe_test_8f2a');
   });
 
-  it('sanitizes responses to ensure real secrets never leak back into sandbox', () => {
+  it('replaces exact configured secret strings in matching response headers and body', () => {
     const engine = new PhantomEngine({ STRIPE_KEY: secretConfig });
     const rawResponse = {
       'set-cookie': 'session=sk_live_supersecret_production_stripe_key_9999',

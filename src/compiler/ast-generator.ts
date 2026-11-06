@@ -115,7 +115,7 @@ export class AstGenerator {
    * Compile full trace into complete Playwright spec file
    */
   compileToSpec(trace: ExecutionTrace, options: CompilationOptions = {}): string {
-    const title = options.suiteTitle || trace.suiteName || 'Airlock Deterministic Test';
+    const title = options.suiteTitle || trace.suiteName || 'Airlock Test';
     const timeout = options.defaultTimeoutMs || 10000;
 
     const stepLines: string[] = [];
@@ -124,9 +124,8 @@ export class AstGenerator {
     }
 
     return `/**
- * AUTO-COMPILED BY AIRLOCK DETERMINISTIC COMPILER
- * Deterministic Compiler: Exploration Trace -> Deterministic Playwright Spec
- * Execution Target: <800ms | Token Cost: $0.00
+ * Generated Playwright output compiled from an exploration trace.
+ * Runtime depends on the target environment and test behavior.
  * Trace ID: ${trace.id}
  * Generated: ${new Date().toISOString()}
  */

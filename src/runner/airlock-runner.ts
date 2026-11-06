@@ -46,7 +46,6 @@ export class AirlockRunner {
 
   private startTime = 0;
   private totalStepsCount = 0;
-  private passedStepsCount = 0;
   private egressBlockedCount = 0;
   private egressAllowedCount = 0;
   private mutationsBlockedCount = 0;
@@ -141,27 +140,22 @@ export class AirlockRunner {
   }
 
   /**
-   * Log action step in deterministic ledger
+   * Record a dispatched browser action. This API does not track the action result.
    */
   step(action: string, target?: string): void {
     this.totalStepsCount++;
-    this.passedStepsCount++;
     this.ledger.append('ACTION_DISPATCH', { action, target });
     logger.step(this.totalStepsCount, action, target);
   }
 
-  /**
-   * Capture a warm point-in-time state checkpoint (<20ms)
-   */
+  /** Capture browser storage and DOM state into a checkpoint snapshot. */
   async checkpoint(name: string, page = this.page, context = this.context): Promise<void> {
     if (!page || !context) throw new Error('Cannot checkpoint: runner not initialized with page/context');
     const snapshot = await this.checkpointManager.capture(page, context, name, this.totalStepsCount);
     this.ledger.append('CHECKPOINT_SAVED', { name, snapshotId: snapshot.id, domHash: snapshot.domHash });
   }
 
-  /**
-   * Restore warm checkpoint directly (<100ms)
-   */
+  /** Restore the stored browser data that applies to the supplied context/page. */
   async restoreCheckpoint(name: string, page = this.page, context = this.context): Promise<boolean> {
     if (!page || !context) throw new Error('Cannot restore: runner not initialized with page/context');
     const ok = await this.checkpointManager.restore(context, page, name);
@@ -172,7 +166,7 @@ export class AirlockRunner {
   }
 
   /**
-   * Parallel time-travel state forking
+   * Restore a browser checkpoint into parallel browser contexts.
    */
   async fork(
     browser: Browser,
@@ -192,14 +186,12 @@ export class AirlockRunner {
     this.ledger.append('EXEC_COMPLETE', {
       durationMs,
       totalSteps: this.totalStepsCount,
-      passedSteps: this.passedStepsCount,
     });
 
     const bundle = AttestationEngine.generateBundle(this.ledger, {
       signingKey: this.config.compliance?.signingKey || 'airlock-default-signing-key',
       outputDir: this.config.compliance?.outputDir,
       totalSteps: this.totalStepsCount,
-      passedSteps: this.passedStepsCount,
       durationMs,
       phantomTokensConfigured: Object.keys(this.config.secrets).length,
       egressBlockedCount: this.egressBlockedCount,
@@ -217,15 +209,13 @@ export class AirlockRunner {
         },
         htmlPath
       );
-      logger.info(`Generated HTML Compliance Audit Report at: ${htmlPath}`);
+      logger.info(`Generated HTML run-evidence report at: ${htmlPath}`);
     }
 
     return bundle;
   }
 
-  /**
-   * Fast-forward virtual clock across all runtime layers (V8 Date/timers, DOM event loop, and Host Time Proxy)
-   */
+  /** Apply a browser-page Date offset; browser timers and service clocks are not changed. */
   async warpTime(duration: string, page = this.page, context = this.context): Promise<TimeWarpResult> {
     const result = await this.timeWarper.warp(duration, page || undefined, context || undefined);
     this.ledger.append('TIMEWARP_ADVANCED', {
@@ -236,10 +226,7 @@ export class AirlockRunner {
     return result;
   }
 
-  /**
-   * Activate Hermetic Shadow Production mode on the browser context.
-   * Serves wire-level stateful responses in 0.2ms.
-   */
+  /** Enable browser-context response fixtures. Unmatched requests may pass through. */
   async enableShadowMocking(context = this.context, targetHosts: string[] = ['*']): Promise<void> {
     if (!context) throw new Error('Cannot enable shadow mocking: runner not initialized with context');
     await this.shadowSynthesizer.activate(context, targetHosts);
@@ -257,7 +244,7 @@ export class AirlockRunner {
     resStatus: number,
     resHeaders: Record<string, string>,
     resBody: string,
-    latencyMs = 1
+    latencyMs?: number
   ): WireInteraction {
     return this.shadowRecorder.record(
       method,

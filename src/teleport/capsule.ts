@@ -1,9 +1,6 @@
 /**
- * AirlockQA Production-to-MicroVM Bug Teleportation
- * 1. 3KB client-side telemetry recorder with 15-second rolling ring buffer.
- * 2. Automatic PII redaction (passwords, emails, payment cards).
- * 3. State Capsule generation upon uncaught exception / crash.
- * 4. Deterministic MicroVM Rehydration & Auto-Synthesized Repro Spec (.spec.ts).
+ * Browser-state capsule prototype with heuristic event redaction and basic replay.
+ * It does not provide consent management, encrypted capsule storage, or VM restore.
  */
 
 import * as fs from 'node:fs';
@@ -34,7 +31,7 @@ export class TelemetryRingBuffer {
   }
 
   /**
-   * Sanitizes all sensitive user data (PII, tokens, credit cards)
+   * Applies best-effort string patterns to event payloads; this is not comprehensive PII redaction.
    */
   private sanitizeEvent(event: TelemetryEvent): TelemetryEvent {
     const sanitizedPayload: Record<string, unknown> = {};
@@ -181,11 +178,11 @@ export class CapsuleManager {
   }
 
   /**
-   * Rehydrate a state capsule into a Playwright page and deterministically replay events
+   * Restore the captured browser data available in this prototype into a Playwright page.
    */
   static async rehydrate(capsule: StateCapsule, page: Page, context?: BrowserContext): Promise<void> {
-    logger.info(`Rehydrating Production Bug Capsule: ${capsule.capsuleId}`);
-    logger.info(`  Crash Target: ${capsule.crash.message.substring(0, 60)}...`);
+    logger.info(`Restoring browser-state capsule: ${capsule.capsuleId}`);
+    logger.info(`  Captured error: ${capsule.crash.message.substring(0, 60)}...`);
 
     // 1. Inject Cookies
     if (context && capsule.storage.cookies.length > 0) {

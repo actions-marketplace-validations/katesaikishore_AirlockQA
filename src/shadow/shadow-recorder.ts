@@ -1,8 +1,4 @@
-/**
- * AirlockQA Wire-Level Shadow Production Auto-Mocking
- * Records HTTP wire traffic at the host network interface and serves
- * sub-millisecond hermetic stateful responses in CI/CD without code changes.
- */
+/** Stores caller-supplied HTTP fixtures for replay in a Playwright BrowserContext. */
 
 import * as fs from 'node:fs';
 import * as path from 'node:path';
@@ -21,7 +17,7 @@ export interface WireInteraction {
   responseStatus: number;
   responseHeaders: Record<string, string>;
   responseBody: string;
-  latencyMs: number;
+  latencyMs: number | null;
 }
 
 export class ShadowRecorder {
@@ -62,7 +58,7 @@ export class ShadowRecorder {
     responseStatus: number,
     responseHeaders: Record<string, string>,
     responseBody: string,
-    latencyMs = 1
+    latencyMs?: number
   ): WireInteraction {
     const parsed = new URL(url);
     const bodyHash = requestBody && requestBody.length > 0 ? sha256(requestBody).substring(0, 16) : undefined;
@@ -80,7 +76,7 @@ export class ShadowRecorder {
       responseStatus,
       responseHeaders,
       responseBody,
-      latencyMs,
+      latencyMs: latencyMs ?? null,
     };
 
     this.catalog.set(key, interaction);

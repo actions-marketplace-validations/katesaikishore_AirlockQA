@@ -1,7 +1,6 @@
 /**
- * AirlockQA Hermetic Shadow Synthesizer
- * Operates in Hermetic Shadow Mode: intercepts wire traffic and serves
- * pre-recorded, deterministic stateful responses in 0.2ms.
+ * Browser-context fixture prototype. It serves matching saved responses and
+ * allows unmatched requests through except for the Stripe-shaped fallback.
  */
 
 import type { BrowserContext, Route } from 'playwright-core';
@@ -10,7 +9,7 @@ import { logger } from '../utils/logger.js';
 
 export class ShadowSynthesizer {
   private recorder: ShadowRecorder;
-  private isHermeticActive = false;
+  private active = false;
   private servedCount = 0;
 
   constructor(recorder?: ShadowRecorder) {
@@ -18,16 +17,27 @@ export class ShadowSynthesizer {
   }
 
   /**
-   * Activate Hermetic Shadow Mode on a browser context.
-   * All outbound requests are intercepted and served from the wire catalog in < 1ms.
+   * Add browser-context routes that serve matching fixtures.
+   * Unmatched requests may continue to the network, so this is not hermetic by default.
    */
   async activate(context: BrowserContext, targetHosts: string[] = ['*']): Promise<void> {
-    this.isHermeticActive = true;
+    this.active = true;
     this.servedCount = 0;
 
     await context.route('**/*', async (route: Route) => {
       const request = route.request();
       const url = request.url();
+      const hostname = new URL(url).hostname;
+      const hostIsTargeted = targetHosts.some((target) => {
+        if (target === '*') return true;
+        if (target.startsWith('*.')) return hostname.endsWith(target.slice(1));
+        return hostname === target;
+      });
+      if (!hostIsTargeted) {
+        await route.continue();
+        return;
+      }
+
       const method = request.method();
       const postData = request.postData() || undefined;
 
@@ -36,14 +46,14 @@ export class ShadowSynthesizer {
 
       if (matched) {
         this.servedCount++;
-        // Serve hermetic wire response in ~0.2ms
+        // Serve a saved response through the browser route.
         await route.fulfill({
           status: matched.responseStatus,
           headers: matched.responseHeaders,
           body: matched.responseBody,
         });
       } else {
-        // If not in catalog and in strict hermetic mode, return safe synthetic mock
+        // Provide the demo Stripe-shaped response only for a targeted host.
         if (url.includes('api.stripe.com')) {
           this.servedCount++;
           await route.fulfill({
@@ -66,7 +76,7 @@ export class ShadowSynthesizer {
       }
     });
 
-    logger.info(`Hermetic Shadow Production Mode active: ${this.recorder.size()} wire interactions cached`);
+    logger.info(`Browser fixture routes active: ${this.recorder.size()} saved interactions available`);
   }
 
   getServedCount(): number {
@@ -74,6 +84,6 @@ export class ShadowSynthesizer {
   }
 
   isActive(): boolean {
-    return this.isHermeticActive;
+    return this.active;
   }
 }

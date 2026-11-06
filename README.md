@@ -1,6 +1,6 @@
 # 🛡️ AirlockQA
 
-> **Fast, deterministic browser testing with self-healing locators and zero-leak credential isolation.**
+> **Browser testing tools with locator recovery, configurable request policies, state checkpoints, and execution evidence.**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue)](https://www.typescriptlang.org/)
@@ -11,7 +11,7 @@
 
 ## Overview
 
-AirlockQA is an end-to-end web testing runtime built for reliability, security, and developer speed. It combines deterministic browser execution with automatic selector self-healing and client-side credential protection.
+AirlockQA is an early-stage TypeScript browser testing runtime. It includes exploratory recording and compilation, Playwright-based execution, configurable request policy and phantom-token substitution, browser-state checkpoints, and audit artifacts. Cloud execution is submitted through `POST /v1/runs`; verify the capabilities enabled by your deployment before relying on them.
 
 ```
                     ┌─────────────────────────┐
@@ -20,21 +20,21 @@ AirlockQA is an end-to-end web testing runtime built for reliability, security, 
                                  │
                                  ▼
    ┌─────────────────────────────────────────────────────────────┐
-   │                    Execution Sandbox                        │
+   │                 Playwright Test Process                      │
    │                                                             │
    │   • Headless Browser (Playwright)                           │
-   │   • Phantom credentials only (real keys never in memory)    │
-   │   • Point-in-time state checkpoints for sub-second replay   │
+   │   • Configured phantom-token substitution and policy       │
+   │   • Browser storage and DOM snapshots (not VM memory)      │
    └─────────────────────────────┬───────────────────────────────┘
                                  │ (HTTP/TCP Egress)
                                  ▼
    ┌─────────────────────────────────────────────────────────────┐
-   │                 Deterministic Egress Gateway                │
+   │                Browser Request Policy                        │
    │                                                             │
-   │   • Whitelist validation on all outbound hosts              │
-   │   • Mutation policy guard (blocks unauthorized endpoints)   │
-   │   • In-flight token replacement at network boundary         │
-   │   • Cryptographic audit ledger and execution attestation    │
+   │   • Host, path, and method checks for routed browser traffic │
+   │   • Configured mutation rules                                │
+   │   • Configured token substitution                            │
+   │   • Signed run evidence                                      │
    └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -42,11 +42,11 @@ AirlockQA is an end-to-end web testing runtime built for reliability, security, 
 
 ## Key Features
 
-- **🛡️ Credential Isolation:** Tests execute with dummy phantom tokens (`ph_sec_***`). The network gateway swaps in real credentials in-flight at the boundary, ensuring raw production keys are never exposed to test scripts or sandbox memory.
-- **⚡ Deterministic Execution:** Compiles exploratory browser sessions into high-speed, zero-overhead Playwright scripts that execute consistently in under a second.
-- **🔄 Self-Healing Locators:** When UI components refactor, the built-in similarity engine automatically resolves broken selectors using token-overlap and DOM tree analysis.
-- **⏱️ Point-in-Time Checkpoints:** Capture warm browser memory states (e.g. authenticated sessions, populated shopping carts) to test variations in parallel without repeating slow setup flows.
-- **📜 Tamper-Evident Audit Ledger:** Generates cryptographically verifiable execution reports with Merkle root signatures for compliance and non-repudiation.
+- **🛡️ Request Policy Prototype:** The Playwright-context gateway can inspect configured phantom tokens, apply host/path/method rules, substitute configured values, and sanitize matching upstream responses. This is browser-request interception; it is not a general OS-level egress firewall or a guarantee that production credentials never enter the runner process.
+- **⚡ Trace Compilation:** Converts recorded browser actions into Playwright-oriented test code. Runtime and stability depend on the application and environment.
+- **🔄 Locator Recovery Prototype:** A similarity-based helper can suggest or resolve candidate locators from available DOM features; review recovered selectors in your application’s test context.
+- **⏱️ Browser Checkpoints:** Saves browser storage state, session storage, URL, and a DOM snapshot/hash, then can restore that data into a browser context. It does not snapshot process or VM memory.
+- **📜 Execution Evidence:** Builds hash-linked ledger entries and signed bundles that can be verified with the configured key. This is an evidence mechanism, not a compliance certification.
 
 ---
 
@@ -162,118 +162,50 @@ AirlockQA is configured via `airlock.config.json` in the root of your repository
 | :--- | :--- |
 | `airlock init` | Initialize default configuration and sample policy |
 | `airlock explore [url]` | Launch an interactive browser session to record DOM actions |
-| `airlock compile <trace>` | Convert exploration trace into deterministic Playwright code |
+| `airlock compile <trace>` | Convert exploration trace into Playwright-oriented code |
 | `airlock test [options]` | Run tests locally (`--local`) or via cloud cluster (`--cloud`) |
-| `airlock fork <checkpoint>` | Spawn parallel test workers from a warm memory checkpoint |
-| `airlock warp <duration>` | Fast-forward virtual clock across kernel, V8, and DOM simultaneously (`+14 days`, `+1 hour`) |
-| `airlock chaos [url]` | Run deterministic 4-clone race condition hunter against mutations to audit idempotency |
-| `airlock teleport <capsule>` | Rehydrate a production crash capsule and auto-synthesize a Playwright repro spec |
+| `airlock fork <checkpoint>` | Create isolated Playwright browser contexts from a saved browser-state checkpoint |
+| `airlock warp <duration>` | Apply the current browser time-warp prototype (`+14 days`, `+1 hour`); see limitations below |
+| `airlock chaos [url]` | Generate a prototype mutation/race-condition audit report; scenarios are not yet executed as kernel or VM faults |
+| `airlock teleport <capsule>` | Load a state-capsule prototype and synthesize a basic Playwright reproduction spec |
 | `airlock audit [bundle]` | Verify cryptographic signature and Merkle root of an audit bundle |
 | `airlock dataset` | View logged UI mutation patches and selector healing accuracy |
-| `airlock serve` | Launch local interactive dashboard and compliance viewer |
+| `airlock serve` | Launch the local dashboard and run-evidence viewer |
 
 ---
 
-## Advanced Capabilities
+## Prototype capabilities and limitations
 
-### 1. Virtual Time-Warp
-Fast-forward virtual clocks across the Linux kernel, V8 JavaScript runtime, and DOM reactive loops simultaneously. Test 14-day trials, 1-hour session timeouts, or monthly billing cycles in milliseconds without breaking TLS handshakes:
+The commands below are early prototypes. Their current names do not imply kernel clock control, VM snapshots, network-wide capture, or production crash replay. Track the implementation gates in [`docs/five-impossible-moats-implementation-plan.md`](docs/five-impossible-moats-implementation-plan.md).
+
+### Browser clock override
+
+`TimeWarper` maintains an offset and overrides `Date` in the current page, with an init script for later navigations and a custom `airlock:timewarp` event. It does not advance browser timers, the Linux clock, backend/database/Redis clocks, cron jobs, or TLS time. Do not use it to validate end-to-end subscription or certificate expiry yet.
 
 ```typescript
-import { AirlockRunner } from 'airlockqa';
-
-const runner = new AirlockRunner();
-await runner.initialize(context, page);
-
-// Fast-forward 14 days in ~10 milliseconds
-await runner.warpTime('+14 days');
+const result = await runner.warpTime('+14 days', page);
+console.log(result.scope, result.affectedPageAPIs); // The current page's Date APIs only
 ```
 
-Or via CLI:
-```bash
-npx airlock warp "+14 days"
-```
+### Browser request fixtures
 
-### 2. Deterministic Chaos & Race-Condition Hunter
-Forks 4 parallel ghost microVM clones at mutation steps (e.g. checkout, transfer) to test:
-- **Clone 1:** Baseline normal execution.
-- **Clone 2:** 2ms rapid duplicate clicks (detects missing `Idempotency-Key` or double-spend race conditions).
-- **Clone 3:** Mid-stream TCP packet drop (tests half-committed states and retry resilience).
-- **Clone 4:** 502 Bad Gateway + delayed asynchronous webhook recovery.
+`ShadowSynthesizer` intercepts requests made through a Playwright `BrowserContext`, serves matching saved fixtures, has one Stripe-shaped synthetic response, and otherwise allows requests through (including external misses). It does not see server-rendered, worker, container, or arbitrary process traffic and is not currently hermetic by default.
 
-```bash
-npx airlock chaos http://localhost:3000
-```
+### Chaos report prototype
 
-### 3. Full-Stack Causal X-Ray
-Injects W3C `traceparent` headers into browser sessions to correlate DOM assertion failures with network wire transactions, backend exceptions, and SQL queries to pinpoint the root cause down to the file and line number:
+`ChaosHunter` invokes one browser action, observes a matching request when present, and reports whether an idempotency header was seen. A missing header is only a risk indicator; it does not prove duplicate behavior or backend enforcement. The remaining duplicate, connection-interruption, and 502/webhook entries are marked not run and have no measured timing.
 
-```bash
-┌──────────────────────────────────────────────────────────────────────────┐
-│ 🧬 AIRLOCK CAUSAL X-RAY: ROOT-CAUSE DIAGNOSTIC                           │
-├──────────────────────────────────────────────────────────────────────────┤
-│ 💥 Failed Step:     Payment Verification Step                            │
-│ 🌐 Network Wire:    POST /api/v1/charge -> 500 Internal Server Error     │
-│ 🔑 Traceparent ID:  4bf92f3577b34da6a3ce929d0e0e4736                     │
-├──────────────────────────────────────────────────────────────────────────┤
-│ 📍 Culprit File:    src/controllers/checkout.ts:88:14                    │
-│ 🧩 Function / Class:chargeCustomerCard                                   │
-│ ⚠️ Root Cause:      Card declined: Insufficient funds                    │
-│ 🗄️ Database Query:  SELECT status FROM orders WHERE id = $1              │
-│    > await stripe.charges.create({ amount, currency });                  │
-└──────────────────────────────────────────────────────────────────────────┘
-```
+### Browser trace diagnostics
 
-### 4. Production-to-MicroVM Bug Teleportation
-Client-side 3KB telemetry snippet with a rolling 15-second sanitized circular ring buffer (PII, cards, and secrets redacted). When an uncaught exception occurs in production, it exports a State Capsule that can be teleported and replayed locally:
+`CausalXRay` adds W3C-style headers to browser requests and records browser response metadata. It reads file, function, and query details only when an upstream error response supplies them; response latency is currently unavailable. Treat the output as browser/network diagnostics only.
 
-```bash
-npx airlock teleport ./capsules/capsule_crash.json --out ./tests/repro-crash.spec.ts
-```
+### State-capsule prototype
 
----
+`TelemetryRingBuffer` redacts a limited set of patterns from event payloads, and `CapsuleManager` can serialize capsule state and perform basic Playwright replay. Redaction is heuristic: arbitrary storage, cookies, URLs, error stacks, or encoded secrets may remain sensitive. The current capsule format is not encrypted and replay does not boot a microVM. Do not send real user data or production credentials to this prototype.
 
 ## Continuous Integration
 
-Add AirlockQA to your GitHub Actions workflow:
-
-```yaml
-# .github/workflows/airlock.yml
-name: AirlockQA Test Suite
-
-on:
-  pull_request:
-    branches: [main]
-  push:
-    branches: [main]
-
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-
-      - name: Install Dependencies
-        run: npm ci
-
-      - name: Install Playwright Browsers
-        run: npx playwright install chromium --with-deps
-
-      - name: Run AirlockQA Tests
-        run: npx airlock test --local
-
-      - name: Archive Compliance Report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: airlock-compliance-report
-          path: .airlock/compliance/
-```
+The included [GitHub Actions workflow](.github/workflows/airlock-ci.yml) builds the TypeScript package, runs automated tests and a local demo run, verifies the signed run-evidence bundle, and uploads the generated artifacts. The local GUI walkthrough is run separately with `bun run qa:gui` because it requires Chrome and `agent-browser`.
 
 ---
 
@@ -292,7 +224,15 @@ bun test
 
 # Build TypeScript
 bun run build
+
+# Run the browser-based staging smoke suite (agent-browser and Chrome required)
+bun run qa:gui
+
+# Build, run all tests, and drive the staging UI
+bun run qa
 ```
+
+The GUI suite writes screenshots, a sample evidence export, and a five-second Three.js preview under `artifacts/gui-qa/pr/`. See [`docs/qa-test-plan.md`](docs/qa-test-plan.md) for the covered flows and the limits of the staging preview.
 
 ---
 

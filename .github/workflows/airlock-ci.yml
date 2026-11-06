@@ -1,4 +1,4 @@
-name: AirlockQA Deterministic Compliance & QA Gate
+name: AirlockQA Browser QA and Run Evidence
 
 on:
   push:
@@ -8,8 +8,9 @@ on:
 
 jobs:
   airlock-qa:
-    name: Zero-Trust Deterministic QA & Cryptographic Audit
+    name: Browser QA and Signed Run Evidence
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
       - name: Checkout repository
@@ -23,51 +24,38 @@ jobs:
       - name: Install dependencies
         run: bun install
 
-      - name: Install Playwright Chromium dependencies
+      - name: Install Playwright Chromium
         run: npx playwright install chromium --with-deps
 
-      - name: Start Target Web Application (Demo Store)
+      - name: Start demo store
         run: |
-          bun ./examples/demo-store/server.ts &
-          sleep 2
+          bun ./examples/demo-store/server.ts > /tmp/airlockqa-demo-store.log 2>&1 &
+          for attempt in {1..30}; do
+            if curl -fsS http://127.0.0.1:3900/ >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/airlockqa-demo-store.log
+          exit 1
 
-      - name: Run AirlockQA Deterministic Tests with Phantom Egress Firewall
-        id: airlock_run
-        run: |
-          bun ./bin/airlock.ts run --url http://127.0.0.1:3900
+      - name: Build TypeScript
+        run: bun run build
 
-      - name: Cryptographically Verify Attestation Bundle
-        run: |
-          bun ./bin/airlock.ts audit ./.airlock/compliance/latest-attestation.json
+      - name: Run automated tests
+        run: bun test
 
-      - name: Upload SOC 2 & ISO 27001 Compliance Evidence Artifacts
+      - name: Run CLI against demo store
+        run: bun ./bin/airlock.ts run --url http://127.0.0.1:3900
+
+      - name: Verify signed run evidence
+        run: bun ./bin/airlock.ts audit ./.airlock/compliance/latest-attestation.json
+
+      - name: Upload run evidence artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: airlock-compliance-bundle
+          name: airlockqa-run-evidence
           path: |
             .airlock/compliance/
             .airlock/dataset/
-          retention-days: 90
-
-      - name: Post PR Compliance & Zero-Leak Badge
-        if: github.event_name == 'pull_request'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const fs = require('fs');
-            const path = './.airlock/compliance/latest-attestation.json';
-            if (fs.existsSync(path)) {
-              const bundle = JSON.parse(fs.readFileSync(path, 'utf8'));
-              const body = `### 🛡️ AirlockQA Audit Passed
-              - **Merkle Root:** \`${bundle.merkleRoot}\`
-              - **Zero-Secret Exposure:** Verified (0 leaks)
-              - **Deterministic Speed:** ${bundle.summary.durationMs}ms ($0.00 token cost)
-              - **SOC 2 Status:** CC6.1 & CC6.6 Compliant`;
-              github.rest.issues.createComment({
-                issue_number: context.issue.number,
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                body: body
-              });
-            }
-
+          retention-days: 30

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'bun:test';
 import { AstGenerator } from '../src/compiler/ast-generator.js';
 import type { ExecutionTrace } from '../src/types/index.js';
 
-describe('Compiler: AI-to-Deterministic Spec Generator', () => {
+describe('Compiler: trace-to-Playwright spec generator', () => {
   const sampleTrace: ExecutionTrace = {
     id: 'trace_test_001',
     suiteName: 'checkout-flow',
@@ -62,15 +62,15 @@ describe('Compiler: AI-to-Deterministic Spec Generator', () => {
     metadata: {},
   };
 
-  it('compiles execution trace into deterministic Playwright TypeScript code', () => {
+  it('generates Playwright TypeScript code from an execution trace', () => {
     const generator = new AstGenerator();
     const code = generator.compileToSpec(sampleTrace, {
-      suiteTitle: 'Checkout Flow Deterministic',
+      suiteTitle: 'Checkout Flow',
       defaultTimeoutMs: 5000,
     });
 
     // Verify key elements in emitted code
-    expect(code).toContain("test.describe('Checkout Flow Deterministic'");
+    expect(code).toContain("test.describe('Checkout Flow'");
     expect(code).toContain("page.goto('http://localhost:3900'");
     expect(code).toContain("airlockLocator(page, { testId: 'login-btn'");
     expect(code).toContain("await el_2.click()");
@@ -78,7 +78,7 @@ describe('Compiler: AI-to-Deterministic Spec Generator', () => {
     expect(code).toContain("await el_3.fill('AIRLOCK20')");
     expect(code).toContain("await airlock.checkpoint('post_auth_and_coupon', page)");
     expect(code).toContain("await expect(el_5).toBeVisible({ timeout: 4000 })");
-    expect(code).toContain('Deterministic Playwright Spec');
+    expect(code).toContain('Generated Playwright output compiled from an exploration trace.');
   });
 });
 

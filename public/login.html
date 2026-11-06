@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f7f8f6">
+  <title>Sign in · Airlock Cloud</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/marketing.css">
+  <script src="/login.js" defer></script>
+</head>
+<body class="auth-page">
+  <header class="auth-header"><a class="marketing-brand" href="/"><img class="brand-mark" src="/favicon.svg" alt="" width="27" height="27"><span>airlock<span>cloud</span></span></a><a href="/" class="auth-back">← Back to home</a></header>
+  <main class="auth-layout">
+    <section class="auth-story">
+      <span class="eyebrow"><span class="eyebrow-dot"></span> AIRLOCK CLOUD</span>
+      <h1>Your test pipeline,<br><em>with a safer boundary.</em></h1>
+      <p>Open the sample console to explore the run-submission flow and preview dashboard.</p>
+      <div class="auth-flow"><span>CI runner</span><i>→</i><span>Run request</span><i>→</i><span>Response</span></div>
+      <div class="auth-story-note"><span>◇</span><span><b>Run request submitted by your CI</b><small>The current cloud API exposes POST /v1/runs. Runner capabilities depend on deployment.</small></span></div>
+    </section>
+    <section class="auth-card">
+      <div class="auth-card-mark">⌑</div>
+      <span class="auth-kicker">WORKSPACE ACCESS</span>
+      <h2>Sign in to Airlock Cloud</h2>
+      <p class="auth-description">Authentication is not connected in this preview. You can enter the sample workspace to explore the console.</p>
+      <button class="button button-primary demo-login" id="demo-login" type="button">Continue to sample workspace <span>→</span></button>
+      <div class="auth-divider"><span></span><small>PREVIEW ACCESS</small><span></span></div>
+      <div class="auth-preview-note"><span class="preview-lock">◇</span><p><b>Local demo session</b><br>This button opens sample data in this browser tab. It does not verify credentials or sign in to a production account.</p></div>
+      <p class="auth-error" id="auth-error" role="alert" hidden>Could not open the sample workspace. Please try again.</p>
+      <a class="auth-back-link" href="/">Return to the marketing page</a>
+    </section>
+  </main>
+  <footer class="auth-footer"><span>© 2026 Airlock Cloud</span><span>Isolated browser testing for CI</span></footer>
+</body>
+</html>

@@ -1,0 +1,25 @@
+name: airlockqa-staging
+
+services:
+  web:
+    image: nginx:stable-alpine
+    container_name: airlockqa-staging-web
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:4310:80"
+    volumes:
+      - ../public:/usr/share/nginx/html:ro
+      - ./staging-nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    read_only: true
+    tmpfs:
+      - /var/cache/nginx
+      - /var/run
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1/healthz || exit 1"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s

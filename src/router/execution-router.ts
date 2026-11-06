@@ -19,7 +19,7 @@ export interface RouteRunOptions {
 
 export class ExecutionTargetRouter {
   /**
-   * Determine target and route execution between Local Free Runner and Bare-Metal Cloud Fleet
+   * Route execution to the local Playwright runner or the configured cloud API.
    */
   static async routeAndExecute(options: RouteRunOptions = {}): Promise<{
     target: 'LOCAL_FREE' | 'CLOUD_ENTERPRISE';
@@ -73,7 +73,7 @@ export class ExecutionTargetRouter {
       logger.moat(
         2,
         'Execution Target: Airlock Cloud Cluster',
-        `Dispatching to remote MicroVM cluster (${cloudApiUrl})`
+        `Submitting a run to the configured cloud API (${cloudApiUrl})`
       );
 
       const config = loadConfig();
@@ -105,7 +105,7 @@ export class ExecutionTargetRouter {
 
         const cloudResult = (await response.json()) as CloudRunResponse;
 
-        logger.success(`MicroVM execution passed in ${cloudResult.executionTimeMs}ms (MicroVM boot: ${cloudResult.microVmBootMs}ms)`);
+        logger.success(`Cloud API reported run status ${cloudResult.status} (reported execution: ${cloudResult.executionTimeMs}ms, reported boot: ${cloudResult.microVmBootMs}ms)`);
         console.log('\n' + cloudResult.githubPRComment);
 
         return { target: 'CLOUD_ENTERPRISE', result: cloudResult };

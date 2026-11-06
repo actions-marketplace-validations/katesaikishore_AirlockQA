@@ -1,9 +1,6 @@
 /**
  * AirlockQA Core Types
- * 1. Phantom Credentials & Policy Proxy
- * 2. Deterministic Compiler & Self-Healing Engine
- * 3. Sub-Second Time-Travel State Forking
- * 4. Cryptographic Proof-of-Execution & Compliance Bundles
+ * Type contracts for browser testing, request policy, checkpoints, and evidence prototypes.
  */
 
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'HEAD' | 'OPTIONS';
@@ -13,7 +10,7 @@ export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'HEAD' | 
 // ==========================================
 
 export interface PhantomSecretConfig {
-  /** The real sensitive secret value (kept strictly outside the sandbox) */
+  /** Configured secret used by the trusted proxy for an allowed substitution. */
   real: string;
   /** The dummy phantom token injected into the sandbox */
   phantom: string;
@@ -160,7 +157,7 @@ export interface MutationDatasetEntry {
 }
 
 // ==========================================
-// 3: TIME-TRAVEL STATE FORKING
+// 3: BROWSER CHECKPOINTS AND PARALLEL CONTEXTS
 // ==========================================
 
 export interface StorageStateSnapshot {
@@ -251,24 +248,25 @@ export interface ComplianceProofBundle {
   timestamp: string;
   summary: {
     totalSteps: number;
-    passedSteps: number;
-    failedSteps: number;
+    /** Pass/fail cannot be inferred from ACTION_DISPATCH events alone. */
+    passedSteps: null;
+    failedSteps: null;
     durationMs: number;
-    zeroTokenCostDeterministic: boolean;
+    aiTokenCostUsd: null;
   };
   policyAudit: {
     phantomTokensConfigured: number;
-    phantomTokensProtected: number;
-    realSecretsExposedToSandbox: 0;
+    /** Secret exposure is not comprehensively measured by the current runner. */
+    realSecretsExposedToSandbox: null;
     egressBlockedCount: number;
     egressAllowedCount: number;
     unauthorizedMutationsPrevented: number;
   };
   soc2Mapping: {
-    cc6_1_logicalAccess: 'COMPLIANT' | 'NON_COMPLIANT';
-    cc6_6_boundaryProtection: 'COMPLIANT' | 'NON_COMPLIANT';
-    cc7_1_changeVerification: 'COMPLIANT' | 'NON_COMPLIANT';
-    cc8_1_nonRepudiation: 'COMPLIANT' | 'NON_COMPLIANT';
+    cc6_1_logicalAccess: 'NOT_ASSESSED';
+    cc6_6_boundaryProtection: 'NOT_ASSESSED';
+    cc7_1_changeVerification: 'NOT_ASSESSED';
+    cc8_1_nonRepudiation: 'NOT_ASSESSED';
   };
   blocksCount: number;
   ledgerVerificationStatus: 'VALID_CHAIN' | 'TAMPERED';
@@ -283,6 +281,9 @@ export interface TimeWarpResult {
   targetTimeIso: string;
   deltaMs: number;
   durationString: string;
+  scope: 'internal' | 'browser-page';
+  affectedPageAPIs: string[];
+  /** @deprecated No system clock layers are synchronized; this is always empty. */
   clockLayersSynchronized: string[];
 }
 
@@ -298,20 +299,23 @@ export interface WireInteraction {
   responseStatus: number;
   responseHeaders: Record<string, string>;
   responseBody: string;
-  latencyMs: number;
+  /** Optional caller-supplied observation; null when no measurement is provided. */
+  latencyMs: number | null;
 }
 
 // ==========================================
-// 6: DETERMINISTIC CHAOS & RACE HUNTER TYPES
+// 6: MUTATION OBSERVATION PROTOTYPE TYPES
 // ==========================================
 
 export interface CloneAuditResult {
+  /** @deprecated This entry describes an observation/scenario, not a VM clone. */
   cloneId: string;
+  scenarioId: string;
   name: string;
   description: string;
-  status: 'PASSED' | 'FAILED' | 'VULNERABILITY_DETECTED';
-  durationMs: number;
-  httpStatus: number;
+  status: 'OBSERVED' | 'SIMULATED' | 'RISK_INDICATED';
+  durationMs: number | null;
+  httpStatus: number | null;
   vulnerability: string | null;
   recommendation: string | null;
 }
@@ -320,10 +324,18 @@ export interface ChaosAuditReport {
   id: string;
   timestamp: string;
   targetEndpoint: string;
-  status: 'PASSED' | 'VULNERABILITY_FOUND';
+  status: 'OBSERVED' | 'SIMULATED' | 'RISK_INDICATED';
+  executionMode: 'OBSERVATION_ONLY';
+  scenarios: CloneAuditResult[];
+  /** @deprecated Use scenarios; no VM clones are created by this prototype. */
   clones: CloneAuditResult[];
+  idempotencyKeyObserved: boolean;
+  idempotencyAssumed: boolean;
+  /** @deprecated This observation-only prototype cannot verify backend enforcement. */
   idempotencyEnforced: boolean;
+  /** @deprecated This observation-only prototype never executes a duplicate request. */
   doubleSpendDetected: boolean;
+  doubleSpendRiskIndicated: boolean;
   summary: string;
 }
 
@@ -356,7 +368,7 @@ export interface XRayTrace {
     method: string;
     url: string;
     status: number;
-    latencyMs: number;
+    latencyMs: number | null;
     requestHeaders: Record<string, string>;
     responseHeaders: Record<string, string>;
     responseBodySnippet?: string;
@@ -378,7 +390,7 @@ export interface XRayDiagnosticBundle {
 }
 
 // ==========================================
-// 8: PRODUCTION-TO-MICROVM BUG TELEPORTATION TYPES
+// 8: BROWSER-STATE CAPSULE PROTOTYPE TYPES
 // ==========================================
 
 export interface TelemetryEvent {
