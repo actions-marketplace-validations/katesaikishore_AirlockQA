@@ -10,6 +10,7 @@ jobs:
   airlock-qa:
     name: Browser QA and Signed Run Evidence
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
       - name: Checkout repository
@@ -24,7 +25,7 @@ jobs:
         run: bun install
 
       - name: Install Playwright Chromium
-        run: bunx playwright install chromium --with-deps
+        run: npx --yes playwright@1.65.0 install chromium --with-deps
 
       - name: Start demo store
         run: |
