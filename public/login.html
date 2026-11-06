@@ -10,32 +10,130 @@
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400..700;1,9..40,400..700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/marketing.css">
+  <style>
+    body { margin: 0; background: #F7F8F5; }
+    .si * { box-sizing: border-box; }
+    .si-btn { transition: background-color .15s ease, transform .15s ease; cursor: pointer; text-decoration: none; }
+    .si-btn:hover { transform: translateY(-1px); }
+    .si-btn-pri:hover { background: #245A49 !important; }
+    @keyframes si-rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+    @keyframes si-glow { 0%,100% { opacity: 0; } 50% { opacity: 1; } }
+    @keyframes si-pass { 0% { left: 6%; opacity: 0; } 20% { opacity: 1; } 80% { opacity: 1; } 100% { left: 90%; opacity: 0; } }
+    @keyframes si-stop { 0% { left: 6%; opacity: 0; } 20% { opacity: 1; } 50% { left: 40.5%; opacity: 1; } 70% { left: 40.5%; opacity: 1; } 100% { left: 35%; opacity: 0; } }
+    @media (prefers-reduced-motion: reduce) {
+      .si [data-anim] { animation: none !important; }
+    }
+  </style>
   <script src="/login.js" defer></script>
 </head>
-<body class="auth-page">
-  <header class="auth-header"><a class="marketing-brand" href="/"><img class="brand-mark" src="/favicon.svg" alt="" width="27" height="27"><span>airlock<span>cloud</span></span></a><a href="/" class="auth-back">← Back to home</a></header>
-  <main class="auth-layout">
-    <section class="auth-story">
-      <span class="eyebrow"><span class="eyebrow-dot"></span> AIRLOCK CLOUD</span>
-      <h1>Your test pipeline,<br><em>with a safer boundary.</em></h1>
-      <p>Open the sample console to explore the run-submission flow and preview dashboard.</p>
-      <div class="auth-flow"><span>CI runner</span><i>→</i><span>Run request</span><i>→</i><span>Response</span></div>
-      <div class="auth-story-note"><span>◇</span><span><b>Run request submitted by your CI</b><small>The current cloud API exposes POST /v1/runs. Runner capabilities depend on deployment.</small></span></div>
+<body>
+<div class="si" style="min-height: 100vh; display: flex; flex-direction: column; background: rgb(247, 248, 245); color: rgb(21, 33, 28); font-family: 'DM Sans', system-ui, -apple-system, sans-serif; font-size: 16px; line-height: 1.6;">
+  <header style="width: 100%; max-width: 1280px; margin: 0px auto; padding: 18px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;">
+    <a href="/" aria-label="AirlockQA home" style="display: inline-flex; align-items: center; gap: 10px; color: rgb(21, 33, 28); text-decoration: none;">
+      <svg width="32" height="32" viewBox="0 0 64 64" aria-hidden="true">
+        <rect x="2" y="2" width="60" height="60" rx="18" fill="#2F6F5B"></rect>
+        <path d="M16 48V31.5C16 22.94 22.94 16 31.5 16h1C41.06 16 48 22.94 48 31.5V48" fill="none" stroke="#F7FBF8" stroke-width="4.5" stroke-linecap="round"></path>
+        <path d="M23.5 47V31.5a8.5 8.5 0 0 1 17 0V47" fill="none" stroke="#B8E4CE" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"></path>
+        <path d="M32 31v13" fill="none" stroke="#F7FBF8" stroke-width="2.5" stroke-linecap="round"></path>
+        <path d="M19.5 49.5h25" fill="none" stroke="#F7FBF8" stroke-width="4.5" stroke-linecap="round"></path>
+        <circle cx="44.5" cy="20.5" r="2.2" fill="#B8E4CE"></circle>
+      </svg>
+      <span style="font: 800 19px / 1 Manrope, system-ui, sans-serif; letter-spacing: -0.5px;">Airlock<span style="color: rgb(47, 111, 91);">QA</span></span>
+    </a>
+    <a href="/" style="display: inline-flex; align-items: center; gap: 6px; font-size: 15px; font-weight: 600; color: rgb(70, 84, 76); text-decoration: none;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 18l-6-6 6-6"></path></svg>
+      Back to home
+    </a>
+  </header>
+
+  <main style="flex: 1 1 0%; width: 100%; max-width: 1280px; margin: 0px auto; padding: 24px 24px 48px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(440px, 100%), 1fr)); gap: 48px; align-items: center;">
+    <!-- Story section with animated safety door -->
+    <section aria-labelledby="si-story" style="position: relative; padding: clamp(28px, 4vw, 48px); border-radius: 28px; background: rgb(21, 33, 28); color: rgb(231, 242, 236); overflow: hidden; animation: 0.7s ease 0s 1 normal both running si-rise;">
+      <div style="display: inline-flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: rgb(127, 214, 174);">
+        <span style="width: 20px; height: 2px; background: rgb(127, 214, 174);"></span>AirlockQA console
+      </div>
+      <h1 id="si-story" style="margin: 16px 0px 0px; font: 800 clamp(32px, 3.4vw, 44px) / 1.08 Manrope, system-ui, sans-serif; letter-spacing: -0.03em; color: rgb(255, 255, 255); text-wrap: balance;">Your tests, behind a safety door.</h1>
+      <p style="margin: 16px 0px 0px; max-width: 460px; font-size: 17px; line-height: 1.65; color: rgb(201, 216, 207);">Sign in to see every run, what the safety door allowed or stopped, and the signed receipt each run left behind.</p>
+      
+      <!-- Animated Safety Door SVG -->
+      <div aria-hidden="true" style="position: relative; margin-top: 32px; height: 128px; border: 1px solid rgb(40, 66, 55); border-radius: 18px; background: rgb(15, 29, 23);">
+        <div style="position: absolute; left: 6%; right: 6%; top: 50%; border-top: 2px dashed rgb(47, 75, 63);"></div>
+        <div style="position: absolute; left: 50%; top: 18px; bottom: 18px; width: 46px; margin-left: -23px; border-radius: 12px; background: rgb(30, 58, 46); display: flex; align-items: center; justify-content: center;">
+          <svg width="26" height="26" viewBox="0 0 64 64"><path d="M16 48V31.5C16 22.94 22.94 16 31.5 16h1C41.06 16 48 22.94 48 31.5V48" fill="none" stroke="#F7FBF8" stroke-width="5" stroke-linecap="round"></path><path d="M23.5 47V31.5a8.5 8.5 0 0 1 17 0V47" fill="none" stroke="#7FD6AE" stroke-width="4.5" stroke-linecap="round"></path></svg>
+          <span style="position: absolute; inset: -4px; border: 2px solid rgb(76, 192, 140); border-radius: 14px; opacity: 0; animation: 5s ease-in-out 0s infinite normal both running si-glow;"></span>
+          <span style="position: absolute; inset: -4px; border: 2px solid rgb(232, 137, 43); border-radius: 14px; opacity: 0; animation: 5s ease-in-out 2.5s infinite normal both running si-glow;"></span>
+        </div>
+        <span style="position: absolute; top: 50%; left: 90%; margin-top: -9px; height: 18px; padding: 0px 8px; border-radius: 999px; background: rgb(127, 214, 174); color: rgb(15, 29, 23); font: 700 10.5px / 18px 'DM Sans', system-ui, sans-serif; white-space: nowrap; animation: 5s ease-in-out 0s infinite normal both running si-pass;">GET</span>
+        <span style="position: absolute; top: 50%; left: 40.5%; margin-top: -9px; height: 18px; padding: 0px 8px; border-radius: 999px; background: rgb(242, 178, 107); color: rgb(15, 29, 23); font: 700 10.5px / 18px 'DM Sans', system-ui, sans-serif; white-space: nowrap; animation: 5s ease-in-out 2.5s infinite normal both running si-stop;">REFUND</span>
+        <span style="position: absolute; left: 6%; bottom: 10px; font-size: 12px; color: rgb(143, 179, 160);">your test</span>
+        <span style="position: absolute; right: 6%; bottom: 10px; font-size: 12px; color: rgb(143, 179, 160);">real services</span>
+      </div>
+
+      <ul style="list-style: none; margin: 28px 0px 0px; padding: 0px; display: grid; gap: 12px; font-size: 15.5px; color: rgb(231, 242, 236);">
+        <li style="display: flex; align-items: flex-start; gap: 12px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7FD6AE" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg>
+          Real keys never enter the test browser
+        </li>
+        <li style="display: flex; align-items: flex-start; gap: 12px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7FD6AE" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg>
+          Every run ends with a receipt you can verify
+        </li>
+        <li style="display: flex; align-items: flex-start; gap: 12px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7FD6AE" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg>
+          Running locally stays free — no account needed
+        </li>
+      </ul>
     </section>
-    <section class="auth-card">
-      <div class="auth-card-mark">⌑</div>
-      <span class="auth-kicker">WORKSPACE ACCESS</span>
-      <h2>Sign in to Airlock Cloud</h2>
-      <p class="auth-description">Authentication is not connected in this preview. You can enter the sample workspace to explore the console.</p>
-      <button class="button button-primary demo-login" id="demo-login" type="button">Continue to sample workspace <span>→</span></button>
-      <div class="auth-divider"><span></span><small>PREVIEW ACCESS</small><span></span></div>
-      <div class="auth-preview-note"><span class="preview-lock">◇</span><p><b>Local demo session</b><br>This button opens sample data in this browser tab. It does not verify credentials or sign in to a production account.</p></div>
-      <p class="auth-error" id="auth-error" role="alert" hidden>Could not open the sample workspace. Please try again.</p>
-      <a class="auth-back-link" href="/">Return to the marketing page</a>
+
+    <!-- Sign-in card -->
+    <section aria-labelledby="si-title" style="width: 100%; max-width: 480px; justify-self: center; animation: 0.7s ease 0.08s 1 normal both running si-rise;">
+      <div style="padding: clamp(24px, 4vw, 40px); border: 1px solid rgb(227, 232, 226); border-radius: 24px; background: rgb(255, 255, 255); box-shadow: rgba(21, 33, 28, 0.08) 0px 24px 60px;">
+        <span style="display: inline-block; font-size: 11.5px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: rgb(47, 111, 91);">WORKSPACE ACCESS</span>
+        <h2 id="si-title" style="margin: 8px 0px 0px; font: 800 28px / 1.2 Manrope, system-ui, sans-serif; letter-spacing: -0.02em; color: rgb(21, 33, 28);">Sign in to Airlock Cloud</h2>
+        <p style="margin: 8px 0px 0px; font-size: 15.5px; color: rgb(90, 105, 97);">Authentication is not connected in this preview. You can enter the sample workspace to explore the console.</p>
+
+        <!-- Primary Demo Login Action -->
+        <button class="si-btn demo-login" id="demo-login" type="button" style="margin-top: 26px; width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; height: 52px; border: 0px; border-radius: 14px; background: rgb(47, 111, 91); color: rgb(255, 255, 255); font: 700 16px 'DM Sans', system-ui, sans-serif; cursor: pointer; box-shadow: 0 4px 14px rgba(47, 111, 91, 0.3);">
+          Continue to sample workspace <span>→</span>
+        </button>
+
+        <div style="margin: 22px 0px; display: flex; align-items: center; gap: 12px; font-size: 12px; font-weight: 700; letter-spacing: 0.08em; color: rgb(90, 105, 97);">
+          <span style="flex: 1 1 0%; height: 1px; background: rgb(227, 232, 226);"></span>
+          PREVIEW ACCESS
+          <span style="flex: 1 1 0%; height: 1px; background: rgb(227, 232, 226);"></span>
+        </div>
+
+        <div style="padding: 14px; border: 1px solid rgb(227, 232, 226); border-radius: 12px; background: rgb(251, 252, 250); font-size: 13.5px; color: rgb(70, 84, 76);">
+          <strong style="color: rgb(21, 33, 28); display: block; margin-bottom: 4px;">Local demo session</strong>
+          This button opens sample data in this browser tab. It does not verify credentials or sign in to a production account.
+        </div>
+
+        <p class="auth-error" id="auth-error" role="alert" hidden style="margin-top: 14px; padding: 10px; border-radius: 8px; background: rgb(254, 242, 242); color: rgb(185, 28, 28); font-size: 13.5px;">
+          Could not open the sample workspace. Please try again.
+        </p>
+      </div>
+
+      <a href="/console" class="si-btn" style="margin-top: 16px; display: flex; align-items: center; gap: 14px; padding: 18px 20px; border: 1px dashed rgb(201, 214, 204); border-radius: 18px; background: rgb(251, 252, 250); color: rgb(21, 33, 28); text-decoration: none;">
+        <span style="flex: 0 0 auto; width: 42px; height: 42px; border-radius: 12px; background: rgb(234, 241, 251); color: rgb(36, 88, 155); display: inline-flex; align-items: center; justify-content: center;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="12.5" rx="2"></rect><path d="M8.5 20.5h7M12 16.5v4"></path></svg>
+        </span>
+        <span style="flex: 1 1 0%; min-width: 0px;">
+          <span style="display: block; font-size: 15.5px; font-weight: 700;">Just looking?</span>
+          <span style="display: block; font-size: 14px; color: rgb(90, 105, 97);">Explore the sample workspace — no sign-in needed.</span>
+        </span>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2F6F5B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>
+      </a>
     </section>
   </main>
-  <footer class="auth-footer"><span>© 2026 Airlock Cloud</span><span>Isolated browser testing for CI</span></footer>
+
+  <footer style="border-top: 1px solid rgb(227, 232, 226);">
+    <div style="max-width: 1280px; margin: 0px auto; padding: 18px 24px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; font-size: 13.5px; color: rgb(90, 105, 97);">
+      <span>© 2026 AirlockQA · MIT License</span>
+      <span>Running tests locally never needs an account.</span>
+    </div>
+  </footer>
+</div>
 </body>
 </html>
