@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'bun:test';
 import { CausalXRay } from '../src/telemetry/causal-xray.js';
 
-describe('Full-Stack Causal X-Ray Engine', () => {
-  it('generates compliant 32-char W3C trace identifiers', () => {
+describe('Browser trace diagnostics prototype', () => {
+  it('generates 32-character trace identifiers for browser requests', () => {
     const xray = new CausalXRay();
     const traceId = xray.getTraceId();
 
@@ -44,7 +44,7 @@ describe('Full-Stack Causal X-Ray Engine', () => {
     expect(caughtError).not.toBeNull();
     expect(caughtError.message).toContain('Payment processing timed out');
     expect(caughtError.xrayBundle).toBeDefined();
-    expect(caughtError.xrayBundle.formattedTerminalBox).toContain('AIRLOCK CAUSAL X-RAY');
+    expect(caughtError.xrayBundle.formattedTerminalBox).toContain('AIRLOCK BROWSER TRACE DIAGNOSTICS');
     expect(caughtError.xrayBundle.formattedTerminalBox).toContain('Failed Step:');
   });
 
@@ -64,10 +64,23 @@ describe('Full-Stack Causal X-Ray Engine', () => {
       },
     });
 
-    expect(box).toContain('AIRLOCK CAUSAL X-RAY: ROOT-CAUSE DIAGNOSTIC');
+    expect(box).toContain('AIRLOCK BROWSER TRACE DIAGNOSTICS');
     expect(box).toContain('src/controllers/checkout.ts:88');
     expect(box).toContain('chargeCustomerCard');
     expect(box).toContain('Card declined: Insufficient funds');
     expect(box).toContain('UPDATE accounts SET balance');
+  });
+
+  it('marks backend source details unavailable when the service did not provide them', () => {
+    const box = CausalXRay.formatTerminalDiagnostic({
+      traceId: '4bf92f3577b34da6a3ce929d0e0e4736',
+      stepName: 'Submit form',
+      errorMsg: 'Assertion timed out',
+      diag: { errorClass: 'AssertionFailure', errorMessage: 'Assertion timed out' },
+    });
+
+    expect(box).toContain('Unavailable (not supplied by the service)');
+    expect(box).toContain('Observed error:');
+    expect(box).not.toContain('controllers/api.ts');
   });
 });

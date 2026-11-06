@@ -4,7 +4,7 @@ import * as path from 'node:path';
 import { ShadowRecorder } from '../src/shadow/shadow-recorder.js';
 import { ShadowSynthesizer } from '../src/shadow/shadow-synthesizer.js';
 
-describe('Zero-Touch Shadow Production Auto-Mocking', () => {
+describe('Browser-context fixture replay prototype', () => {
   const testCatalogPath = './.airlock/test-shadow/catalog.json';
 
   it('records outbound wire interactions and caches them', () => {
@@ -37,11 +37,36 @@ describe('Zero-Touch Shadow Production Auto-Mocking', () => {
     }
   });
 
-  it('initializes ShadowSynthesizer and reports hermetic status', () => {
+  it('initializes ShadowSynthesizer without claiming hermetic network coverage', () => {
     const recorder = new ShadowRecorder(testCatalogPath);
     const synthesizer = new ShadowSynthesizer(recorder);
 
     expect(synthesizer.isActive()).toBe(false);
     expect(synthesizer.getServedCount()).toBe(0);
+  });
+
+  it('continues requests outside the configured target hosts', async () => {
+    const recorder = new ShadowRecorder(testCatalogPath);
+    const synthesizer = new ShadowSynthesizer(recorder);
+    let routeHandler: ((route: any) => Promise<void>) | undefined;
+    const context = {
+      route: async (_pattern: string, handler: (route: any) => Promise<void>) => {
+        routeHandler = handler;
+      },
+    };
+    const continued: string[] = [];
+
+    await synthesizer.activate(context as any, ['api.example.com']);
+    await routeHandler?.({
+      request: () => ({
+        url: () => 'https://outside.example.net/ping',
+        method: () => 'GET',
+        postData: () => null,
+      }),
+      continue: async () => continued.push('continued'),
+      fulfill: async () => continued.push('fulfilled'),
+    });
+
+    expect(continued).toEqual(['continued']);
   });
 });

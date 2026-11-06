@@ -10,7 +10,6 @@ export interface AttestationOptions {
   signingKey: string;
   outputDir?: string;
   totalSteps: number;
-  passedSteps: number;
   durationMs: number;
   phantomTokensConfigured: number;
   egressBlockedCount: number;
@@ -20,7 +19,7 @@ export interface AttestationOptions {
 
 export class AttestationEngine {
   /**
-   * Create and cryptographically sign a compliance proof bundle
+   * Create and sign an execution-evidence bundle. This is not a compliance assessment.
    */
   static generateBundle(
     ledger: AirlockLedger,
@@ -45,24 +44,23 @@ export class AttestationEngine {
       timestamp: new Date().toISOString(),
       summary: {
         totalSteps: options.totalSteps,
-        passedSteps: options.passedSteps,
-        failedSteps: options.totalSteps - options.passedSteps,
+        passedSteps: null,
+        failedSteps: null,
         durationMs: options.durationMs,
-        zeroTokenCostDeterministic: true,
+        aiTokenCostUsd: null,
       },
       policyAudit: {
         phantomTokensConfigured: options.phantomTokensConfigured,
-        phantomTokensProtected: options.phantomTokensConfigured,
-        realSecretsExposedToSandbox: 0,
+        realSecretsExposedToSandbox: null,
         egressBlockedCount: options.egressBlockedCount,
         egressAllowedCount: options.egressAllowedCount,
         unauthorizedMutationsPrevented: options.unauthorizedMutationsPrevented,
       },
       soc2Mapping: {
-        cc6_1_logicalAccess: 'COMPLIANT',
-        cc6_6_boundaryProtection: options.egressBlockedCount > 0 || options.egressAllowedCount > 0 ? 'COMPLIANT' : 'COMPLIANT',
-        cc7_1_changeVerification: options.passedSteps === options.totalSteps ? 'COMPLIANT' : 'NON_COMPLIANT',
-        cc8_1_nonRepudiation: 'COMPLIANT',
+        cc6_1_logicalAccess: 'NOT_ASSESSED',
+        cc6_6_boundaryProtection: 'NOT_ASSESSED',
+        cc7_1_changeVerification: 'NOT_ASSESSED',
+        cc8_1_nonRepudiation: 'NOT_ASSESSED',
       },
       blocksCount: ledger.getBlocks().length,
       ledgerVerificationStatus: 'VALID_CHAIN',
@@ -92,13 +90,6 @@ export class AttestationEngine {
       return {
         valid: false,
         reason: 'Cryptographic signature mismatch: bundle has been modified or signed with a different key',
-      };
-    }
-
-    if (bundle.policyAudit.realSecretsExposedToSandbox !== 0) {
-      return {
-        valid: false,
-        reason: 'Zero-Secret Guarantee violated: Real secrets were detected in sandbox environment',
       };
     }
 

@@ -136,7 +136,7 @@ export class TraceRecorder {
       expected: params.expected,
       checkpointName: params.checkpointName,
       timestamp: new Date().toISOString(),
-      durationMs: params.durationMs || 10,
+      durationMs: params.durationMs,
       screenshotHash,
       domSnapshotAfter: domSnapshot,
     };

@@ -13,7 +13,7 @@ export { SelfHealer, type SelfHealOptions } from './healer/self-healer.js';
 export { DatasetCollector } from './healer/dataset-collector.js';
 export { stringSimilarity, levenshteinDistance, tokenOverlap } from './healer/dom-diff.js';
 
-// 3: Sub-Second Time-Travel State Forking
+// 3: Browser Checkpoints and Parallel Contexts
 export { CheckpointManager } from './forker/checkpoint-manager.js';
 export { StateForker, type ForkWorkerContext, type ForkWorkerFunction } from './forker/state-forker.js';
 
@@ -29,13 +29,13 @@ export { TimeWarper } from './timewarp/time-warper.js';
 export { ShadowRecorder } from './shadow/shadow-recorder.js';
 export { ShadowSynthesizer } from './shadow/shadow-synthesizer.js';
 
-// 6: Deterministic Chaos & Race-Condition Hunter
+// 6: Mutation Observation Prototype
 export { ChaosHunter, type ChaosAuditOptions } from './chaos/chaos-hunter.js';
 
-// 7: Full-Stack Causal X-Ray
+// 7: Browser Trace Diagnostics
 export { CausalXRay } from './telemetry/causal-xray.js';
 
-// 8: Bug Teleportation & State Capsules
+// 8: Browser-State Capsule Prototype
 export { TelemetryRingBuffer, CapsuleManager } from './teleport/capsule.js';
 
 // Runner & Resilient Locators

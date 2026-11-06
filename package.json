@@ -1,7 +1,7 @@
 {
   "name": "airlockqa",
   "version": "1.0.0",
-  "description": "Zero-Trust, Self-Compiling, Time-Traveling AI QA Engine with Phantom Credentials and Cryptographic Proof",
+  "description": "TypeScript browser testing tools with configurable request policies and signed run evidence",
   "type": "module",
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
@@ -12,6 +12,8 @@
   "scripts": {
     "build": "tsc",
     "test": "bun test",
+    "qa:gui": "bash scripts/gui-smoke.sh",
+    "qa": "bun run build && bun test && bun run qa:gui",
     "cli": "bun ./bin/airlock.ts",
     "demo:server": "bun ./examples/demo-store/server.ts"
   },

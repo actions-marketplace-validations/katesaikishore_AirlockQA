@@ -28,7 +28,8 @@ export class StateForker {
   }
 
   /**
-   * Clone warm state into N isolated parallel workers in sub-second time (<150ms spin-up)
+   * Restore browser storage and DOM snapshots into isolated parallel browser contexts.
+   * This is browser-state restoration, not a process or VM-memory snapshot.
    */
   async forkParallel(
     browser: Browser,
@@ -44,8 +45,8 @@ export class StateForker {
     const forkStartTime = Date.now();
     logger.moat(
       3,
-      `Sub-Second State Forking: Spawning ${variations.length} Parallel Clones`,
-      `Branching warm RAM state '${checkpointName}' without repeating setup steps`
+      `Parallel Browser-State Forking: Spawning ${variations.length} Isolated Contexts`,
+      `Restoring browser checkpoint '${checkpointName}' without repeating setup steps`
     );
 
     // Launch contexts in parallel
@@ -105,14 +106,14 @@ export class StateForker {
       };
 
       const statusIcon = result.success ? '✔' : '✖';
-      logger.info(`  ├─ Clone #${i + 1} [${variation.id}]: ${statusIcon} completed in ${durationMs}ms`);
+      logger.info(`  ├─ Browser variation #${i + 1} [${variation.id}]: ${statusIcon} completed in ${durationMs}ms`);
 
       return result;
     });
 
     const results = await Promise.all(workerPromises);
     const totalElapsed = Date.now() - forkStartTime;
-    logger.success(`All ${variations.length} time-travel forks completed in ${totalElapsed}ms total`);
+    logger.success(`All ${variations.length} browser-state forks completed in ${totalElapsed}ms total`);
 
     return results;
   }

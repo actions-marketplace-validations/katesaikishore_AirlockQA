@@ -1,34 +1,50 @@
 import { describe, it, expect } from 'bun:test';
 import { ChaosHunter } from '../src/chaos/chaos-hunter.js';
 
-describe('Deterministic Chaos & Race-Condition Hunter', () => {
-  it('detects double-spend race condition when mutation lacks Idempotency-Key', async () => {
+describe('Mutation observation prototype', () => {
+  it('indicates idempotency risk without claiming a double-spend was detected', async () => {
     const hunter = new ChaosHunter();
 
     // Mock page with minimal interface for testing
+    let requestListener: ((request: any) => void) | undefined;
     const mockPage: any = {
       url: () => 'http://localhost:3000/checkout',
-      on: (_event: string, _fn: any) => {},
-      off: (_event: string, _fn: any) => {},
+      on: (event: string, listener: (request: any) => void) => {
+        if (event === 'request') requestListener = listener;
+      },
+      off: () => {},
     };
 
     const report = await hunter.auditMutation(
       mockPage,
-      async () => {},
+      async () => {
+        requestListener?.({
+          url: () => 'http://localhost:3000/api/checkout',
+          method: () => 'POST',
+          headers: () => ({}),
+          postData: () => '{}',
+        });
+      },
       { endpointPattern: 'checkout', simulatedBackendIdempotent: false }
     );
 
-    expect(report.status).toBe('VULNERABILITY_FOUND');
-    expect(report.doubleSpendDetected).toBe(true);
+    expect(report.status).toBe('RISK_INDICATED');
+    expect(report.executionMode).toBe('OBSERVATION_ONLY');
+    expect(report.doubleSpendRiskIndicated).toBe(true);
+    expect(report.doubleSpendDetected).toBe(false);
     expect(report.idempotencyEnforced).toBe(false);
-    expect(report.clones.length).toBe(4);
+    expect(report.idempotencyKeyObserved).toBe(false);
+    expect(report.scenarios.length).toBe(4);
 
-    const clone2 = report.clones.find((c) => c.cloneId === 'clone_2_rapid_duplicate');
-    expect(clone2?.status).toBe('VULNERABILITY_DETECTED');
-    expect(clone2?.vulnerability).toContain('Double-Charge Race Condition');
+    const duplicateScenario = report.scenarios.find((c) => c.scenarioId === 'scenario_2_rapid_duplicate');
+    expect(duplicateScenario?.status).toBe('RISK_INDICATED');
+    expect(duplicateScenario?.durationMs).toBeNull();
+    expect(duplicateScenario?.httpStatus).toBeNull();
+    expect(duplicateScenario?.vulnerability?.toLowerCase()).toContain('no idempotency key');
+    expect(report.summary).toContain('no duplicate was sent');
   });
 
-  it('passes audit when endpoint enforces idempotency protection', async () => {
+  it('labels an assumed backend behavior as simulated rather than verified', async () => {
     const hunter = new ChaosHunter();
 
     const mockPage: any = {
@@ -43,15 +59,44 @@ describe('Deterministic Chaos & Race-Condition Hunter', () => {
       { endpointPattern: 'charge', simulatedBackendIdempotent: true }
     );
 
-    expect(report.status).toBe('PASSED');
+    expect(report.status).toBe('SIMULATED');
     expect(report.doubleSpendDetected).toBe(false);
-    expect(report.idempotencyEnforced).toBe(true);
+    expect(report.doubleSpendRiskIndicated).toBe(false);
+    expect(report.idempotencyAssumed).toBe(true);
+    expect(report.idempotencyEnforced).toBe(false);
 
-    const clone2 = report.clones.find((c) => c.cloneId === 'clone_2_rapid_duplicate');
-    expect(clone2?.status).toBe('PASSED');
+    const duplicateScenario = report.scenarios.find((c) => c.scenarioId === 'scenario_2_rapid_duplicate');
+    expect(duplicateScenario?.status).toBe('SIMULATED');
+    expect(duplicateScenario?.durationMs).toBeNull();
   });
 
-  it('renders clean terminal audit report table', async () => {
+  it('does not treat an observed key as proof of backend enforcement', async () => {
+    const hunter = new ChaosHunter();
+    let requestListener: ((request: any) => void) | undefined;
+    const mockPage: any = {
+      url: () => 'http://localhost:3000/api/charge',
+      on: (event: string, listener: (request: any) => void) => {
+        if (event === 'request') requestListener = listener;
+      },
+      off: () => {},
+    };
+
+    const report = await hunter.auditMutation(mockPage, async () => {
+      requestListener?.({
+        url: () => 'http://localhost:3000/api/charge',
+        method: () => 'POST',
+        headers: () => ({ 'idempotency-key': 'test-key' }),
+        postData: () => '{}',
+      });
+    }, { endpointPattern: 'charge' });
+
+    expect(report.status).toBe('OBSERVED');
+    expect(report.idempotencyKeyObserved).toBe(true);
+    expect(report.idempotencyEnforced).toBe(false);
+    expect(report.doubleSpendDetected).toBe(false);
+  });
+
+  it('labels the terminal report as observation-only and scenarios as not run', async () => {
     const hunter = new ChaosHunter();
     const mockPage: any = {
       url: () => 'http://localhost:3000/api/transfer',
@@ -62,8 +107,10 @@ describe('Deterministic Chaos & Race-Condition Hunter', () => {
     const report = await hunter.auditMutation(mockPage, async () => {}, { simulatedBackendIdempotent: true });
     const formatted = ChaosHunter.formatReport(report);
 
-    expect(formatted).toContain('AIRLOCK DETERMINISTIC CHAOS & RACE-CONDITION AUDIT REPORT');
+    expect(formatted).toContain('AIRLOCK MUTATION OBSERVATION REPORT');
+    expect(formatted).toContain('OBSERVATION ONLY; scenarios not executed');
     expect(formatted).toContain('Target Endpoint:');
-    expect(formatted).toContain('Clone 1: Normal Execution (Baseline)');
+    expect(formatted).toContain('Scenario 1: Browser action observation');
+    expect(formatted).toContain('Scenario 3: Connection interruption (not executed)');
   });
 });

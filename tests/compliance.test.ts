@@ -62,7 +62,6 @@ describe('Compliance: Cryptographic Ledger & Audit Bundles', () => {
     const bundle = AttestationEngine.generateBundle(ledger, {
       signingKey,
       totalSteps: 1,
-      passedSteps: 1,
       durationMs: 450,
       phantomTokensConfigured: 1,
       egressBlockedCount: 1,
@@ -72,7 +71,10 @@ describe('Compliance: Cryptographic Ledger & Audit Bundles', () => {
 
     expect(bundle.merkleRoot).toBeDefined();
     expect(bundle.signature).toBeDefined();
-    expect(bundle.policyAudit.realSecretsExposedToSandbox).toBe(0);
+    expect(bundle.policyAudit.realSecretsExposedToSandbox).toBeNull();
+    expect(bundle.summary.passedSteps).toBeNull();
+    expect(bundle.summary.failedSteps).toBeNull();
+    expect(bundle.soc2Mapping.cc6_1_logicalAccess).toBe('NOT_ASSESSED');
 
     // Verify bundle
     const verifyResult = AttestationEngine.verifyBundle(bundle, signingKey);

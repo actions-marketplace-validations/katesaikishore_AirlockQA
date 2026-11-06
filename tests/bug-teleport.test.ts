@@ -2,7 +2,7 @@ import { describe, it, expect } from 'bun:test';
 import { TelemetryRingBuffer, CapsuleManager } from '../src/teleport/capsule.js';
 import { sha256 } from '../src/utils/crypto.js';
 
-describe('Production-to-MicroVM Bug Teleportation', () => {
+describe('Browser-state capsule prototype', () => {
   it('maintains rolling ring buffer with automatic circular eviction', () => {
     const ring = new TelemetryRingBuffer(3);
 
@@ -17,7 +17,7 @@ describe('Production-to-MicroVM Bug Teleportation', () => {
     expect(events[2].payload.id).toBe('btn_4');
   });
 
-  it('redacts sensitive PII, credit cards, emails, and tokens automatically', () => {
+  it('masks selected email, card, and token patterns in strings', () => {
     const masked = TelemetryRingBuffer.maskSensitiveString(
       'User customer@acme.com paid with card 4111 2222 3333 4444 using token eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dozG4'
     );

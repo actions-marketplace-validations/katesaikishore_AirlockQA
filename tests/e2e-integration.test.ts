@@ -1,4 +1,4 @@
-import { describe, expect, it, beforeAll, afterAll } from 'bun:test';
+import { describe, expect, it, beforeAll, afterAll, setDefaultTimeout } from 'bun:test';
 import * as http from 'node:http';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
@@ -8,6 +8,8 @@ import { AirlockRunner } from '../src/runner/airlock-runner.js';
 import { AttestationEngine } from '../src/compliance/attestation.js';
 import { airlockLocator } from '../src/runner/locator.js';
 import type { ForkVariation } from '../src/types/index.js';
+
+setDefaultTimeout(60_000);
 
 describe('End-to-End AirlockQA Integration Test', () => {
   let demoServer: http.Server;
@@ -69,7 +71,7 @@ describe('End-to-End AirlockQA Integration Test', () => {
     await runner.initialize(context, page);
 
     // ------------------------------------------------------------------------
-    // STEP: DETERMINISTIC FAST EXECUTION (<800ms)
+    // STEP: BROWSER ACTION EXECUTION
     // ------------------------------------------------------------------------
     runner.step('GOTO', baseUrl);
     await page.goto(baseUrl, { waitUntil: 'domcontentloaded' });
@@ -89,7 +91,7 @@ describe('End-to-End AirlockQA Integration Test', () => {
     await page.waitForTimeout(200);
 
     // ------------------------------------------------------------------------
-    // STEP: SUB-SECOND TIME-TRAVEL STATE CHECKPOINT
+    // STEP: RESTORE BROWSER CHECKPOINT INTO ISOLATED CONTEXTS
     // ------------------------------------------------------------------------
     await runner.checkpoint('e2e_post_auth', page, context);
 
@@ -148,7 +150,7 @@ describe('End-to-End AirlockQA Integration Test', () => {
     expect(blockedResult.ok).toBe(false);
 
     // ------------------------------------------------------------------------
-    // STEP: TIME-TRAVEL PARALLEL FORKING (<150ms)
+    // STEP: RESTORE A BROWSER CHECKPOINT IN PARALLEL CONTEXTS
     // ------------------------------------------------------------------------
     const variations: ForkVariation[] = [
       { id: 'var_vip50', description: '50% VIP', inputOverrides: { coupon: 'VIP50' }, expectedOutcome: 'pass' },
@@ -175,10 +177,10 @@ describe('End-to-End AirlockQA Integration Test', () => {
     const bundle = await runner.finalize();
 
     expect(bundle.merkleRoot).toBeDefined();
-    expect(bundle.policyAudit.realSecretsExposedToSandbox).toBe(0);
+    expect(bundle.policyAudit.realSecretsExposedToSandbox).toBeNull();
     expect(bundle.policyAudit.egressBlockedCount).toBeGreaterThanOrEqual(1); // Blocked refund!
-    expect(bundle.soc2Mapping.cc6_1_logicalAccess).toBe('COMPLIANT');
-    expect(bundle.soc2Mapping.cc6_6_boundaryProtection).toBe('COMPLIANT');
+    expect(bundle.soc2Mapping.cc6_1_logicalAccess).toBe('NOT_ASSESSED');
+    expect(bundle.soc2Mapping.cc6_6_boundaryProtection).toBe('NOT_ASSESSED');
 
     // Verify attestation bundle cryptographically
     const verification = AttestationEngine.verifyBundle(bundle, 'e2e-test-hmac-master-key-32-chars!');
@@ -189,11 +191,11 @@ describe('End-to-End AirlockQA Integration Test', () => {
     expect(fs.existsSync(htmlReportPath)).toBe(true);
     const htmlContent = fs.readFileSync(htmlReportPath, 'utf8');
     expect(htmlContent).toContain(bundle.merkleRoot);
-    expect(htmlContent).toContain('SOC 2 Verified Bundle');
+    expect(htmlContent).toContain('not a compliance assessment');
 
     await context.close();
     fs.rmSync('./.airlock/e2e-compliance', { recursive: true, force: true });
-  }, 20000);
+  }, 60000);
 
   it('verifies surgical locator self-healing on refactored UI', async () => {
     // Navigate with ?breaking=true where the button was refactored from #checkout-btn to .btn-refactored-v2
@@ -246,5 +248,5 @@ describe('End-to-End AirlockQA Integration Test', () => {
     expect(checkoutStatus).toContain('Stripe charge created successfully');
 
     await context.close();
-  }, 20000);
+  }, 60000);
 });

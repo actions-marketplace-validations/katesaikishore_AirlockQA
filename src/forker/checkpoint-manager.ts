@@ -99,7 +99,7 @@ export class CheckpointManager {
   }
 
   /**
-   * Restore warm checkpoint directly into context and page in <100ms
+   * Restore browser storage and URL/content into the supplied context and page.
    */
   async restore(context: BrowserContext, page: Page, name: string): Promise<boolean> {
     const snapshot = this.getCheckpoint(name);
@@ -145,7 +145,7 @@ export class CheckpointManager {
     );
 
     const elapsed = Date.now() - startTime;
-    logger.moat(3, 'Time-Travel State Restored', `Restored '${name}' to ${snapshot.url} in ${elapsed}ms (Zero re-execution required!)`);
+    logger.info(`Restored browser checkpoint '${name}' to ${snapshot.url} in ${elapsed}ms`);
     return true;
   }
 }

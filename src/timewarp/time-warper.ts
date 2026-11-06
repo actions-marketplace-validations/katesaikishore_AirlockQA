@@ -1,7 +1,6 @@
 /**
- * AirlockQA Virtual Time-Warp Engine
- * Synchronizes Linux microVM, database, and Chromium V8 clocks simultaneously.
- * Enables running 14-day trials, 1-hour session timeouts, and billing cycles in milliseconds.
+ * AirlockQA browser-page Date offset prototype.
+ * It does not change browser timers, the operating-system clock, or service clocks.
  */
 
 import type { Page, BrowserContext } from 'playwright-core';
@@ -12,6 +11,9 @@ export interface TimeWarpResult {
   targetTimeIso: string;
   deltaMs: number;
   durationString: string;
+  scope: 'internal' | 'browser-page';
+  affectedPageAPIs: string[];
+  /** @deprecated No system clock layers are synchronized; this is always empty. */
   clockLayersSynchronized: string[];
 }
 
@@ -76,88 +78,54 @@ export class TimeWarper {
     }
   }
 
-  /**
-   * Fast-forward virtual clock across all layers (V8 Date/timers, DOM, and Host Proxy)
-   */
+  /** Apply an offset to the internal clock and, when supplied, the page's Date APIs. */
   async warp(duration: string, page?: Page, context?: BrowserContext): Promise<TimeWarpResult> {
     const deltaMs = TimeWarper.parseDuration(duration);
     const previousTime = new Date(this.baseTimestamp + this.offsetMs);
     this.offsetMs += deltaMs;
     const targetTime = new Date(this.baseTimestamp + this.offsetMs);
 
-    const layers: string[] = ['Airlock Host Time Proxy'];
+    const affectedPageAPIs: string[] = [];
 
     if (page) {
-      // 1. Inject V8 Virtual Clock Override into the current page and all future navigations
-      await page.addInitScript(`(() => {
-        const offset = ${this.offsetMs};
-        const RealDate = window.Date;
-        
-        class VirtualDate extends RealDate {
-          constructor(...args) {
-            if (args.length === 0) {
-              super(RealDate.now() + offset);
-            } else {
-              super(...args);
-            }
-          }
-          static now() {
-            return RealDate.now() + offset;
-          }
-        }
-        
-        // Preserve prototype and statics
-        VirtualDate.UTC = RealDate.UTC;
-        VirtualDate.parse = RealDate.parse;
-        VirtualDate.prototype = RealDate.prototype;
+      const applyDateOffset = (offsetMs: number) => {
+        const currentDate = window.Date as DateConstructor & { __AIRLOCK_REAL_DATE__?: DateConstructor };
+        const RealDate = currentDate.__AIRLOCK_REAL_DATE__ || currentDate;
+        const VirtualDate = function (this: unknown, ...args: unknown[]) {
+          if (!new.target) return new RealDate(RealDate.now() + offsetMs).toString();
+          const constructorArgs = args.length === 0 ? [RealDate.now() + offsetMs] : args;
+          return Reflect.construct(RealDate, constructorArgs, new.target);
+        } as unknown as DateConstructor & { __AIRLOCK_REAL_DATE__?: DateConstructor };
+
+        (VirtualDate as any).prototype = RealDate.prototype;
+        Object.setPrototypeOf(VirtualDate, RealDate);
+        Object.defineProperty(VirtualDate, '__AIRLOCK_REAL_DATE__', { value: RealDate });
+        Object.defineProperty(VirtualDate, 'now', { value: () => RealDate.now() + offsetMs });
         window.Date = VirtualDate;
+        (window as any).__AIRLOCK_VIRTUAL_CLOCK_OFFSET__ = offsetMs;
+        window.dispatchEvent(new CustomEvent('airlock:timewarp', { detail: { offsetMs } }));
+      };
 
-        // Fast-forward active timeouts and intervals
-        window.__AIRLOCK_VIRTUAL_CLOCK_OFFSET__ = offset;
-      })()`);
-
-      // 2. Evaluate clock shift on live DOM immediately without reloading page
-      await page.evaluate((offset) => {
-        const RealDate = (window.Date as any).__realDate || window.Date;
-        class VirtualDate extends RealDate {
-          constructor(...args: any[]) {
-            if (args.length === 0) {
-              super(RealDate.now() + offset);
-            } else {
-              super(...(args as [any]));
-            }
-          }
-          static now() {
-            return RealDate.now() + offset;
-          }
-        }
-        VirtualDate.UTC = RealDate.UTC;
-        VirtualDate.parse = RealDate.parse;
-        VirtualDate.prototype = RealDate.prototype;
-        (VirtualDate as any).__realDate = RealDate;
-        window.Date = VirtualDate as any;
-        (window as any).__AIRLOCK_VIRTUAL_CLOCK_OFFSET__ = offset;
-
-        // Dispatch synthetic clock tick event for reactive frameworks (React / Vue / Svelte)
-        window.dispatchEvent(new CustomEvent('airlock:timewarp', { detail: { offsetMs: offset } }));
-      }, this.offsetMs).catch(() => {});
-
-      layers.push('Chromium V8 Engine Clock', 'DOM Reactive Event Loop');
+      await page.addInitScript(applyDateOffset, this.offsetMs);
+      await page.evaluate(applyDateOffset, this.offsetMs);
+      affectedPageAPIs.push('new Date() without arguments', 'Date.now()');
     }
 
-    if (context) {
-      layers.push('Browser Context Cookie / Token Expiry Engine');
+    if (context && !page) {
+      logger.warn('A BrowserContext alone is not clock-controlled; pass a Page to apply the browser Date offset.');
     }
 
-    logger.info(`Virtual Time-Warp: Fast-forwarded ${duration} (${deltaMs > 0 ? '+' : ''}${(deltaMs / 1000 / 3600 / 24).toFixed(1)} days)`);
-    logger.info(`  └─ Synchronized: ${previousTime.toISOString()} -> ${targetTime.toISOString()}`);
+    logger.info(`Browser Date offset: ${duration} (${deltaMs > 0 ? '+' : ''}${(deltaMs / 1000 / 3600 / 24).toFixed(1)} days)`);
+    logger.info(`  └─ Internal target: ${previousTime.toISOString()} -> ${targetTime.toISOString()}`);
 
     return {
       previousTimeIso: previousTime.toISOString(),
       targetTimeIso: targetTime.toISOString(),
       deltaMs,
       durationString: duration,
-      clockLayersSynchronized: layers,
+      scope: page ? 'browser-page' : 'internal',
+      affectedPageAPIs,
+      clockLayersSynchronized: [],
     };
   }
 

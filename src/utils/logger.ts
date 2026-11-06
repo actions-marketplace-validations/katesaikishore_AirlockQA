@@ -18,7 +18,7 @@ class Logger {
   ██║  ██║██║██║  ██║███████╗╚██████╔╝╚██████╗██║  ██╗╚██████╔╝██║  ██║
   ╚═╝  ╚═╝╚═╝╚═╝  ╚═╝╚══════╝ ╚═════╝  ╚═════╝╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═╝
 `));
-    console.log(pc.dim('  ─── The Zero-Trust, Self-Compiling, Time-Traveling AI QA Engine ───\n'));
+    console.log(pc.dim('  ─── Browser testing, request policy, and run evidence ───\n'));
   }
 
   info(msg: string, ...args: unknown[]): void {

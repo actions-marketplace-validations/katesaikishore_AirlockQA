@@ -28,8 +28,8 @@ export class PhantomEngine {
   }
 
   /**
-   * Returns a map of environment variables safe to inject into the sandbox.
-   * NEVER contains real secrets - ONLY phantom tokens!
+   * Returns configured phantom values for the browser/test environment.
+   * Real values remain in this Node process for configured proxy substitutions.
    */
   getSandboxEnv(): Record<string, string> {
     const env: Record<string, string> = {};
@@ -145,7 +145,8 @@ export class PhantomEngine {
   }
 
   /**
-   * Sanitize upstream responses so real secrets are never returned into the sandbox.
+   * Replace exact configured secret strings in matching upstream headers and body text.
+   * This does not detect transformed, encoded, binary, or otherwise unmatched values.
    */
   sanitizeResponse(
     headers: Record<string, string>,
