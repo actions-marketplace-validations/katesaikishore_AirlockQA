@@ -7,7 +7,9 @@ import type { ForkVariation } from '../src/types/index.js';
 
 describe('State Forker: Point-in-Time State Checkpointing', () => {
   const testCheckpointsDir = './.airlock/test-checkpoints';
-  const chromePath = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+  const macChromePath = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+  const chromePath = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH ||
+    (fs.existsSync(macChromePath) ? macChromePath : undefined);
 
   it('captures and retrieves point-in-time state checkpoint', async () => {
     const manager = new CheckpointManager(testCheckpointsDir);
