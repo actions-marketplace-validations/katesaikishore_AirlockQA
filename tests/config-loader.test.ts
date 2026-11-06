@@ -72,9 +72,10 @@ describe('loadConfig', () => {
   it('loads the committed sample config', () => {
     const config = loadConfig(undefined, path.resolve(import.meta.dir, '..'), { env: {} });
     expect(config.compliance?.signingKey).toBeUndefined();
-    for (const secret of Object.values(config.secrets)) {
+    for (const [name, secret] of Object.entries(config.secrets)) {
       expect(secret.realFromEnv).toBeTruthy();
-      expect(secret.real).toBe('REPLACE_ME_REAL_SECRET');
+      // Each placeholder is unique: the phantom engine rejects real values that contain one another.
+      expect(secret.real).toBe(`REPLACE_ME_${name}`);
     }
   });
 });

@@ -56,7 +56,7 @@ program
         STRIPE_SECRET_KEY: {
           // The real value is read from this environment variable at load time.
           realFromEnv: 'STRIPE_SECRET_KEY',
-          real: 'REPLACE_ME_REAL_SECRET',
+          real: 'REPLACE_ME_STRIPE_SECRET_KEY',
           phantom: 'ph_sec_stripe_test_8f2a1c',
           allowedHosts: ['localhost', '127.0.0.1', 'api.stripe.com'],
           allowedMethods: ['GET', 'POST'],
@@ -64,7 +64,7 @@ program
         },
         ADMIN_AUTH_TOKEN: {
           realFromEnv: 'ADMIN_AUTH_TOKEN',
-          real: 'REPLACE_ME_REAL_SECRET',
+          real: 'REPLACE_ME_ADMIN_AUTH_TOKEN',
           phantom: 'ph_auth_bearer_9901_admin',
           allowedHosts: ['localhost', '127.0.0.1'],
           blockedPaths: ['/api/admin/wipe-data'],

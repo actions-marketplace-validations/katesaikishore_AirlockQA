@@ -153,7 +153,7 @@ AirlockQA is configured via `airlock.config.json` in the root of your repository
   "secrets": {
     "API_TOKEN": {
       "realFromEnv": "API_TOKEN",
-      "real": "REPLACE_ME_REAL_SECRET",
+      "real": "REPLACE_ME_API_TOKEN",
       "phantom": "ph_sec_test_dummy_token",
       "allowedHosts": ["api.example.com"],
       "allowedMethods": ["GET", "POST"],

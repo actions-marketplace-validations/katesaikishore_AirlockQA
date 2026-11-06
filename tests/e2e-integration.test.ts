@@ -21,6 +21,8 @@ describe('End-to-End AirlockQA Integration Test', () => {
   const baseUrl = `http://127.0.0.1:${DEMO_PORT}`;
 
   beforeAll(async () => {
+    // The demo store accepts whatever real key the runner substitutes; match this test's config.
+    process.env.STRIPE_SECRET_KEY = 'sk_test_live_sample_51M001AcmeProductionSecretKey9900';
     demoServer = await startDemoServer(DEMO_PORT);
     browser = await chromium.launch({
       executablePath: chromePath,

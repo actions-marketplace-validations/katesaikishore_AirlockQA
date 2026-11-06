@@ -4,7 +4,9 @@ import { fileURLToPath } from 'node:url';
 
 const app = express();
 const PORT = 3900;
-const REAL_STRIPE_SECRET = 'sk_test_live_sample_51M001AcmeProductionSecretKey9900';
+// Demo only: accept the same value the runner substitutes for the phantom token.
+// airlock.config.json reads STRIPE_SECRET_KEY (realFromEnv) and falls back to this placeholder.
+const realStripeSecret = () => process.env.STRIPE_SECRET_KEY || 'REPLACE_ME_STRIPE_SECRET_KEY';
 
 app.use(express.json());
 
@@ -15,7 +17,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 // Stripe Checkout API
 app.post('/api/checkout', (req, res) => {
   const authHeader = req.headers.authorization || '';
-  const expectedAuth = `Bearer ${REAL_STRIPE_SECRET}`;
+  const expectedAuth = `Bearer ${realStripeSecret()}`;
 
   // If phantom token arrived without proxy edge substitution, reject!
   if (authHeader.includes('ph_sec_')) {

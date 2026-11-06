@@ -118,7 +118,7 @@ Running `bun run cli init` (or `npx airlock init`) generates a default configura
   "secrets": {
     "STRIPE_KEY": {
       "realFromEnv": "STRIPE_SECRET_KEY",
-      "real": "REPLACE_ME_REAL_SECRET",
+      "real": "REPLACE_ME_API_TOKEN",
       "phantom": "ph_sec_stripe_test_placeholder",
       "allowedHosts": ["localhost", "127.0.0.1", "api.stripe.com"],
       "allowedMethods": ["GET", "POST"],
