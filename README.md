@@ -14,16 +14,16 @@ Read this table before relying on a feature. Each row describes what this reposi
 | Capability | Status | Notes |
 | :--- | :--- | :--- |
 | `explore`, `compile`, `init` | Implemented | Records clicks, typing, key presses and selects into a trace; compiles it to a Playwright spec. |
-| `test --local` | Implemented | Runs specs through Playwright Test with the gateway attached as a fixture. |
+| `test --local` | Implemented | Runs specs through Playwright Test. Hand-written specs can use the `airlockTest` fixture; compiled specs attach the gateway in `beforeEach`. |
 | `run` (configured workflow) | Implemented | Runs `workflow` steps in one browser, with the gateway attached, and writes signed evidence. |
-| Phantom credential substitution | Implemented | Exact string match in text request bodies and headers. Binary bodies are not rewritten. |
+| Phantom credential substitution | Implemented | Exact string match in text request bodies only. Binary bodies are not rewritten. |
 | Request policy (egress rules) | Implemented, scoped | Covers browser-context requests and the standalone HTTP proxy. It is not an operating-system firewall. |
 | Evidence signing and `audit` | Implemented | HMAC-SHA256 or Ed25519. The SOC 2 mapping fields are `NOT_ASSESSED`; this is not a certification. |
 | Browser checkpoints and `fork` | Implemented | Saves cookies, storage and DOM hash, then restores them into new contexts. It does not capture process or VM memory. |
 | `chaos` | Prototype | Clicks one action and reports whether the observed request carried an idempotency key. It does not inject faults. |
 | `warp` | Prototype | The CLI command has no effect on the browser clock. The runner API can offset `Date` on one page. |
 | `teleport` | Prototype | Generates a repro spec from a capsule file. It does not replay the capsule. |
-| Self-healing locators | Partial | A fallback helper used by compiled specs. Healing configuration keys are not read yet. |
+| Self-healing locators | Partial | A fallback helper used by compiled specs. `healer.confidenceThreshold` and `healer.datasetDir` are used; `healer.autoHeal` and `healer.saveMutations` are not read yet. |
 | `serve` (web console) | Partial | Evidence and checkpoint views read local files. Run lists and metrics are sample data. |
 | Airlock Cloud (`test --cloud`) | Client only | The client exists. The service, key issuance and quota enforcement are not in this repository. |
 
@@ -31,8 +31,8 @@ Read this table before relying on a feature. Each row describes what this reposi
 
 1. **Explore** a page to record a trace, or write a spec by hand.
 2. **Compile** the trace to a Playwright spec that uses resilient locators.
-3. **Test** locally with `airlock test --local`. Requests pass through the gateway, which substitutes phantom values for configured secrets only after the policy allows the request.
-4. **Audit** each run. `airlock run` and `airlock audit` produce and verify a signed bundle that records the hash chain, the Merkle root and the policy decisions.
+3. **Test** locally with `airlock test --local`. Requests pass through the gateway, which replaces phantom placeholders with configured real values only after the policy allows the request.
+4. **Audit** each run. `airlock run` produces a signed bundle that records the hash chain, the Merkle root and the policy decisions, and `airlock audit` verifies it.
 
 ## Quick start
 
@@ -66,13 +66,17 @@ Use the CLI from the repository with `bun ./bin/airlock.ts <command>` or `bun ru
 ## Typical workflow
 
 ```bash
-airlock init                                                    # create airlock.config.json
-airlock explore http://localhost:3000 --name checkout           # record a trace
-airlock compile .airlock/traces/checkout-trace.json --out tests/checkout.spec.ts
-airlock test --local tests/checkout.spec.ts --url http://localhost:3000
+bun run cli init                                                 # create airlock.config.json
+bun run cli explore http://localhost:3000 --name checkout        # record a trace
+bun run cli compile .airlock/traces/checkout-trace.json --out tests/checkout.spec.ts
+bun run cli test --local tests/checkout.spec.ts --url http://localhost:3000
 ```
 
+Compiled specs import from `airlockqa`, which resolves only where the package is installed. The package is not yet published, so inside this repository point that import at `src/index.ts` before running a compiled spec.
+
 ## CLI reference
+
+The examples in this README use `airlock`. From a clone, run `bun run cli <command>` instead.
 
 | Command | Purpose |
 | :--- | :--- |
@@ -93,7 +97,7 @@ Run `airlock <command> --help` for the complete option list.
 
 ## Configuration
 
-AirlockQA reads `airlock.config.json` from the working directory. The file is validated on load; an invalid file stops the command and names the problem.
+AirlockQA reads `airlock.config.json` from the working directory, falling back to `.airlock/config.json` and `airlock.json`. The file is validated on load; an invalid file stops the command and names the problem.
 
 ```json
 {
@@ -114,7 +118,7 @@ AirlockQA reads `airlock.config.json` from the working directory. The file is va
 }
 ```
 
-Every field is documented in [docs/HOW-TO-USE.md](docs/HOW-TO-USE.md). Do not commit real credentials. Load them from the environment with `realFromEnv`.
+The main fields are documented in [docs/HOW-TO-USE.md](docs/HOW-TO-USE.md). A few advanced fields are described only in the schema at `src/config/schema.ts`. Do not commit real credentials. Load them from the environment with `realFromEnv`.
 
 ## Environment variables
 
@@ -122,14 +126,14 @@ Every field is documented in [docs/HOW-TO-USE.md](docs/HOW-TO-USE.md). Do not co
 | :--- | :--- |
 | `AIRLOCK_CHROME_PATH` | Chromium executable used when `browser.executablePath` is not set. |
 | `AIRLOCK_SIGNING_KEY` | Signing key for evidence. Takes precedence over `compliance.signingKey`. |
-| `AIRLOCK_SIGNING_ALGORITHM` | `HMAC-SHA256` (default) or `Ed25519`. |
+| `AIRLOCK_SIGNING_ALGORITHM` | `HMAC-SHA256` for a plain key; `Ed25519` when the key is a PEM private key. Set it to force an algorithm. |
 | `AIRLOCK_TRUSTED_PUBLIC_KEY` | Pins the expected Ed25519 signer for `airlock audit`. |
-| `AIRLOCK_CHECKPOINT_KEY` | Encrypts saved checkpoints at rest (AES-256-GCM). |
-| `AIRLOCK_API_KEY` | Airlock Cloud key. Sent only as a Bearer token over HTTPS. |
+| `AIRLOCK_CHECKPOINT_KEY` | Encrypts saved checkpoints at rest (AES-256-GCM). Without it, checkpoints are plain text and contain cookies, storage and page HTML. |
+| `AIRLOCK_API_KEY` | Airlock Cloud key. Sent only as a Bearer token over HTTPS (plain HTTP is allowed only for localhost). |
 | `AIRLOCK_CLOUD_URL` | Cloud API base URL. Requires HTTPS except for localhost. |
 | `CI` | When set and no signing key is provided, `run` and `audit` refuse to use the development key. |
 
-Secrets referenced with `realFromEnv` or `${env:NAME}` use names you choose. Container and proxy variables are documented in [docs/HOW-TO-USE.md](docs/HOW-TO-USE.md).
+Secret values are read from the variable named by `realFromEnv`, and `${env:NAME}` may be used in workflow step values. Names are yours to choose. The container and proxy variables are read by `container/start-proxy.ts` and `container/entrypoint.sh`; see those files and `container/docker-compose.yml`.
 
 ## Local or cloud execution
 
@@ -139,7 +143,7 @@ Secrets referenced with `realFromEnv` or `${env:NAME}` use names you choose. Con
 2. `--cloud` submits a run to Airlock Cloud and requires `AIRLOCK_API_KEY`.
 3. With neither flag, the command runs on Cloud if `AIRLOCK_API_KEY` is set, and locally otherwise.
 
-Cloud execution is client code only in this repository. The hosted service is not included, so `--cloud` fails unless you point `AIRLOCK_CLOUD_URL` at a deployment that implements `POST /v1/runs`.
+Cloud execution is client code only in this repository. When `AIRLOCK_CLOUD_URL` is unset, the client sends runs to the default endpoint `https://api.qbrin.cloud`, a hosted service outside this repository. This repository does not verify that service's availability. Set `AIRLOCK_CLOUD_URL` to use another deployment that implements `POST /v1/runs`.
 
 ## Request policy and phantom secrets
 
@@ -150,18 +154,19 @@ Test code sees placeholder values (phantom tokens). The gateway replaces a place
 - the method and path are not blocked, and
 - the egress policy allows the host.
 
-Replacement is an exact string match in text bodies and headers. Binary bodies are passed through unchanged. Encoded, split or transformed values are not detected.
+Replacement is an exact string match in text request bodies. Binary bodies are passed through unchanged. Encoded, split or transformed values are not detected.
 
-The policy blocks listed hosts and paths. It does not block all egress by default, does not cover requests that a server makes to other servers, and does not replace a secrets vault. Read the limits in [docs/HOW-TO-USE.md](docs/HOW-TO-USE.md) before relying on it for production credentials.
+Unlisted hosts are blocked by default (`defaultAction: BLOCK`). The policy does not cover requests that a server makes to other servers, it is not an operating-system firewall, and it does not replace a secrets vault. Read the limits in [docs/HOW-TO-USE.md](docs/HOW-TO-USE.md) before relying on it for production credentials.
 
 ## Evidence, signing and audit
 
 Each `run` writes `.airlock/compliance/latest-attestation.json` and an HTML report. A bundle records the ledger hash chain, the Merkle root of the chain, the policy decisions and the signature over the whole bundle.
 
 - A bundle proves that the recorded ledger has not changed since it was signed, and that the signer held the key.
-- Anyone holding the HMAC key can verify a bundle. With Ed25519, anyone with the pinned public key can verify it.
+- Anyone holding the HMAC key can verify a bundle. With Ed25519, verify against a pinned public key (`AIRLOCK_TRUSTED_PUBLIC_KEY`). Without one, `audit` checks only that the bundle matches the key embedded in it, which shows consistency but not who signed it.
 - A bundle does not prove that the tests passed, that the application is secure, or that any compliance control was met. The SOC 2 mapping fields are `NOT_ASSESSED`.
 - In CI without `AIRLOCK_SIGNING_KEY`, the workflow in this repository signs with a random key for that job. Such a bundle cannot be verified later by a key holder.
+- Outside CI, with no signing key configured, a run is signed with a development key that is public in this repository. Such a bundle is marked `insecureDevKey` and provides no integrity guarantee. Set `AIRLOCK_SIGNING_KEY` for any bundle you rely on.
 
 ## Continuous integration
 
