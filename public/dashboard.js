@@ -213,20 +213,20 @@ function showView(view, options) {
   if (!live && nextView === "run-detail" && activeRun) renderRunDetail(activeRun);
   const headingNames = {
     dashboard: "Overview",
-    runs: "Test runs",
+    runs: "Runs",
     "run-detail": "Run detail",
-    explorer: "Test explorer",
+    explorer: "Tests",
     analytics: "Analytics",
     recorder: "Recorder",
     healing: "Self-healing",
     checkpoints: "Checkpoints",
     policy: "Request policy",
-    audit: "Audit & evidence",
+    audit: "Evidence",
     timewarp: "Time warp",
     fixtures: "Fixtures",
     chaos: "Chaos report",
     capsules: "Bug capsules",
-    integrations: "API & CI/CD",
+    integrations: "CI/CD & API",
     settings: "Settings"
   };
   setText("page-heading", headingNames[nextView] || "Overview");

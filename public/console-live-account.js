@@ -105,7 +105,7 @@ function buildEvidence(main, shared) {
   let keyInfo = null;
 
   main.append(
-    shared.pageHeader("Audit & evidence", "Every finished cloud run has a signed evidence bundle. Verify it here, or on your own machine with the CLI."),
+    shared.pageHeader("Evidence", "Every finished cloud run has a signed evidence bundle. Verify it here, or on your own machine with the CLI."),
     shared.card("Service signing key", keyBody),
     shared.card("Runs with evidence", listBody));
 
