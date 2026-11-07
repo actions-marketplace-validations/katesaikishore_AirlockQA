@@ -99,6 +99,68 @@ html, body {
   min-width: 0 !important;
   overflow-x: hidden !important;
 }
+/* The sidebar is a flex sibling of the main area, not a fixed panel. The older rules that offset .main-shell by
+   the sidebar's width (238px, then 70px, then a bottom margin on phones) would count that space twice and leave
+   an empty gutter, so they must never apply to this layout. */
+.cx > .main-shell {
+  margin: 0 !important;
+}
+
+/* Wide screens: the sidebar stays in view while the page scrolls, and the page content sits beside it. */
+.nav-toggle { display: none; }
+@media (min-width: 861px) {
+  .cx { flex-wrap: nowrap !important; }
+  .cx > aside {
+    position: fixed;
+    inset: 0 auto 0 0;
+    width: 259px;
+    max-width: none !important;
+    min-width: 0 !important;
+    flex: none !important;
+    overflow-y: auto;
+    z-index: 5;
+  }
+  .cx > .main-shell { margin-left: 259px !important; }
+}
+
+/* Small screens: the sidebar collapses to the brand and a Menu button, so the page content is the first thing shown. */
+@media (max-width: 860px) {
+  .cx { flex-direction: column !important; flex-wrap: nowrap !important; }
+  .cx > aside {
+    flex: none !important;
+    width: 100% !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    border-right: 0 !important;
+    border-bottom: 1px solid rgb(227, 232, 226);
+  }
+  .cx > aside nav {
+    flex-direction: row !important;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px !important;
+    min-height: 0 !important;
+    padding: 10px 16px !important;
+  }
+  .cx > aside nav > * { flex: 0 0 100%; }
+  .cx > aside nav > a:first-child { flex: 0 1 auto; }
+  .cx > aside nav > .nav-toggle {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 0 18px;
+    border: 1px solid rgb(211, 219, 212);
+    border-radius: 10px;
+    background: #fff;
+    color: rgb(21, 33, 28);
+    font: 600 14.5px "DM Sans", system-ui, sans-serif;
+    cursor: pointer;
+  }
+  .cx > aside:not([data-open="true"]) nav > :not(:first-child):not(.nav-toggle) { display: none !important; }
+}
 .content-wrap {
   max-width: 100vw !important;
   min-width: 0 !important;

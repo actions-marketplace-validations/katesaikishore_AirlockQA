@@ -590,7 +590,7 @@ function buildRuns(main) {
   select.addEventListener("change", function () { state.status = select.value; loadRuns({}).then(schedulePoll); });
 
   main.append(
-    pageHeader("Test runs", "Hosted browser runs on Airlock Cloud. The list refreshes every 3 seconds while a run is queued or running.", [toggle]),
+    pageHeader("Runs", "Hosted browser runs on Airlock Cloud. The list refreshes every 3 seconds while a run is queued or running.", [toggle]),
     startPanel,
     h("div", { class: "lv-toolbar" }, search, select, count),
     results, moreWrap);
