@@ -742,4 +742,31 @@ program
     )()
   );
 
+// ==========================================
+// COMMAND: QA (cloud QA runs; --dry-run only until the submit route exists)
+// ==========================================
+program
+  .command('qa')
+  .description('Prepare a cloud QA run for the pushed commit. --dry-run prints the request without submitting it.')
+  .option('--dry-run', 'print the request that would be submitted, submit nothing')
+  .option('--suites <list>', 'comma-separated suites (unit,integration,e2e,smoke,explore,a11y,security,load)', 'unit')
+  .option('--gate <mode>', 'strict or default', 'default')
+  .action(async (opts) => {
+    const { prepareQaDryRun, realQaDeps } = await import('../src/router/qa-cli.js');
+    const suites = String(opts.suites).split(',').map((x: string) => x.trim()).filter(Boolean);
+    const gate = opts.gate === 'strict' ? 'strict' : 'default';
+    const result = await prepareQaDryRun({ suites, gate }, realQaDeps());
+    if (!result.ok) {
+      logger.error(result.message);
+      process.exitCode = 1;
+      return;
+    }
+    for (const w of result.warnings) logger.warn(w);
+    console.log(JSON.stringify(result.body, null, 2));
+    if (!opts.dryRun) {
+      logger.error('Submitting QA runs is not available yet (POST /v1/qa-runs is not deployed). Re-run with --dry-run.');
+      process.exitCode = 1;
+    }
+  });
+
 program.parse(process.argv);
