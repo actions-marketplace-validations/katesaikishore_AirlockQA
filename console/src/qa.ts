@@ -170,6 +170,17 @@ export function formatRatio(part: { failed?: number; flaky?: number; total: numb
   return `${count} of ${total} suite results (${Math.round((count / total) * 100)}%)`;
 }
 
+/** "owner/repo" for a GitHub URL; anything else unchanged. */
+export function shortRepo(url: string): string {
+  const m = /^https:\/\/github\.com\/([^/]+\/[^/]+?)(?:\.git)?\/?$/.exec(url);
+  return m ? m[1] : url;
+}
+
+/** A reason line without the long rules Playwright draws after a test title ("──────"). */
+export function cleanReason(reason: string): string {
+  return reason.replace(/\s*[─━═]{3,}\s*$/u, '');
+}
+
 /** The reasons that belong to one suite: lines the worker prefixed with "<suite>: ", without the prefix. */
 export function reasonsForSuite(reasons: string[] | null | undefined, suite: string): string[] {
   const prefix = `${suite}: `;

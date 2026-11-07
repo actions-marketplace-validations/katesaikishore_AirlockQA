@@ -42,7 +42,7 @@ function SigningKey() {
         <div className="lv-meta-item"><dt>Algorithm</dt><dd>{info.algorithm}</dd></div>
       </dl>
       <p className="lv-small lv-muted">Public key</p>
-      <div className="lv-code-wrap">
+      <div className="lv-code-wrap lv-code-multi">
         <pre className="lv-code" id="evidence-public-key" tabIndex={0}><code>{pem}</code></pre>
         <CopyButton label="Copy public key" getText={() => pem} />
       </div>

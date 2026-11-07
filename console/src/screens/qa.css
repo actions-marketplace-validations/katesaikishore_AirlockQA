@@ -11,3 +11,15 @@
 .qa-seal-unverified { color: #8A4B06; }
 .qa-reasons { margin: 6px 0 0; padding-left: 18px; font-size: 13px; }
 .qa-reasons li { overflow-wrap: anywhere; }
+.qa-repo { margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 360px; }
+.qa-nowrap { white-space: nowrap; }
+.qa-reasons li + li { margin-top: 2px; }
+#qa-run-table td:first-child { min-width: 220px; }
+@media (max-width: 640px) {
+  .qa-repo { max-width: 100%; }
+  #qa-run-table td:first-child { min-width: 0; }
+  .qa-reasons { padding-left: 16px; }
+}
+/* Blocks inside the QA wrappers get the same 18px rhythm as the page itself. */
+#qa-run-detail > * + *, #qa-analytics-content > * + * { margin-top: 18px; }
+.qa-analytics > .lv-card-title { margin-bottom: 12px; font-size: 20px; }

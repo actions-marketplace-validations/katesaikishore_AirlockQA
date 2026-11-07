@@ -47,6 +47,9 @@ export default function App() {
     heading?.focus({ preventScroll: true });
   }, [route.view]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // A new screen (or a run opened from a list) starts at the top, not at the previous screen's scroll position.
+  useEffect(() => { window.scrollTo(0, 0); }, [route.view, route.param]);
+
   return (
     <div id="dc-root">
       <div className="cx">
