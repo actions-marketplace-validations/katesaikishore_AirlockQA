@@ -23,3 +23,8 @@
 /* Blocks inside the QA wrappers get the same 18px rhythm as the page itself. */
 #qa-run-detail > * + *, #qa-analytics-content > * + * { margin-top: 18px; }
 .qa-analytics > .lv-card-title { margin-bottom: 12px; font-size: 20px; }
+
+/* Who saw a finding. */
+.qa-source { display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 999px; font-size: 12px; font-weight: 700; white-space: nowrap; }
+.qa-source-first { background: #E2F2E9; color: #1F6B4F; }
+.qa-source-self { background: #EEF2EE; color: #46544C; }
