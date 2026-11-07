@@ -32,13 +32,13 @@ This guide provides end-to-end instructions for installing, configuring, running
 
 ## 1. Architectural Model
 
-AirlockQA strictly distinguishes between **Local Execution**, **Airlock Cloud**, and **Enterprise Deployments**:
+AirlockQA distinguishes between **Local Execution** and the optional hosted service, **Airlock Cloud**:
 
 | Mode | Where Tests Run | Credentials Needed | Quota & Compute |
 | :--- | :--- | :--- | :--- |
 | **Open-Source Local** | User laptop or CI runner | None (`--local`) | Free, unbounded local execution |
-| **Airlock Cloud** | Hosted microVM execution | Project API key (`AIRLOCK_API_KEY`) | Metered quota (e.g. 100 runs/day/repo) |
-| **Enterprise** | Dedicated customer infrastructure | Enterprise endpoint (`AIRLOCK_CLOUD_URL`) | Per enterprise license agreement |
+| **Airlock Cloud** | Isolated headless browser on the hosted service | API key from the console (`airlock login`) | Free plan: 100 runs per workspace per day, one at a time |
+| **Another deployment** | A deployment of the service that you operate | Its key and `AIRLOCK_CLOUD_URL` | Set by its operator |
 
 ```
                        ┌─────────────────────────┐
@@ -49,7 +49,7 @@ AirlockQA strictly distinguishes between **Local Execution**, **Airlock Cloud**,
            ▼                                                 ▼
 ┌─────────────────────┐                           ┌─────────────────────┐
 │  --local (Free)     │                           │  --cloud / API      │
-│  Local Playwright   │                           │  Hosted Workers     │
+│  Local Playwright   │                           │  Hosted browser     │
 │  Browser Context    │                           │  Bearer Token Auth  │
 └──────────┬──────────┘                           └──────────┬──────────┘
            │                                                 │
@@ -242,20 +242,24 @@ test('checkout', async ({ page, airlock }) => {
 
 The fixture is automatic, so the gateway is attached even when a test does not use `airlock`. After each test the bundle is attached to the Playwright result as `airlock-evidence`. Playwright output goes to `.airlock/playwright/` (JSON results in `results.json`).
 
-#### 2. Cloud Run (Requires `AIRLOCK_API_KEY`):
+#### 2. Cloud Run (hosted workflow):
 ```bash
-export AIRLOCK_API_KEY="air_live_your_project_key"
-bun run cli test ./tests/checkout.spec.ts --cloud
+bun run cli login            # paste a key created in the console under CI/CD & API (input is hidden)
+bun run cli test --cloud --url https://staging.example.com --workflow workflow.json
+bun run cli runs             # recent hosted runs; `runs <id>` shows one with its steps
+bun run cli usage            # today's run count and limits
 ```
 
-The suite name sent to the API is `--suite <name>`, else the spec file name (`checkout`), else `projectName` from the config. A run reported as `FAILED` or `POLICY_VIOLATION` sets exit code 1.
+Hosted runs execute the **declarative workflow** (from `--workflow <file>` or the config's `workflow`; with neither, a smoke check that opens the URL). Spec files are not uploaded. The target must be a public address, and workflows may not use `${env:NAME}`. `test --cloud` waits for the result (`--no-wait` to return at once, `--timeout <seconds>`), downloads the evidence to `.airlock/compliance/cloud-<runId>.json` and verifies it against the signing key pinned by `airlock login`.
 
-*Note: The CLI transmits your token only via `Authorization: Bearer <token>` over HTTPS. Real application secrets are automatically stripped from the cloud payload.*
+The suite name sent to the API is `--suite <name>`, else the spec file name (`checkout`), else `projectName` from the config. A run reported as `FAILED`, `POLICY_VIOLATION` or `CANCELLED` sets exit code 1. In CI, set `AIRLOCK_API_KEY` from a secret instead of running `login`.
 
-#### 3. Custom Enterprise Endpoint:
+*Note: The CLI transmits your key only as `Authorization: Bearer <key>` over HTTPS (HTTP only for localhost), never to an endpoint other than the one it was saved for. Real application secrets are never part of the cloud request.*
+
+#### 3. Another endpoint:
 ```bash
-export AIRLOCK_CLOUD_URL="https://airlock.internal.corp"
-export AIRLOCK_API_KEY="air_ent_your_key"
+export AIRLOCK_CLOUD_URL="https://airlock.example.org"   # a deployment of the service that you operate
+export AIRLOCK_API_KEY="air_live_key_issued_by_that_deployment"
 bun run cli test --cloud
 ```
 
@@ -512,13 +516,14 @@ docker compose -f container/docker-compose.staging.yml up -d
 
 ## 7. Cloud Quotas & Security Model
 
-When executing against **Airlock Cloud** (`--cloud`):
+When executing against **Airlock Cloud** (`--cloud`). The full API is in [cloud-api.md](cloud-api.md).
 
-1. **Authentication**: All requests send `Authorization: Bearer air_live_...`.
-2. **Quota Enforcement**:
-   - Plans typically allow **100 runs per day per repository**.
-   - Cloud servers return HTTP `429 Too Many Requests` when limits are reached.
-   - The CLI monitors `x-ratelimit-remaining` and warns developers when remaining quota drops below 20%.
-3. **Data Quarantine**:
-   - The CLI strictly filters the payload to exclude `real` app credentials.
-   - Only `phantom` placeholders and route policies are transmitted to workers.
+1. **Authentication**: requests send `Authorization: Bearer air_live_...`. Keys are created and revoked in the console; only a hash is stored by the service.
+2. **Quota** (free plan):
+   - **100 accepted runs per workspace per UTC day.** The check and the count happen in one transaction. A run cancelled while still queued is refunded, within a daily refund limit.
+   - One run at a time, up to 50 workflow steps and 90 seconds per run.
+   - When the limit is reached the service returns HTTP `429` with code `DAILY_QUOTA_EXCEEDED` and the reset time. Accepted runs carry `X-RateLimit-*` headers, and the CLI warns when 20% or less remains.
+3. **What is sent**:
+   - Only the target URL, suite name, optional workflow, and phantom placeholders with their policy. `real` credentials are never sent, and the service rejects a request that contains one.
+   - Targets must be public addresses; the service refuses private, loopback and link-local ones, and every browser request goes through an address-validating proxy.
+4. **Evidence**: each run's evidence is signed with the service's Ed25519 key. `airlock test --cloud` verifies it against the key pinned at `airlock login`; `AIRLOCK_TRUSTED_PUBLIC_KEY` pins it explicitly.

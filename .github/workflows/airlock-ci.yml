@@ -68,7 +68,8 @@ jobs:
           echo "AIRLOCK_SIGNING_KEY=$key" >> "$GITHUB_ENV"
 
       - name: Run automated tests
-        run: bun test
+        # One process per test file: browsers started by several files in one process interfere on small runners.
+        run: bash scripts/test-isolated.sh
 
       - name: Run CLI against demo store
         run: bun ./bin/airlock.ts run --url http://127.0.0.1:3900

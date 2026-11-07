@@ -26,7 +26,8 @@
     "qa:gui": "bash scripts/gui-smoke.sh",
     "qa": "bun run build && bun test && bun run qa:gui",
     "cli": "bun ./bin/airlock.ts",
-    "demo:server": "bun ./examples/demo-store/server.ts"
+    "demo:server": "bun ./examples/demo-store/server.ts",
+    "test:isolated": "bash scripts/test-isolated.sh"
   },
   "keywords": [
     "playwright",
