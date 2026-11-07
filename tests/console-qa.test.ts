@@ -160,7 +160,7 @@ describe('verifyQaSeal', () => {
 
 describe('analytics formatting', () => {
   test('formatRatio shows the count, the total and a percentage', () => {
-    expect(formatRatio({ failed: 2, total: 10 }, 'failed')).toBe('2 of 10 runs (20%)');
+    expect(formatRatio({ failed: 2, total: 10 }, 'failed')).toBe('2 of 10 suite results (20%)');
   });
 
   test('formatRatio says so when nothing has finished', () => {
@@ -176,5 +176,21 @@ describe('suiteStatusLabel', () => {
     expect(suiteStatusLabel('NOT_RUN')).toBe('NOT RUN');
     expect(suiteStatusLabel('SOMETHING_NEW')).toBe('UNKNOWN');
     expect(suiteStatusLabel(undefined)).toBe('UNKNOWN');
+  });
+});
+
+describe('console qa: reasons and gate wording', () => {
+  test('reasonsForSuite keeps only that suite\'s lines, without the prefix', async () => {
+    const { reasonsForSuite } = await import('../console/src/qa');
+    expect(reasonsForSuite(['warning: suite e2e failed', 'e2e: 1) a › b', 'security: FAIL x', 'e2e: 2 failed'], 'e2e')).toEqual(['1) a › b', '2 failed']);
+    expect(reasonsForSuite(undefined, 'e2e')).toEqual([]);
+  });
+
+  test('gateVerdict explains a default gate that passed with warnings', async () => {
+    const { gateVerdict } = await import('../console/src/qa');
+    expect(gateVerdict(null, 'default')).toBe('Not decided yet');
+    expect(gateVerdict({ exitCode: 1, reasons: [] }, 'strict')).toBe('Failed (exit 1)');
+    expect(gateVerdict({ exitCode: 0, reasons: [] }, 'default')).toBe('Passed');
+    expect(gateVerdict({ exitCode: 0, reasons: ['warning: suite e2e failed'] }, 'default')).toMatch(/^Passed with warnings: the default gate/);
   });
 });

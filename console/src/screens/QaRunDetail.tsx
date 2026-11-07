@@ -3,7 +3,7 @@ import { useApp } from '../app-context';
 import { usePolling } from '../hooks';
 import { formatDateTime, isActive } from '../lib';
 import { Card, Loading, PageHeader, RetryBlock, StatusPill } from '../ui';
-import { suiteStatusLabel, verifyQaSeal, type QaRunDetail, type SealCheck } from '../qa';
+import { gateVerdict, reasonsForSuite, suiteStatusLabel, verifyQaSeal, type QaFinding, type QaRunDetail, type SealCheck } from '../qa';
 
 const SEAL_COPY: Record<SealCheck['state'], { title: string; body: string; tone: string }> = {
   verified: {
@@ -75,7 +75,43 @@ function SealCard({ evidence }: { evidence: unknown | null }) {
   );
 }
 
+const SEVERITY_ORDER: Record<string, number> = { S1: 1, S2: 2, S3: 3, S4: 4 };
+
+function FindingsCard({ findings }: { findings: QaFinding[] | undefined }) {
+  const list = [...(findings ?? [])].sort(
+    (a, b) => (SEVERITY_ORDER[a.severity] ?? 9) - (SEVERITY_ORDER[b.severity] ?? 9) || a.klass.localeCompare(b.klass),
+  );
+  return (
+    <Card title="Findings">
+      {list.length ? (
+        <>
+          <div className="lv-table-wrap">
+            <table className="lv-table" id="qa-findings-table">
+              <caption className="sr-only">Findings from this run</caption>
+              <thead><tr><th scope="col">Severity</th><th scope="col">Finding</th><th scope="col">Route</th></tr></thead>
+              <tbody>
+                {list.map((f) => (
+                  <tr key={f.fingerprint}>
+                    <td className="lv-mono">{f.severity}</td>
+                    <td>{f.assertion} <span className="lv-muted lv-mono">({f.klass})</span></td>
+                    <td className="lv-mono">{f.route}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="lv-muted lv-small">
+            Self-reported: these come from your app&rsquo;s own test output in the sandbox, matched against fixed rules.
+            Failures that match no rule are listed under the suite, not here.
+          </p>
+        </>
+      ) : <p className="lv-muted">No findings for this run.</p>}
+    </Card>
+  );
+}
+
 function RunBody({ run }: { run: QaRunDetail }) {
+  const gateReasons = run.gate?.reasons ?? [];
   return (
     <>
       <PageHeader
@@ -95,7 +131,7 @@ function RunBody({ run }: { run: QaRunDetail }) {
           <div><dt>Branch</dt><dd className="lv-mono">{run.branch || 'not reported'}</dd></div>
           <div><dt>Started</dt><dd>{formatDateTime(run.createdAt)}</dd></div>
         </dl>
-        {run.error ? <p className="lv-alert lv-alert-error" role="alert">{run.error}</p> : null}
+        {run.error && gateReasons.length === 0 ? <p className="lv-alert lv-alert-error" role="alert">{run.error}</p> : null}
       </Card>
       <Card title="Suites">
         {run.suites && run.suites.length ? (
@@ -104,17 +140,20 @@ function RunBody({ run }: { run: QaRunDetail }) {
               <caption className="sr-only">Suite results</caption>
               <thead><tr><th scope="col">Suite</th><th scope="col">Status</th><th scope="col">Reasons</th></tr></thead>
               <tbody>
-                {run.suites.map((entry) => (
+                {run.suites.map((entry) => {
+                  const reasons = entry.reasons && entry.reasons.length ? entry.reasons : reasonsForSuite(gateReasons, entry.suite);
+                  return (
                   <tr key={entry.suite}>
                     <td className="lv-mono">{entry.suite}</td>
                     <td className="lv-mono">{suiteStatusLabel(entry.status)}</td>
                     <td>
-                      {entry.reasons && entry.reasons.length ? (
-                        <ul className="qa-reasons">{entry.reasons.map((reason, index) => <li key={index}>{reason}</li>)}</ul>
+                      {reasons.length ? (
+                        <ul className="qa-reasons">{reasons.map((reason, index) => <li key={index}>{reason}</li>)}</ul>
                       ) : <span className="lv-muted">None reported</span>}
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -123,12 +162,18 @@ function RunBody({ run }: { run: QaRunDetail }) {
       <Card title="Gate">
         <dl className="lv-meta">
           <div><dt>Mode</dt><dd className="lv-mono">{run.gateMode || 'not reported'}</dd></div>
-          <div><dt>Verdict</dt><dd>{run.gate ? (run.gate.exitCode === 0 ? 'Passed' : 'Failed (exit ' + run.gate.exitCode + ')') : 'Not decided yet'}</dd></div>
+          {run.gate && typeof run.gate.continueOnFailure === 'boolean' ? (
+            <div><dt>Continue on failure</dt><dd>{run.gate.continueOnFailure ? 'Yes' : 'No'}</dd></div>
+          ) : null}
+          <div><dt>Verdict</dt><dd id="qa-gate-verdict">{gateVerdict(run.gate, run.gateMode)}</dd></div>
         </dl>
-        {run.gate && run.gate.reasons.length ? (
-          <ul className="qa-reasons">{run.gate.reasons.map((reason, index) => <li key={index}>{reason}</li>)}</ul>
+        {gateReasons.filter((r) => r.startsWith('warning: ') || !/^[a-z0-9]+: /.test(r)).length ? (
+          <ul className="qa-reasons">
+            {gateReasons.filter((r) => r.startsWith('warning: ') || !/^[a-z0-9]+: /.test(r)).map((reason, index) => <li key={index}>{reason}</li>)}
+          </ul>
         ) : null}
       </Card>
+      <FindingsCard findings={run.findings} />
       <SealCard evidence={run.evidence} />
     </>
   );
