@@ -22,7 +22,8 @@ describe('Login and create-account page', () => {
 
   beforeAll(async () => {
     tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'airlock-login-page-'));
-    browser = await chromium.launch({ executablePath: chromePath, headless: true });
+    // Same flags as tests/console-live.test.js, which runs reliably on the Linux CI runner.
+    browser = await chromium.launch({ executablePath: chromePath, headless: true, args: ['--no-sandbox', '--disable-dev-shm-usage'] });
   });
 
   // A fresh dashboard server for every test, as tests/dashboard-static.test.js does: a single server shared by the
