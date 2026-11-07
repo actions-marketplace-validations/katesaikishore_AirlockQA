@@ -389,7 +389,7 @@ airlock qa --dry-run
 airlock qa --wait --gate strict
 ```
 
-Gates: `default` fails only if the build, the health check or a requested suite that ran failed; `strict` also fails on any suite that did not run, on any flaky result, and on any first-party S1 or S2 finding. Heuristic leads never fail a gate unless someone promotes them.
+Gates: `default` fails only when the build or the health check (smoke) fails; other failing or unrun suites are reported as warnings. `strict` also fails on any suite that failed, did not run or was flaky, and on any first-party S1 or S2 finding. Heuristic leads never fail a gate unless someone promotes them.
 
 ### `airlock audit [bundlePath]`
 Verifies a signed run-evidence bundle (spec **2.0.0**). It recomputes the ledger hash chain and the Merkle root from the blocks embedded in the bundle, then checks a signature that covers **every field** of the bundle (everything except `signature` itself). It exits with code `1` on any failure.
