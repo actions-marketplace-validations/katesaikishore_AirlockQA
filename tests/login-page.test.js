@@ -190,7 +190,6 @@ describe('Login and create-account page', () => {
       { status: 400, body: { code: 'WEAK_PASSWORD', message: 'That password is too common.' } },
       { status: 429, body: { code: 'RATE_LIMITED', message: 'slow down' } },
       { status: 503, body: { code: 'SIGNUPS_PAUSED', message: 'paused' } },
-      'network',
     ];
     let index = 0;
     const { context, page } = await openPage('?mode=signup', {});
@@ -201,7 +200,6 @@ describe('Login and create-account page', () => {
         return route.fulfill({ status: 401, contentType: 'application/json', body: JSON.stringify({ code: 'UNAUTHENTICATED', message: 'x' }) });
       }
       const next = responses[index++];
-      if (next === 'network') return route.abort('failed');
       return route.fulfill({ status: next.status, contentType: 'application/json', body: JSON.stringify(next.body) });
     });
     try {
@@ -215,6 +213,11 @@ describe('Login and create-account page', () => {
         ['Cannot reach Airlock Cloud', null],
       ];
       for (const [text, focusId] of expectations) {
+        // A network outage is simulated inside the page: asking Chromium to abort the request crashed the
+        // browser under bun test on Linux CI, and the page's own handling of a rejected fetch is what matters.
+        if (text === 'Cannot reach Airlock Cloud') {
+          await page.evaluate(() => { window.fetch = () => Promise.reject(new TypeError('Failed to fetch')); });
+        }
         await page.click('#auth-submit');
         await page.waitForFunction((expected) => {
           const box = document.getElementById('auth-error');
@@ -306,7 +309,7 @@ describe('Login and create-account page', () => {
   it('stays on the form when the service is unreachable', async () => {
     const context = await browser.newContext();
     const page = await context.newPage();
-    await page.route('**/api/**', (route) => route.abort('failed'));
+    await page.addInitScript(() => { window.fetch = () => Promise.reject(new TypeError('Failed to fetch')); });
     try {
       await page.goto(origin + '/login');
       await page.waitForSelector('#auth-form');
