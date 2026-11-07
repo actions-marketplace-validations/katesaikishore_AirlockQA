@@ -50,9 +50,16 @@ const FILL_VALUES: Record<string, string> = {
   tel: '+15555550100',
   url: 'https://example.test/',
   date: '2026-01-15',
-  password: 'QA-not-a-real-secret-1',
 };
 const DEFAULT_FILL = 'QA sample text';
+
+/**
+ * Value typed into password fields of the app under test. Derived from the plan seed, so a plan stays reproducible
+ * and no fixed password-like literal sits in the source. It is never a real credential.
+ */
+function passwordFillFor(seed: number): string {
+  return `qa-fill-${(seed >>> 0).toString(36)}-Aa1`;
+}
 
 function rng(seed: number): () => number {
   let s = seed >>> 0 || 1;
@@ -91,7 +98,8 @@ export function planExploration(
   }
   const actions: PlannedAction[] = order.slice(0, Math.max(0, opts.maxActions)).map((e) => {
     if (e.role === 'textbox' || e.inputType !== undefined) {
-      return { ref: e.ref, kind: 'fill', value: FILL_VALUES[e.inputType ?? ''] ?? DEFAULT_FILL };
+      const value = e.inputType === 'password' ? passwordFillFor(opts.seed) : (FILL_VALUES[e.inputType ?? ''] ?? DEFAULT_FILL);
+      return { ref: e.ref, kind: 'fill', value };
     }
     return { ref: e.ref, kind: 'click' };
   });

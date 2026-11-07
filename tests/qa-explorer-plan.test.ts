@@ -56,3 +56,15 @@ describe('exploration planner: what the crawler may touch', () => {
     }
   });
 });
+
+describe('explorer plan: password fields', () => {
+  it('fills a password field with a seed-derived value that is stable for the same seed', () => {
+    const els = [{ ref: 'p1', role: 'textbox', name: 'Password', inputType: 'password' }] as any;
+    const a = planExploration(els, { seed: 42, maxActions: 5 });
+    const b = planExploration(els, { seed: 42, maxActions: 5 });
+    const c = planExploration(els, { seed: 7, maxActions: 5 });
+    expect(a.actions[0]).toMatchObject({ kind: 'fill' });
+    expect((a.actions[0] as any).value).toBe((b.actions[0] as any).value);
+    expect((a.actions[0] as any).value).not.toBe((c.actions[0] as any).value);
+  });
+});
