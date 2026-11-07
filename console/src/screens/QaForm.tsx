@@ -164,7 +164,7 @@ export function QaForm({ onClose, onCreated }: Props) {
       </div>
       <details className="lv-details" open={missingScripts.length > 0 || undefined}>
         <summary>Script names (optional)</summary>
-        <p className="lv-hint">Names of npm scripts in the repository's package.json. Unit, integration and e2e use their defaults when left empty; a11y, security, load and explore need a name to run.</p>
+        <p className="lv-hint">Names of npm scripts in the repository's package.json. Unit, integration and e2e use their defaults when left empty; a11y, security and load need a name to run. Explore runs Airlock&rsquo;s own checker unless you name a test:explore script.</p>
         <div className="lv-form-row">
           {QA_SCRIPT_NAMES.map((name) => (
             <div key={name} className="lv-field">

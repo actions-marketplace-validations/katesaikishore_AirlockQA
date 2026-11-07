@@ -3,7 +3,7 @@ import { useApp } from '../app-context';
 import { usePolling } from '../hooks';
 import { formatDateTime, isActive } from '../lib';
 import { Card, Loading, PageHeader, RetryBlock, StatusPill } from '../ui';
-import { cleanReason, gateVerdict, reasonsForSuite, suiteStatusLabel, verifyQaSeal, type QaFinding, type QaRunDetail, type SealCheck } from '../qa';
+import { cleanReason, findingSource, gateVerdict, reasonsForSuite, suiteStatusLabel, verifyQaSeal, type QaFinding, type QaRunDetail, type SealCheck } from '../qa';
 
 const SEAL_COPY: Record<SealCheck['state'], { title: string; body: string; tone: string }> = {
   verified: {
@@ -79,8 +79,12 @@ const SEVERITY_ORDER: Record<string, number> = { S1: 1, S2: 2, S3: 3, S4: 4 };
 
 function FindingsCard({ findings }: { findings: QaFinding[] | undefined }) {
   const list = [...(findings ?? [])].sort(
-    (a, b) => (SEVERITY_ORDER[a.severity] ?? 9) - (SEVERITY_ORDER[b.severity] ?? 9) || a.klass.localeCompare(b.klass),
+    (a, b) =>
+      (SEVERITY_ORDER[a.severity] ?? 9) - (SEVERITY_ORDER[b.severity] ?? 9) ||
+      (a.origin === b.origin ? 0 : a.origin === 'first_party_observed' ? -1 : 1) ||
+      a.klass.localeCompare(b.klass),
   );
+  const firstParty = list.filter((f) => f.origin === 'first_party_observed').length;
   return (
     <Card title="Findings">
       {list.length ? (
@@ -88,21 +92,25 @@ function FindingsCard({ findings }: { findings: QaFinding[] | undefined }) {
           <div className="lv-table-wrap">
             <table className="lv-table lv-table-stack" id="qa-findings-table">
               <caption className="sr-only">Findings from this run</caption>
-              <thead><tr><th scope="col">Severity</th><th scope="col">Finding</th><th scope="col">Route</th></tr></thead>
+              <thead><tr><th scope="col">Severity</th><th scope="col">Finding</th><th scope="col">Route</th><th scope="col">Seen by</th></tr></thead>
               <tbody>
                 {list.map((f) => (
                   <tr key={f.fingerprint}>
                     <td data-label="Severity" className="lv-mono">{f.severity}</td>
                     <td data-label="Finding">{f.assertion} <span className="lv-muted lv-mono">({f.klass})</span></td>
                     <td data-label="Route" className="lv-mono">{f.route}</td>
+                    <td data-label="Seen by">
+                      <span className={'qa-source ' + (f.origin === 'first_party_observed' ? 'qa-source-first' : 'qa-source-self')}>{findingSource(f.origin)}</span>
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
           <p className="lv-muted lv-small">
-            Self-reported: these come from your app&rsquo;s own test output in the sandbox, matched against fixed rules.
-            Failures that match no rule are listed under the suite, not here.
+            {firstParty} seen by Airlock&rsquo;s checker, which visited and clicked through the running app from its own
+            container; {list.length - firstParty} from your app&rsquo;s own test output (self-reported). A failing test that no
+            rule names is listed as failing_test.
           </p>
         </>
       ) : <p className="lv-muted">No findings for this run.</p>}

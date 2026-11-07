@@ -17,6 +17,7 @@ const RULES = {
   missing_alt: 'S4',
   oversized_asset: 'S4',
   no_loading_state: 'S4',
+  failing_test: 'S3', // a test in the app's own suite failed and no more specific rule names what broke
 } as const;
 
 export const FINDING_CLASSES = Object.keys(RULES) as Array<keyof typeof RULES>;

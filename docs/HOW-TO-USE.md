@@ -381,7 +381,7 @@ Runs QA on the **pushed** commit of the repository you are in, in Airlock Cloud.
 - `--dry-run` prints the exact request that would be sent and sends nothing. It checks that the remote is a public `https://github.com/<owner>/<repo>` URL, that the commit is on GitHub, and that every script name is a plain npm script name (never a shell command).
 - Without `--dry-run`, the request is submitted with your saved key (`airlock login`) or `AIRLOCK_API_KEY`.
 - `--wait` waits for the run to finish. The exit code is `0` only if the run succeeded and the gate passed.
-- `--suites` takes any of `unit`, `integration`, `e2e`, `smoke`, `a11y`, `security`, `load`, `explore`. `smoke` (the build, start and health check) always runs first. `integration` and `e2e` run only after a green `unit` suite. The browser and extra suites (`a11y`, `security`, `load`, `explore`) run only when the request names a script for them (for example `scripts["test:security"]`); otherwise they are reported as `NOT_RUN` with a reason, never as a pass.
+- `--suites` takes any of `unit`, `integration`, `e2e`, `smoke`, `a11y`, `security`, `load`, `explore`. `smoke` (the build, start and health check) always runs first. `integration` and `e2e` run only after a green `unit` suite. The `a11y`, `security` and `load` suites run only when the request names a script for them (for example `scripts["test:security"]`); otherwise they are reported as `NOT_RUN` with a reason, never as a pass. `explore` runs Airlock's own checker (below) unless you name a `test:explore` script.
 - `--continue-on-failure` keeps the extra suites running after a failing test suite (a unit or e2e failure, for example). Build, start and smoke failures still stop the run, because the app cannot be tested without them. Without the flag, the first failing suite stops the extra suites, which are reported as `NOT_RUN`.
 - Only one QA run may be queued or running on the shared staging host at a time. Each account has a separate daily QA quota (5 by default).
 
@@ -417,9 +417,24 @@ The `qa` block in `airlock.config.json` tells the cloud how to build, start and 
 | `scripts.start` | `npm start` | Starts the app. It must listen on the `PORT` environment variable; the cloud sets it to `3000`. |
 | `scripts.test` | `test` | The `unit` suite. |
 | `scripts["test:integration"]`, `scripts["test:e2e"]` | as named | Used by the `integration` and `e2e` suites. `e2e` runs against the started app (`BASE_URL` is set). |
-| `scripts["test:a11y"]`, `["test:security"]`, `["test:load"]`, `["test:explore"]` | none | **Required** for those suites. Without one, the suite is reported `NOT_RUN` with the reason. |
+| `scripts["test:a11y"]`, `["test:security"]`, `["test:load"]` | none | **Required** for those suites. Without one, the suite is reported `NOT_RUN` with the reason. |
+| `scripts["test:explore"]` | none | Optional. When set, your script runs instead of Airlock's checker. |
 
 Before any script runs, the cloud installs dependencies with `npm ci` (falling back to `npm install`) and runs `npm run build` when your `package.json` has a `build` script. The `install` and `build` keys and the `port` field are accepted but not used yet: the install and build commands are fixed, and the app always runs on port 3000.
+
+#### The `explore` suite: Airlock's own checker
+
+Without a `test:explore` script, `explore` runs Airlock's checker against your app while it runs on the staging slot. The checker runs in its own container, not inside your app's, so what it reports is **first-party**: seen by Airlock, not reported by your tests.
+
+- It visits up to 30 pages of your app (same site only), then clicks up to 25 buttons. It skips any control whose name sounds destructive: delete, remove, pay, buy, checkout, send, publish, transfer, refund, cancel, sign out, reset and similar.
+- **It cannot change your data.** Every request other than GET, HEAD or OPTIONS, and every request to another site, is blocked in its browser. A form it submits, or a button the skip list misses, is stopped before it reaches your server. Errors your page throws because of that blocking are ignored.
+- It reports server errors (5xx), uncaught exceptions, console errors, dead internal links, images without alt text, images over 1 MB, a missing `Content-Security-Policy` or `Strict-Transport-Security` header, and session cookies without `HttpOnly`, `Secure` or `SameSite`. Headers are checked on your app's own response; a proxy in front of it in production may add them.
+- An S1 or S2 finding (a 5xx or an uncaught exception) fails the suite. S3 and S4 findings are recorded without failing it.
+- Limits: it only looks and clicks. It does not fill in forms with data, log in, or know what a page *should* show.
+
+#### Findings
+
+Each run lists its findings with a severity (S1 to S4) and who saw them: **Airlock checker** (first-party) or **your tests** (self-reported, read from your test output by fixed rules). A failing test that no rule names becomes a `failing_test` finding, named by file and test title, so it is tracked from run to run as new, still open or fixed. When both sources report the same bug, the first-party one is kept. Findings do not change a gate by themselves: self-reported findings are already covered by the suite that failed, and first-party S1/S2 findings fail the `explore` suite, which fails a `strict` gate (the default gate only warns).
 
 `airlock qa --dry-run` prints the exact request, so you can check what will be sent before you use a run of your daily quota.
 

@@ -230,3 +230,22 @@ describe('console qa form: extra suites, health path, continue-on-failure', () =
     expect([...QA_SCRIPT_NAMES].sort()).toEqual(Object.keys(shape).sort());
   });
 });
+
+describe('console qa: explore and finding sources', () => {
+  test('explore no longer needs a script; a11y, security and load still do', async () => {
+    const { scriptedSuitesWithoutScript } = await import('../console/src/qa');
+    expect(scriptedSuitesWithoutScript(['explore', 'security'], {})).toEqual(['security']);
+  });
+
+  test('findingSource names who saw a finding', async () => {
+    const { findingSource } = await import('../console/src/qa');
+    expect(findingSource('first_party_observed')).toBe('Airlock checker');
+    expect(findingSource('sandbox_self_reported')).toBe('Your tests');
+    expect(findingSource(undefined)).toBe('Unknown');
+  });
+
+  test('cleanReason drops short trailing rules too', async () => {
+    const { cleanReason } = await import('../console/src/qa');
+    expect(cleanReason('7) a.spec.js:60:1 › banner after a +15 day time warp ──')).toBe('7) a.spec.js:60:1 › banner after a +15 day time warp');
+  });
+});

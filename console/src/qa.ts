@@ -13,8 +13,11 @@ export type QaGate = (typeof QA_GATES)[number];
 export const QA_SCRIPT_NAMES = [
   'install', 'build', 'start', 'test', 'test:integration', 'test:e2e', 'test:a11y', 'test:security', 'test:load', 'test:explore',
 ] as const;
-/** Suites that run only when the request names a script for them (scripts['test:<suite>']). */
-export const QA_SCRIPTED_SUITES = ['a11y', 'security', 'load', 'explore'] as const;
+/**
+ * Suites that run only when the request names a script for them (scripts['test:<suite>']). explore is not here: without
+ * a script it runs Airlock's own checker.
+ */
+export const QA_SCRIPTED_SUITES = ['a11y', 'security', 'load'] as const;
 const HEALTH_PATH_RE = /^\/[A-Za-z0-9._~/-]{0,200}$/;
 export type QaScriptName = (typeof QA_SCRIPT_NAMES)[number];
 
@@ -200,8 +203,15 @@ export function shortRepo(url: string): string {
 }
 
 /** A reason line without the long rules Playwright draws after a test title ("──────"). */
+/** Who saw a finding: Airlock's checker (first-party) or the app's own tests (self-reported). */
+export function findingSource(origin: string | null | undefined): string {
+  if (origin === 'first_party_observed') return 'Airlock checker';
+  if (origin === 'sandbox_self_reported') return 'Your tests';
+  return 'Unknown';
+}
+
 export function cleanReason(reason: string): string {
-  return reason.replace(/\s*[─━═]{3,}\s*$/u, '');
+  return reason.replace(/\s+[─━═]+\s*$/u, '');
 }
 
 /** The reasons that belong to one suite: lines the worker prefixed with "<suite>: ", without the prefix. */
