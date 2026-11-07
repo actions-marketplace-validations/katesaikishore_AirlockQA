@@ -27,7 +27,8 @@ export function QaAnalyticsPanel() {
     content = <Loading text="Loading QA analytics" />;
   } else {
     const hotspots = [...(data.hotspots || [])].sort((a, b) => Number(b.failures) - Number(a.failures));
-    const findings = [...(data.findings || [])].sort((a, b) => Number(b.buildsOpen) - Number(a.buildsOpen));
+    const rank = (s?: string) => ({ S1: 1, S2: 2, S3: 3, S4: 4 } as Record<string, number>)[s ?? ''] ?? 9;
+    const findings = [...(data.findings || [])].sort((a, b) => rank(a.severity) - rank(b.severity) || Number(b.buildsOpen) - Number(a.buildsOpen));
     content = (
       <>
         <section className="lv-grid lv-grid-kpi" aria-label="QA rates">
@@ -60,11 +61,15 @@ export function QaAnalyticsPanel() {
               <div className="lv-table-wrap">
                 <table className="lv-table lv-table-compact" id="qa-findings-summary">
                   <caption className="sr-only">Distinct findings across QA runs</caption>
-                  <thead><tr><th scope="col">Fingerprint</th><th scope="col">First seen at</th><th scope="col">Runs open</th></tr></thead>
+                  <thead><tr><th scope="col">Severity</th><th scope="col">Finding</th><th scope="col">First seen at</th><th scope="col">Runs from first to last seen</th></tr></thead>
                   <tbody>
                     {findings.map((f) => (
                       <tr key={f.fingerprint}>
-                        <td className="lv-mono">{f.fingerprint}</td>
+                        <td className="lv-mono">{f.severity || '?'}</td>
+                        <td>
+                          {f.assertion || f.fingerprint}
+                          {f.route && f.route !== '/' ? <span className="lv-muted lv-mono"> {f.route}</span> : null}
+                        </td>
                         <td className="lv-mono">{(f.firstSeenSha || '').slice(0, 7) || 'unknown'}</td>
                         <td className="lv-mono">{String(f.buildsOpen)}</td>
                       </tr>
@@ -73,7 +78,7 @@ export function QaAnalyticsPanel() {
                 </table>
               </div>
               <p className="lv-muted lv-small">
-                {findings.length} distinct finding{findings.length === 1 ? '' : 's'}. Open a run to see what each one is.
+                {findings.length} distinct finding{findings.length === 1 ? '' : 's'}, self-reported from your app&rsquo;s test output.
               </p>
             </>
           ) : <p className="lv-muted">No findings stored yet.</p>}

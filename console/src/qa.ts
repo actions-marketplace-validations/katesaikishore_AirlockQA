@@ -137,7 +137,15 @@ export interface QaAnalytics {
   runs?: number;
   suiteResults?: number;
   /** One entry per distinct bug (fingerprint): the commit it was first seen on and how many runs it has stayed open. */
-  findings?: Array<{ fingerprint: string; firstSeenSha: string; buildsOpen: number }>;
+  findings?: Array<{
+    fingerprint: string;
+    firstSeenSha: string;
+    buildsOpen: number;
+    klass?: string;
+    severity?: string;
+    assertion?: string;
+    route?: string;
+  }>;
 }
 
 /** PASS, FAIL, NOT_RUN and FLAKY are the statuses the console shows. Anything else is UNKNOWN, never a pass. */
