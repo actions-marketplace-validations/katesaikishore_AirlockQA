@@ -286,6 +286,7 @@ export const CreateQaRunBodySchema = z
         start: z.string().regex(QA_SCRIPT_NAME_RE).optional(),
         test: z.string().regex(QA_SCRIPT_NAME_RE).optional(),
         'test:integration': z.string().regex(QA_SCRIPT_NAME_RE).optional(),
+        'test:e2e': z.string().regex(QA_SCRIPT_NAME_RE).optional(),
       })
       .strict()
       .default({}),

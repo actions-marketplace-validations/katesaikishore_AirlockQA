@@ -25,6 +25,10 @@ describe('QA contract: request body', () => {
     expect(CreateQaRunBodySchema.safeParse(valid()).success).toBe(true);
   });
 
+  it('accepts the e2e and integration script names', () => {
+    expect(CreateQaRunBodySchema.safeParse({ ...valid(), scripts: { 'test:e2e': 'test:e2e', 'test:integration': 'test:integration' } }).success).toBe(true);
+  });
+
   it('refuses shell strings in script names (npm script names only)', () => {
     for (const bad of ['test; rm -rf /', 'build && curl x', '$(id)', 'Test Suite', '', 'a'.repeat(41)]) {
       const r = CreateQaRunBodySchema.safeParse({ ...valid(), scripts: { test: bad } });
