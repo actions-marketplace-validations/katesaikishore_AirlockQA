@@ -1,0 +1,13 @@
+/* QA screens: suite checkboxes, seal card and analytics spacing. Colours come from the console's lv-* tokens. */
+.qa-fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
+.qa-fieldset legend { font-weight: 600; margin-bottom: 8px; }
+.qa-checks { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px 14px; }
+.qa-check { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px; }
+.qa-check input { width: 16px; height: 16px; margin: 0; accent-color: #2F6F5B; }
+.qa-analytics { margin-top: 28px; }
+.qa-seal-state { font-weight: 600; }
+.qa-seal-verified { color: #1F6B4F; }
+.qa-seal-bad { color: #B42318; }
+.qa-seal-unverified { color: #8A4B06; }
+.qa-reasons { margin: 6px 0 0; padding-left: 18px; font-size: 13px; }
+.qa-reasons li { overflow-wrap: anywhere; }

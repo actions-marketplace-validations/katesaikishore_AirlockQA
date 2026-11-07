@@ -742,4 +742,50 @@ program
     )()
   );
 
+// ==========================================
+// COMMAND: QA (cloud QA runs; --dry-run only until the submit route exists)
+// ==========================================
+program
+  .command('qa')
+  .description('Run QA on the pushed commit in Airlock Cloud. --dry-run prints the request without submitting it; --wait waits for the gate verdict.')
+  .option('--dry-run', 'print the request that would be submitted, submit nothing')
+  .option('--suites <list>', 'comma-separated suites (unit,integration,e2e,smoke,explore,a11y,security,load)', 'unit')
+  .option('--gate <mode>', 'strict or default', 'default')
+  .option('--continue-on-failure', 'still run a11y, security, load and explore after a failing test suite (build, start and smoke still stop the run)')
+  .option('--wait', 'wait for the run to finish and exit 0 only if the gate passed')
+  .action(async (opts) => {
+    const { prepareQaDryRun, realQaDeps } = await import('../src/router/qa-cli.js');
+    const suites = String(opts.suites).split(',').map((x: string) => x.trim()).filter(Boolean);
+    const gate = opts.gate === 'strict' ? 'strict' : 'default';
+    const result = await prepareQaDryRun({ suites, gate, continueOnFailure: opts.continueOnFailure === true }, realQaDeps());
+    if (!result.ok) {
+      logger.error(result.message);
+      process.exitCode = 1;
+      return;
+    }
+    for (const w of result.warnings) logger.warn(w);
+    if (opts.dryRun) {
+      console.log(JSON.stringify(result.body, null, 2));
+      return;
+    }
+    const { resolveCloudAuth } = await import('../src/router/cloud-credentials.js');
+    const { submitQaRun, waitForQaRun } = await import('../src/router/qa-cli.js');
+    const auth = resolveCloudAuth({});
+    if (!auth) {
+      logger.error('Not signed in. Run "airlock login" (or set AIRLOCK_API_KEY) to submit a QA run.');
+      process.exitCode = 1;
+      return;
+    }
+    const target = { apiUrl: auth.apiUrl, apiKey: auth.apiKey };
+    const submitted = await submitQaRun(result.body, target);
+    logger.info(`QA run ${submitted.id} queued for ${result.body.repo}@${result.body.sha.slice(0, 7)}`);
+    if (!opts.wait) return;
+    const run = await waitForQaRun(target, submitted.id, { intervalMs: 15_000, timeoutMs: 75 * 60_000 });
+    console.log(JSON.stringify(run, null, 2));
+    const { verifyQaSeal } = await import('../src/router/qa-cli.js');
+    const sealed = (run as { evidence?: unknown }).evidence;
+    logger.info(verifyQaSeal(sealed) ? 'Sealed result: signature verified with the service key' : 'Sealed result: NOT verified (missing or altered)');
+    process.exitCode = run.status === 'SUCCESS' && run.gate?.exitCode === 0 && verifyQaSeal(sealed) ? 0 : 1;
+  });
+
 program.parse(process.argv);

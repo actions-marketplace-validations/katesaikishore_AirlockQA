@@ -375,6 +375,24 @@ bun run cli teleport .airlock/traces/crash-capsule.json --out ./tests/repro-bug.
 
 ---
 
+### `airlock qa [--suites <list>] [--gate strict|default] [--continue-on-failure] [--dry-run] [--wait]`
+Runs QA on the **pushed** commit of the repository you are in, in Airlock Cloud.
+
+- `--dry-run` prints the exact request that would be sent and sends nothing. It checks that the remote is a public `https://github.com/<owner>/<repo>` URL, that the commit is on GitHub, and that every script name is a plain npm script name (never a shell command).
+- Without `--dry-run`, the request is submitted with your saved key (`airlock login`) or `AIRLOCK_API_KEY`.
+- `--wait` waits for the run to finish. The exit code is `0` only if the run succeeded and the gate passed.
+- `--suites` takes any of `unit`, `integration`, `e2e`, `smoke`, `a11y`, `security`, `load`, `explore`. `smoke` (the build, start and health check) always runs first. `integration` and `e2e` run only after a green `unit` suite. The browser and extra suites (`a11y`, `security`, `load`, `explore`) run only when the request names a script for them (for example `scripts["test:security"]`); otherwise they are reported as `NOT_RUN` with a reason, never as a pass.
+- `--continue-on-failure` keeps the extra suites running after a failing test suite (a unit or e2e failure, for example). Build, start and smoke failures still stop the run, because the app cannot be tested without them. Without the flag, the first failing suite stops the extra suites, which are reported as `NOT_RUN`.
+- Only one QA run may be queued or running on the shared staging host at a time. Each account has a separate daily QA quota (5 by default).
+
+```bash
+airlock qa --dry-run
+airlock qa --wait --gate strict
+airlock qa --wait --suites unit,e2e,a11y,security --continue-on-failure
+```
+
+Gates: `default` fails only when the build or the health check (smoke) fails; other failing or unrun suites are reported as warnings. `strict` also fails on any suite that failed, did not run or was flaky, and on any first-party S1 or S2 finding. Heuristic leads never fail a gate unless someone promotes them.
+
 ### `airlock audit [bundlePath]`
 Verifies a signed run-evidence bundle (spec **2.0.0**). It recomputes the ledger hash chain and the Merkle root from the blocks embedded in the bundle, then checks a signature that covers **every field** of the bundle (everything except `signature` itself). It exits with code `1` on any failure.
 

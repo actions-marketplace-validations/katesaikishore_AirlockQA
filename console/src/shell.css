@@ -1,0 +1,57 @@
+/* Visual rules for the console shell. Layout rules (.cx, .main-shell, the collapsed small-screen menu) live in public/styles.css. */
+.cx { min-height: 100vh; display: flex; flex-wrap: wrap; background: #f7f8f5; color: #15211c; font-family: 'DM Sans', system-ui, -apple-system, 'Segoe UI', sans-serif; font-size: 14.5px; line-height: 1.4; }
+.cx > aside { flex: 1 1 248px; max-width: 280px; min-width: 240px; border-right: 1px solid #e3e8e2; background: #fbfcfa; }
+.cx .main-shell { flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column; }
+.primary-nav { box-sizing: border-box; width: 100%; min-height: 100%; padding: 18px 14px 20px; display: flex; flex-direction: column; gap: 14px; background: #fbfcfa; color: #15211c; }
+.nav-brand { display: inline-flex; align-items: center; gap: 10px; padding: 2px 6px; color: #15211c; text-decoration: none; }
+.nav-brand-text { font: 800 18px/1 Manrope, system-ui, sans-serif; letter-spacing: -0.4px; }
+.nav-brand-text span { color: #2f6f5b; }
+.nav-workspace { display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 10px; border: 1px solid #e3e8e2; border-radius: 12px; background: #fff; cursor: pointer; text-align: left; font-family: inherit; color: inherit; }
+.nav-workspace:disabled { cursor: default; }
+.nav-workspace-mark { flex: 0 0 auto; width: 30px; height: 30px; border-radius: 9px; background: #15211c; color: #b8e4ce; display: inline-flex; align-items: center; justify-content: center; font: 800 13px/1 Manrope, system-ui, sans-serif; }
+.nav-workspace-text { flex: 1 1 0; min-width: 0; }
+.nav-workspace-name { display: block; font-size: 14px; font-weight: 700; color: #15211c; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nav-workspace-plan { display: block; font-size: 12.5px; color: #5a6961; }
+.nav-cta { display: flex; align-items: center; justify-content: center; gap: 8px; height: 40px; border-radius: 11px; background: #2f6f5b; color: #fff; font-size: 14.5px; font-weight: 600; text-decoration: none; }
+.nav-groups { display: flex; flex-direction: column; gap: 10px; }
+.nav-group { display: flex; flex-direction: column; gap: 2px; }
+.nav-group-title { display: flex; align-items: center; gap: 8px; padding: 8px 10px 4px; font-size: 11.5px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #5a6961; }
+.nav-group-tag { padding: 1px 6px; border-radius: 999px; background: #eef2ee; font-size: 10.5px; letter-spacing: 0.02em; text-transform: none; }
+.nav-items { display: flex; flex-wrap: wrap; gap: 2px; }
+.cn-item { flex: 1 1 160px; display: flex; align-items: center; gap: 10px; height: 38px; padding: 0 10px; border-radius: 10px; text-decoration: none; font-size: 14.5px; background: transparent; color: #46544c; font-weight: 500; }
+.cn-item svg { flex: 0 0 auto; }
+.cn-label { flex: 1 1 0; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cn-badge { min-width: 22px; height: 20px; padding: 0 6px; border-radius: 999px; font-size: 12px; font-weight: 700; line-height: 20px; text-align: center; background: #fff3e2; color: #9a4a07; }
+.nav-foot { margin-top: auto; display: flex; flex-direction: column; gap: 10px; padding-top: 12px; }
+.nav-usage { padding: 12px; border: 1px solid #e3e8e2; border-radius: 12px; background: #fff; }
+.nav-usage-line { display: flex; justify-content: space-between; gap: 8px; font-size: 12.5px; font-weight: 600; color: #46544c; }
+.nav-usage-count { font-family: 'JetBrains Mono', monospace; color: #15211c; }
+.nav-usage-track { margin-top: 8px; height: 6px; border-radius: 3px; background: #eef2ee; overflow: hidden; }
+.nav-usage-bar { display: block; height: 100%; border-radius: 3px; background: #2f6f5b; }
+.usage-reset { display: block; margin-top: 6px; font-size: 12px; color: #5a6961; }
+.nav-usage-link { display: inline-block; margin-top: 8px; font-size: 12.5px; font-weight: 600; color: #2f6f5b; text-decoration: none; }
+.nav-docs { display: flex; align-items: center; gap: 10px; height: 36px; padding: 0 10px; border-radius: 10px; color: #46544c; font-size: 14px; text-decoration: none; }
+.nav-profile { display: flex; align-items: center; gap: 10px; padding: 10px; border-top: 1px solid #e3e8e2; }
+.nav-profile-avatar { flex: 0 0 auto; width: 34px; height: 34px; border-radius: 50%; background: #f1e9df; color: #6b4e31; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; }
+.nav-profile-text { flex: 1 1 0; min-width: 0; }
+.nav-profile-name { display: block; font-size: 14px; font-weight: 700; color: #15211c; overflow-wrap: anywhere; }
+.nav-profile-role { display: block; font-size: 12.5px; color: #5a6961; overflow-wrap: anywhere; }
+.nav-signout { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border: 0; background: transparent; border-radius: 9px; color: #46544c; cursor: pointer; }
+.nav-signout:hover { background: #eef3ef; }
+
+.app-topbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 16px; padding: 14px 32px; border-bottom: 1px solid #e3e8e2; background: #fff; }
+.topbar-crumb { flex: 1 1 120px; min-width: 0; display: flex; align-items: center; gap: 8px; font-size: 14px; color: #5a6961; }
+.topbar-crumb strong { font-weight: 600; color: #15211c; }
+.topbar-search { flex: 0 1 240px; display: flex; align-items: center; gap: 8px; height: 38px; padding: 0 10px 0 12px; border: 1px solid #e3e8e2; border-radius: 10px; background: #f7f8f5; color: #5a6961; }
+.topbar-search input { flex: 1 1 0; min-width: 0; border: 0; outline: 0; background: transparent; font: inherit; color: #15211c; }
+.topbar-search kbd { font: 600 11px 'JetBrains Mono', monospace; color: #5a6961; }
+.topbar-actions { display: flex; align-items: center; gap: 10px; }
+.topbar-actions .c-btn { display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 12px; border: 1px solid #e3e8e2; border-radius: 9px; background: #fff; font: 600 13px 'DM Sans', system-ui, sans-serif; color: #46544c; cursor: pointer; }
+.topbar-actions .preview-chip { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; border-radius: 999px; background: #e2f2e9; color: #1f6b4f; font-size: 12px; font-weight: 600; white-space: nowrap; }
+.topbar-actions .preview-chip .chip-dot { width: 7px; height: 7px; border-radius: 50%; background: #2f6f5b; }
+.topbar-actions .topbar-avatar { width: 32px; height: 32px; border-radius: 50%; border: 0; background: #f1e9df; color: #6b4e31; font-weight: 700; font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; padding: 0; }
+.main-body { flex: 1 1 auto; }
+.view-panel[hidden] { display: none; }
+.sample-banner { padding: 10px 32px; background: #fff3e2; border-bottom: 1px solid #f0d9b5; color: #6b3b05; font-size: 13.5px; }
+.sample-banner a { color: inherit; font-weight: 700; }
+.boot-error { max-width: 480px; margin: 20vh auto; padding: 24px; text-align: center; }
