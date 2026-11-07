@@ -14,6 +14,36 @@ export interface PolicyVerdict {
   matchedRule?: EgressRule;
 }
 
+/**
+ * Case-insensitive glob match where `*` matches any run of characters and everything else is literal.
+ * Runs in O(pattern x text) time with no backtracking blowup, so an attacker-supplied pattern such as
+ * "*a*a*a*a*b" cannot stall the process the way a generated regular expression could.
+ */
+export function globMatch(pattern: string, text: string): boolean {
+  const pat = pattern.toLowerCase();
+  const str = text.toLowerCase();
+  let p = 0;
+  let t = 0;
+  let star = -1;
+  let mark = 0;
+  while (t < str.length) {
+    if (p < pat.length && pat[p] === '*') {
+      star = p++;
+      mark = t;
+    } else if (p < pat.length && pat[p] === str[t]) {
+      p++;
+      t++;
+    } else if (star !== -1) {
+      p = star + 1;
+      t = ++mark;
+    } else {
+      return false;
+    }
+  }
+  while (p < pat.length && pat[p] === '*') p++;
+  return p === pat.length;
+}
+
 export class PolicyEngine {
   private config: EgressPolicyConfig;
 
@@ -40,14 +70,7 @@ export class PolicyEngine {
   private matchPath(path: string, pattern: string): boolean {
     if (pattern === '*') return true;
     if (pattern === path) return true;
-    
-    // Convert glob to regex
-    const regexPattern = pattern
-      .replace(/[.+^${}()|[\]\\]/g, '\\$&') // escape regex specials except *
-      .replace(/\*/g, '.*');
-    
-    const re = new RegExp(`^${regexPattern}$`, 'i');
-    return re.test(path);
+    return globMatch(pattern, path);
   }
 
   /**

@@ -89,6 +89,14 @@ export class CheckpointManager {
   }
 
   private filePathFor(name: string): string {
+    // A checkpoint name becomes a file name. Workflows can be submitted by anyone, so it must not be able
+    // to climb out of the checkpoint directory or hide as a dotfile.
+    if (!/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/.test(name) || name.includes('..')) {
+      throw new Error(`Invalid checkpoint name "${name.slice(0, 40)}". Use letters, digits, dot, dash or underscore (max 64 characters).`);
+    }
+    const root = path.resolve(this.checkpointsDir);
+    const file = path.resolve(root, `${name}.json`);
+    if (!file.startsWith(root + path.sep)) throw new Error('Checkpoint path escapes the checkpoint directory');
     return path.join(this.checkpointsDir, `${name}.json`);
   }
 

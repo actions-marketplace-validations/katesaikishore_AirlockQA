@@ -76,6 +76,21 @@ export class AirlockLedger {
     return [...this.blocks];
   }
 
+  /**
+   * Rebuild a ledger from blocks recorded elsewhere (for example by a hosted worker).
+   * The hash chain is verified first; tampered or malformed blocks throw.
+   * This lets a trusted service sign evidence without ever holding the browser that produced it.
+   */
+  static fromBlocks(blocks: LedgerBlock[]): AirlockLedger {
+    const check = AirlockLedger.verifyBlocks(blocks);
+    if (!check.valid) {
+      throw new Error(`Cannot rebuild ledger: ${check.reason ?? 'hash chain is invalid'}`);
+    }
+    const ledger = new AirlockLedger();
+    ledger.blocks = JSON.parse(JSON.stringify(blocks)) as LedgerBlock[];
+    return ledger;
+  }
+
   getBlockHashes(): string[] {
     return this.blocks.map((b) => b.blockHash);
   }

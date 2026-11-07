@@ -365,6 +365,34 @@ a:hover {
   color: #8FB3A0 !important;
 }
 
+.al[data-tab="api"] .al-code-panel:not([data-panel="api"]) {
+  display: none !important;
+}
+
+.al[data-tab="api"] [data-tab-target="api"] {
+  background: #1E3A2E !important;
+  color: #E7F2EC !important;
+}
+
+.al[data-tab="api"] [data-tab-target]:not([data-tab-target="api"]) {
+  background: transparent !important;
+  color: #8FB3A0 !important;
+}
+
+/* Copy button inside dark code panels */
+.al-copy-dark {
+  height: 30px;
+  padding: 0 12px;
+  border: 1px solid #365647;
+  border-radius: 8px;
+  background: transparent;
+  color: #B8CCC0;
+  font: 600 12px/1 'DM Sans', system-ui, sans-serif;
+  cursor: pointer;
+}
+.al-copy-dark:hover { background: #1E3A2E; color: #E7F2EC; }
+.al-copy-dark.is-copied { color: #7FD6AE; border-color: #7FD6AE; }
+
 /* FAQ Accordion */
 .al-faq-body[hidden] {
   display: none !important;

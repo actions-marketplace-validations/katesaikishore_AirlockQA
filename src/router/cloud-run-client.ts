@@ -1,6 +1,7 @@
 import type { AirlockConfig } from '../types/index.js';
 import type { CloudRunRequest, CloudRunResponse } from '../types/cloud-client.js';
 import { logger } from '../utils/logger.js';
+import { safeText } from '../utils/safe-text.js';
 
 export type CloudRunPayload = Omit<CloudRunRequest, 'apiKey'>;
 
@@ -106,7 +107,19 @@ export class CloudApiError extends Error {
     }
 
     if (status === 401 || status === 403) {
-      return `Airlock Cloud rejected the API key (HTTP ${status}). Check that AIRLOCK_API_KEY is valid, active, and belongs to this deployment.`;
+      return `Airlock Cloud rejected the API key (HTTP ${status}). Check that the key is valid and active (run "airlock login" to save a new one) and that it belongs to this deployment.`;
+    }
+
+    const record = asRecord(body);
+    if (status >= 400 && status < 500 && typeof record?.message === 'string') {
+      const issues = Array.isArray(record.issues)
+        ? record.issues
+            .map((issue) => asRecord(issue))
+            .filter((issue): issue is Record<string, unknown> => Boolean(issue))
+            .map((issue) => `${String(issue.path ?? '')}: ${String(issue.message ?? '')}`.replace(/^: /, ''))
+        : [];
+      const detail = issues.length ? ` (${issues.slice(0, 5).join('; ')})` : '';
+      return `Airlock Cloud rejected the request (HTTP ${status}): ${safeText(record.message, 300)}${detail ? safeText(detail, 400) : ''}`;
     }
 
     return `Airlock Cloud request failed (HTTP ${status}).`;
@@ -114,7 +127,12 @@ export class CloudApiError extends Error {
 }
 
 /** Build the public request shape without ever forwarding configured real credentials. */
-export function createCloudRunPayload(config: AirlockConfig, targetUrl: string, suiteName?: string): CloudRunPayload {
+export function createCloudRunPayload(
+  config: AirlockConfig,
+  targetUrl: string,
+  suiteName?: string,
+  workflow?: CloudRunRequest['workflow']
+): CloudRunPayload {
   const phantomConfig: CloudRunRequest['phantomConfig'] = {};
 
   for (const [name, secret] of Object.entries(config.secrets || {})) {
@@ -131,10 +149,11 @@ export function createCloudRunPayload(config: AirlockConfig, targetUrl: string, 
     suiteName: suiteName || config.projectName,
     targetUrl,
     phantomConfig,
+    ...(workflow ? { workflow } : {}),
   };
 }
 
-function normalizeApiUrl(apiUrl: string): string {
+export function normalizeApiUrl(apiUrl: string): string {
   let parsed: URL;
   try {
     parsed = new URL(apiUrl);

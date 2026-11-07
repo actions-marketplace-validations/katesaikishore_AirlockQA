@@ -39,6 +39,8 @@ export interface CloudRunRequest {
     blockedPaths?: string[];
   }>;
   egressPolicyYaml?: string;
+  /** Declarative workflow executed by hosted runs (same shape as the `workflow` config section). */
+  workflow?: { name?: string; startUrl?: string; steps: unknown[] };
   options?: {
     workersCount?: number;
   };

@@ -3,8 +3,7 @@ import * as path from 'node:path';
 import * as yaml from 'js-yaml';
 import { loadConfig } from '../config/loader.js';
 import { logger } from '../utils/logger.js';
-import { createCloudRunPayload, submitCloudRun } from './cloud-run-client.js';
-import { runPlaywrightSpecs, suiteNameFromSpec } from './local-test-runner.js';
+import { runPlaywrightSpecs } from './local-test-runner.js';
 
 export interface RouteRunOptions {
   local?: boolean;
@@ -15,6 +14,12 @@ export interface RouteRunOptions {
   targetUrl?: string;
   cloudApiUrl?: string;
   apiKey?: string;
+  /** Workflow JSON file for hosted runs (defaults to the config's `workflow`). */
+  workflowFile?: string;
+  /** Hosted runs: wait for the result (default true). */
+  wait?: boolean;
+  /** Hosted runs: how long to wait, in seconds. */
+  timeoutSeconds?: number;
 }
 
 export class ExecutionTargetRouter {
@@ -58,31 +63,23 @@ export class ExecutionTargetRouter {
       }
       return { target: 'LOCAL', result };
     } else {
-      const cloudApiUrl = options.cloudApiUrl || process.env.AIRLOCK_CLOUD_URL || 'https://api.qbrin.cloud';
-      if (!apiKey?.trim()) {
-        throw new Error('Cloud runs require AIRLOCK_API_KEY. Create a key in your Airlock Cloud workspace and store it in your CI secrets.');
-      }
-
       logger.moat(
         2,
-        'Execution Target: Airlock Cloud API',
-        `Submitting a run request to the configured API (${cloudApiUrl})`
+        'Execution Target: Airlock Cloud',
+        'Submitting a hosted run. Workflows run in an isolated browser; real credentials are never sent.'
       );
-
-      const config = loadConfig();
-      const suiteName = options.suiteName || suiteNameFromSpec(options.specPath, config.projectName);
-      const payload = createCloudRunPayload(config, options.targetUrl || config.baseUrl, suiteName);
-
-      const cloudResult = await submitCloudRun({
-        apiUrl: cloudApiUrl,
-        apiKey,
-        payload,
+      const { runHostedTest } = await import('./cloud-commands.js');
+      const result = await runHostedTest({
+        specPath: options.specPath,
+        suiteName: options.suiteName,
+        targetUrl: options.targetUrl,
+        workflowFile: options.workflowFile,
+        wait: options.wait,
+        timeoutSeconds: options.timeoutSeconds,
+        apiKey: options.apiKey,
+        apiUrl: options.cloudApiUrl,
       });
-
-      logger.success(`Cloud API accepted run ${cloudResult.runId} with status ${cloudResult.status}.`);
-      if (cloudResult.githubPRComment) console.log('\n' + cloudResult.githubPRComment);
-
-      return { target: 'CLOUD_API', result: cloudResult };
+      return { target: 'CLOUD_API', result };
     }
   }
 

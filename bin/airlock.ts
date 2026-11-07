@@ -257,6 +257,9 @@ program
   .option('-c, --cloud', 'Submit a run request to Airlock Cloud (requires AIRLOCK_API_KEY)')
   .option('-u, --url <url>', 'Target base URL')
   .option('-s, --suite <name>', 'Suite name sent to Airlock Cloud (default: spec file name, then projectName)')
+  .option('-w, --workflow <file>', 'Cloud: JSON file with the workflow to run (default: the config workflow)')
+  .option('--no-wait', 'Cloud: submit the run and exit without waiting for the result')
+  .option('--timeout <seconds>', 'Cloud: how long to wait for the result', '600')
   .action(async (specPath, opts) => {
     logger.banner();
     try {
@@ -267,13 +270,16 @@ program
         specPath,
         suiteName: opts.suite,
         targetUrl: opts.url,
+        workflowFile: opts.workflow,
+        wait: opts.wait,
+        timeoutSeconds: Number(opts.timeout) || 600,
       });
       if (target === 'LOCAL') {
         const exitCode = (result as LocalTestRunResult).exitCode;
         if (exitCode !== 0) process.exitCode = exitCode;
       } else {
         const status = (result as { status?: string }).status;
-        if (status === 'FAILED' || status === 'POLICY_VIOLATION') process.exitCode = 1;
+        if (status === 'FAILED' || status === 'POLICY_VIOLATION' || status === 'CANCELLED') process.exitCode = 1;
       }
     } catch (error) {
       logger.error(error instanceof Error ? error.message : String(error));
@@ -682,5 +688,58 @@ function loadChaosFile(file: string): z.infer<typeof ChaosFileSchema> {
   }
   return parsed.data;
 }
+
+
+// ==========================================
+// COMMANDS: AIRLOCK CLOUD ACCOUNT (login, logout, whoami, usage, runs)
+// ==========================================
+function cloudAction(handler: () => Promise<void> | void): () => Promise<void> {
+  return async () => {
+    try {
+      await handler();
+    } catch (error) {
+      logger.error(error instanceof Error ? error.message : String(error));
+      process.exitCode = 1;
+    }
+  };
+}
+
+program
+  .command('login')
+  .description('Save an Airlock Cloud API key on this machine (create one in the console under CI/CD & API)')
+  .option('--key <key>', 'API key (prefer the hidden prompt or AIRLOCK_API_KEY; command-line values land in shell history)')
+  .option('--api-url <url>', 'Airlock Cloud API base URL (default: AIRLOCK_CLOUD_URL or https://api.qbrin.cloud)')
+  .action((opts) => cloudAction(async () => (await import('../src/router/cloud-commands.js')).loginCommand({ key: opts.key, apiUrl: opts.apiUrl }))());
+
+program
+  .command('logout')
+  .description('Remove the saved Airlock Cloud API key from this machine')
+  .action(() => cloudAction(async () => (await import('../src/router/cloud-commands.js')).logoutCommand())());
+
+program
+  .command('whoami')
+  .description('Show which Airlock Cloud key and plan this machine uses')
+  .option('--api-url <url>', 'Airlock Cloud API base URL')
+  .action((opts) => cloudAction(async () => (await import('../src/router/cloud-commands.js')).whoamiCommand({ apiUrl: opts.apiUrl }))());
+
+program
+  .command('usage')
+  .description('Show today\'s Airlock Cloud run usage and limits')
+  .option('--json', 'Print the raw JSON')
+  .option('--api-url <url>', 'Airlock Cloud API base URL')
+  .action((opts) => cloudAction(async () => (await import('../src/router/cloud-commands.js')).usageCommand({ json: opts.json, apiUrl: opts.apiUrl }))());
+
+program
+  .command('runs [runId]')
+  .description('List recent Airlock Cloud runs, or show one run with its steps')
+  .option('-n, --limit <count>', 'How many runs to list (max 100)', '20')
+  .option('--status <status>', 'Only list runs with this status (for example FAILED)')
+  .option('--json', 'Print the raw JSON')
+  .option('--api-url <url>', 'Airlock Cloud API base URL')
+  .action((runId, opts) =>
+    cloudAction(async () =>
+      (await import('../src/router/cloud-commands.js')).runsCommand(runId, { limit: opts.limit, status: opts.status, json: opts.json, apiUrl: opts.apiUrl })
+    )()
+  );
 
 program.parse(process.argv);
