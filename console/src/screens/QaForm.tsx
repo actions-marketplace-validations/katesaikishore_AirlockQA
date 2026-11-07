@@ -6,6 +6,7 @@ import {
   QA_SCRIPT_NAMES,
   QA_SUITES,
   describeQaError,
+  scriptedSuitesWithoutScript,
   validateQaForm,
   type QaFormErrors,
   type QaScriptName,
@@ -18,6 +19,10 @@ const SCRIPT_LABELS: Record<QaScriptName, string> = {
   test: 'test',
   'test:integration': 'test:integration',
   'test:e2e': 'test:e2e',
+  'test:a11y': 'test:a11y',
+  'test:security': 'test:security',
+  'test:load': 'test:load',
+  'test:explore': 'test:explore',
 };
 
 const blankScripts = (): Record<QaScriptName, string> =>
@@ -37,6 +42,9 @@ export function QaForm({ onClose, onCreated }: Props) {
   const [suites, setSuites] = useState<string[]>(['unit']);
   const [gate, setGate] = useState<string>('default');
   const [scripts, setScripts] = useState<Record<QaScriptName, string>>(blankScripts);
+  const [healthPath, setHealthPath] = useState('');
+  const [continueOnFailure, setContinueOnFailure] = useState(false);
+  const missingScripts = scriptedSuitesWithoutScript(suites, scripts);
   const [errors, setErrors] = useState<QaFormErrors>({});
   const [serverError, setServerError] = useState<{ message: string; issues: string[] } | null>(null);
   const [busy, setBusy] = useState(false);
@@ -51,7 +59,7 @@ export function QaForm({ onClose, onCreated }: Props) {
   const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setServerError(null);
-    const result = validateQaForm({ repo, sha, branch, suites, gate, scripts });
+    const result = validateQaForm({ repo, sha, branch, suites, gate, scripts, healthPath, continueOnFailure });
     if (!result.ok) {
       setErrors(result.errors);
       const first = result.errors.repo ? repoRef.current : result.errors.sha ? shaRef.current : null;
@@ -74,8 +82,9 @@ export function QaForm({ onClose, onCreated }: Props) {
   };
 
   const errorId = (field: string) => `qa-${field}-error`;
+  // Error ids use "-" for ".", so a script field's error id matches its aria-describedby.
   const fieldError = (field: keyof QaFormErrors) => (errors[field] ? (
-    <p id={errorId(String(field))} className="lv-field-error" role="alert">{errors[field]}</p>
+    <p id={errorId(String(field).replace('scripts.', 'script-'))} className="lv-field-error" role="alert">{errors[field]}</p>
   ) : null);
 
   return (
@@ -133,10 +142,29 @@ export function QaForm({ onClose, onCreated }: Props) {
           ))}
         </div>
         {fieldError('suites')}
+        {missingScripts.length ? (
+          <p className="lv-hint" id="qa-missing-scripts" role="status">
+            {missingScripts.join(', ')} {missingScripts.length === 1 ? 'runs' : 'run'} only with a script name below
+            ({missingScripts.map((s) => 'test:' + s).join(', ')}); without one it is reported as not run.
+          </p>
+        ) : null}
       </fieldset>
-      <details className="lv-details">
+      <label className="qa-check" htmlFor="qa-continue">
+        <input id="qa-continue" type="checkbox" checked={continueOnFailure} onChange={(event) => setContinueOnFailure(event.target.checked)} />
+        <span>Continue after a failing suite (a11y, security, load and explore still run; build, start and health-check failures still stop the run)</span>
+      </label>
+      <div className="lv-form-row">
+        <div className="lv-field">
+          <label htmlFor="qa-health">Health-check path (optional)</label>
+          <input id="qa-health" className="lv-input lv-mono" name="healthPath" type="text" autoComplete="off" spellCheck={false} placeholder="/"
+            aria-invalid={errors.healthPath ? true : undefined} aria-describedby={errors.healthPath ? errorId('healthPath') : undefined}
+            value={healthPath} onChange={(event) => setHealthPath(event.target.value)} />
+          {fieldError('healthPath')}
+        </div>
+      </div>
+      <details className="lv-details" open={missingScripts.length > 0 || undefined}>
         <summary>Script names (optional)</summary>
-        <p className="lv-hint">Names of npm scripts in the repository's package.json. Leave empty to use the defaults.</p>
+        <p className="lv-hint">Names of npm scripts in the repository's package.json. Unit, integration and e2e use their defaults when left empty; a11y, security, load and explore need a name to run.</p>
         <div className="lv-form-row">
           {QA_SCRIPT_NAMES.map((name) => (
             <div key={name} className="lv-field">

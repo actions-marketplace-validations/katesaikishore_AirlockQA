@@ -52,3 +52,27 @@ describe('preflight: building the request', () => {
     await expect(buildQaRunRequest({ ...base, isPushed: pushedOk, suites: ['unit', 'destroy'] as any })).rejects.toThrow();
   });
 });
+
+describe('preflight: scripts for the browser and extra suites', () => {
+  it('accepts test:a11y, test:security, test:load and test:explore from the qa config, with port and health path', async () => {
+    const config = {
+      qa: {
+        scripts: { 'test:a11y': 'test:a11y', 'test:security': 'test:security', 'test:load': 'test:load', 'test:explore': 'test:explore' },
+        port: 4000,
+        healthPath: '/health',
+      },
+    };
+    const { body } = await buildQaRunRequest({
+      remoteUrl: 'https://github.com/acme/app', sha: SHA, config, isPushed: async () => true,
+      suites: ['a11y', 'security', 'load', 'explore', 'smoke'], continueOnFailure: true,
+    });
+    expect(body.scripts).toMatchObject(config.qa.scripts);
+    expect(body).toMatchObject({ port: 4000, healthPath: '/health', continueOnFailure: true });
+  });
+
+  it('still refuses an unknown script key', async () => {
+    await expect(buildQaRunRequest({
+      remoteUrl: 'https://github.com/acme/app', sha: SHA, config: { qa: { scripts: { 'test:fuzz': 'fuzz' } } }, isPushed: async () => true, suites: ['unit'],
+    })).rejects.toThrow(QaPreflightError);
+  });
+});

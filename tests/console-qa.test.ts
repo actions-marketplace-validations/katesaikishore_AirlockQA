@@ -194,3 +194,39 @@ describe('console qa: reasons and gate wording', () => {
     expect(gateVerdict({ exitCode: 0, reasons: ['warning: suite e2e failed'] }, 'default')).toMatch(/^Passed with warnings: the default gate/);
   });
 });
+
+describe('console qa form: extra suites, health path, continue-on-failure', () => {
+  const base = async () => {
+    const { QA_SCRIPT_NAMES } = await import('../console/src/qa');
+    const scripts = Object.fromEntries(QA_SCRIPT_NAMES.map((n) => [n, ''])) as any;
+    return { repo: 'https://github.com/acme/app', sha: 'a'.repeat(40), branch: '', suites: ['security', 'smoke'], gate: 'default', scripts };
+  };
+
+  test('sends test:security, the health path and continueOnFailure', async () => {
+    const { validateQaForm } = await import('../console/src/qa');
+    const input = await base();
+    input.scripts['test:security'] = 'test:security';
+    const r = validateQaForm({ ...input, healthPath: '/health', continueOnFailure: true });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.body).toMatchObject({ scripts: { 'test:security': 'test:security' }, healthPath: '/health', continueOnFailure: true });
+  });
+
+  test('rejects a health path that does not start with /', async () => {
+    const { validateQaForm } = await import('../console/src/qa');
+    const r = validateQaForm({ ...(await base()), healthPath: 'health' });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(Object.keys(r.errors)).toEqual(['healthPath']);
+  });
+
+  test('scriptedSuitesWithoutScript names the suites that would be NOT_RUN', async () => {
+    const { scriptedSuitesWithoutScript } = await import('../console/src/qa');
+    expect(scriptedSuitesWithoutScript(['unit', 'a11y', 'security'], { 'test:a11y': 'test:a11y' })).toEqual(['security']);
+  });
+
+  test('the form and the server contract accept the same script names', async () => {
+    const { QA_SCRIPT_NAMES } = await import('../console/src/qa');
+    const { CreateQaRunBodySchema } = await import('../cloud/shared/contract');
+    const shape = (CreateQaRunBodySchema as any).shape.scripts._def.innerType.shape;
+    expect([...QA_SCRIPT_NAMES].sort()).toEqual(Object.keys(shape).sort());
+  });
+});
