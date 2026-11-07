@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, it, setDefaultTimeout } from 'bun:test';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, setDefaultTimeout } from 'bun:test';
 import { once } from 'node:events';
 import * as fs from 'node:fs';
 import * as os from 'node:os';
@@ -9,7 +9,7 @@ import { startDashboardServer } from '../src/dashboard/server.js';
 setDefaultTimeout(90_000);
 
 const macChrome = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
-const executablePath = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH || macChrome;
+const executablePath = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH || (fs.existsSync(macChrome) ? macChrome : undefined);
 const XSS = '<img src=x onerror="window.__xss = 1">';
 
 let browser;
@@ -19,16 +19,27 @@ let origin;
 
 beforeAll(async () => {
   tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'airlock-console-live-'));
+  browser = await chromium.launch({ executablePath, headless: true, args: ['--no-sandbox'] });
+});
+
+// A fresh dashboard server for every test, as tests/dashboard-static.test.js does: a single server shared by the
+// whole file stopped accepting connections partway through on Linux CI.
+beforeEach(async () => {
   server = startDashboardServer({ compliance: { outputDir: path.join(tempRoot, 'compliance') } }, 0, path.join(tempRoot, 'artifacts'));
   await once(server, 'listening');
-  const address = server.address();
-  origin = 'http://127.0.0.1:' + address.port;
-  browser = await chromium.launch({ executablePath, headless: true, args: ['--no-sandbox'] });
+  origin = 'http://127.0.0.1:' + server.address().port;
+});
+
+afterEach(async () => {
+  if (server) {
+    server.closeAllConnections?.();
+    await new Promise((resolve) => server.close(() => resolve()));
+    server = undefined;
+  }
 });
 
 afterAll(async () => {
   if (browser) await browser.close();
-  if (server) await new Promise((resolve) => server.close(() => resolve()));
   if (tempRoot) fs.rmSync(tempRoot, { recursive: true, force: true });
 });
 

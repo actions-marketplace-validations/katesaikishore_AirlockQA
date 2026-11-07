@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, it, setDefaultTimeout } from 'bun:test';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, setDefaultTimeout } from 'bun:test';
 import { once } from 'node:events';
 import * as fs from 'node:fs';
 import * as os from 'node:os';
@@ -22,16 +22,27 @@ describe('Login and create-account page', () => {
 
   beforeAll(async () => {
     tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'airlock-login-page-'));
+    browser = await chromium.launch({ executablePath: chromePath, headless: true });
+  });
+
+  // A fresh dashboard server for every test, as tests/dashboard-static.test.js does: a single server shared by the
+  // whole file stopped accepting connections partway through on Linux CI.
+  beforeEach(async () => {
     server = startDashboardServer({ compliance: { outputDir: path.join(tempRoot, 'compliance') } }, 0, path.join(tempRoot, 'artifacts'));
     await once(server, 'listening');
-    const address = server.address();
-    origin = 'http://127.0.0.1:' + address.port;
-    browser = await chromium.launch({ executablePath: chromePath, headless: true });
+    origin = 'http://127.0.0.1:' + server.address().port;
+  });
+
+  afterEach(async () => {
+    if (server) {
+      server.closeAllConnections?.();
+      await new Promise((resolve) => server.close(() => resolve()));
+      server = undefined;
+    }
   });
 
   afterAll(async () => {
     if (browser) await browser.close();
-    if (server) await new Promise((resolve) => server.close(() => resolve()));
     if (tempRoot) fs.rmSync(tempRoot, { recursive: true, force: true });
   });
 
