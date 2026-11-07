@@ -98,4 +98,31 @@ describe('Browser-context fixture replay prototype', () => {
     expect(synthesizer.getServedCount()).toBe(0);
     expect(synthesizer.getMissedRequests()).toEqual(['POST https://api.stripe.com/v1/charges/unrecorded']);
   });
+
+  it('reports missed requests without query strings and keeps the list bounded', async () => {
+    const recorder = new ShadowRecorder(testCatalogPath);
+    const synthesizer = new ShadowSynthesizer(recorder);
+    let routeHandler: ((route: any) => Promise<void>) | undefined;
+    const context = {
+      route: async (_pattern: string, handler: (route: any) => Promise<void>) => {
+        routeHandler = handler;
+      },
+    };
+    await synthesizer.activate(context as any, ['*']);
+    const send = (url: string) =>
+      routeHandler?.({
+        request: () => ({ url: () => url, method: () => 'GET', postData: () => null }),
+        continue: async () => {},
+        fallback: async () => {},
+        fulfill: async () => {},
+      });
+
+    await send('https://api.example.com/v1/items?api_key=sk_live_SECRET&token=abc#frag');
+    const first = synthesizer.getMissedRequests();
+    expect(first).toEqual(['GET https://api.example.com/v1/items']);
+    expect(first.join(' ')).not.toContain('sk_live_SECRET');
+
+    for (let i = 0; i < 700; i++) await send(`https://api.example.com/v1/items/${i}`);
+    expect(synthesizer.getMissedRequests().length).toBeLessThanOrEqual(500);
+  });
 });

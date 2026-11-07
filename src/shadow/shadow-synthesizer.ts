@@ -13,6 +13,7 @@ export class ShadowSynthesizer {
   private active = false;
   private servedCount = 0;
   private missedUrls: string[] = [];
+  private static readonly MAX_MISSED = 500;
 
   constructor(recorder?: ShadowRecorder) {
     this.recorder = recorder || new ShadowRecorder();
@@ -58,7 +59,10 @@ export class ShadowSynthesizer {
       } else {
         // Never fabricate a response. Record the miss and let the next route handler
         // (the AirlockGateway) decide, so policy and phantom-token handling still apply.
-        this.missedUrls.push(`${method} ${url}`);
+        // Keep the report free of secrets (query strings and fragments are dropped) and bounded in size.
+        if (this.missedUrls.length < ShadowSynthesizer.MAX_MISSED) {
+          this.missedUrls.push(`${method} ${ShadowSynthesizer.redactUrl(url)}`);
+        }
         await route.fallback();
       }
     });
@@ -66,7 +70,16 @@ export class ShadowSynthesizer {
     logger.info(`Browser fixture routes active: ${this.recorder.size()} saved interactions available`);
   }
 
-  /** Targeted requests that had no saved response and were passed on unchanged. */
+  private static redactUrl(url: string): string {
+    try {
+      const u = new URL(url);
+      return `${u.origin}${u.pathname}`;
+    } catch {
+      return url.split(/[?#]/)[0];
+    }
+  }
+
+  /** Targeted requests that had no saved response and were passed on unchanged (query strings removed, capped at 500). */
   getMissedRequests(): string[] {
     return [...this.missedUrls];
   }
