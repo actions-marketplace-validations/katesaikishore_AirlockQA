@@ -126,3 +126,66 @@ describe('qa pipeline: order and cleanup', () => {
     expect(r.suites.every((s) => s.status === 'NOT_RUN' || s.status === 'BLOCKED')).toBe(true);
   });
 });
+
+const EXTRA = ['a11y', 'security', 'load', 'explore'] as const;
+
+/** Stubs plus one extra-suite backend per name. Every call is recorded in the same list as the core phases. */
+function withExtras(over: Partial<Record<string, () => Promise<void>>> = {}) {
+  const { calls, backends } = stubs();
+  const extras: Record<string, () => Promise<void>> = {};
+  for (const name of EXTRA) {
+    extras[name] = over[name] ?? (async () => {
+      calls.push(name);
+    });
+  }
+  return { calls, backends: { ...backends, extras } as PipelineBackends };
+}
+
+describe('qa pipeline: extra suites (a11y, security, load, explore)', () => {
+  it('runs each requested extra suite after e2e, against the started app, and reports PASS', async () => {
+    const { calls, backends } = withExtras();
+    const r = await runQaPipeline({ suites: ['unit', 'e2e', 'a11y', 'security', 'load', 'explore'], gate: 'default', backends });
+    expect(calls).toEqual(['lease', 'build', 'unit', 'start', 'smoke', 'e2e', 'a11y', 'security', 'load', 'explore', 'release']);
+    for (const name of EXTRA) {
+      expect(r.suites.find((s) => s.suite === name)).toMatchObject({ status: 'PASS' });
+    }
+    expect(r.exitCode).toBe(0);
+  });
+
+  it('a failing extra suite is FAIL, the suites after it are NOT_RUN, and a strict gate exits 1', async () => {
+    const { calls, backends } = withExtras({ a11y: async () => { throw new Error('2 serious violations'); } });
+    const r = await runQaPipeline({ suites: ['a11y', 'load', 'smoke'], gate: 'strict', backends });
+    expect(r.suites.find((s) => s.suite === 'a11y')).toMatchObject({ status: 'FAIL' });
+    expect(r.suites.find((s) => s.suite === 'load')).toMatchObject({ status: 'NOT_RUN' });
+    expect(calls).not.toContain('load');
+    expect(r.phase).toBe('TESTS_FAILED');
+    expect(r.exitCode).toBe(1);
+    expect(calls.at(-1)).toBe('release');
+  });
+
+  it('under the default gate a failing extra suite is a warning, not a failed run', async () => {
+    const { backends } = withExtras({ security: async () => { throw new Error('missing HSTS'); } });
+    const r = await runQaPipeline({ suites: ['security'], gate: 'default', backends });
+    expect(r.suites.find((s) => s.suite === 'security')).toMatchObject({ status: 'FAIL' });
+    expect(r.exitCode).toBe(0);
+    expect(r.reasons.join(' ')).toMatch(/warning: suite security failed/);
+  });
+
+  it('extra suites do not run after a unit failure: they are NOT_RUN and the slot is still released', async () => {
+    const { calls, backends } = withExtras();
+    backends.unit = async () => {
+      throw new Error('1 test failed');
+    };
+    const r = await runQaPipeline({ suites: ['unit', 'a11y'], gate: 'default', backends });
+    expect(calls).not.toContain('a11y');
+    expect(r.suites.find((s) => s.suite === 'a11y')).toMatchObject({ status: 'NOT_RUN' });
+    expect(calls.at(-1)).toBe('release');
+  });
+
+  it('an extra suite with no backend is NOT_RUN, never PASS', async () => {
+    const { backends } = stubs();
+    const r = await runQaPipeline({ suites: ['explore', 'smoke'], gate: 'strict', backends: { ...backends, extras: {} } });
+    expect(r.suites.find((s) => s.suite === 'explore')).toMatchObject({ status: 'NOT_RUN' });
+    expect(r.exitCode).toBe(1);
+  });
+});

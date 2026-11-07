@@ -11,7 +11,15 @@ export interface PipelineBackends {
   e2e: () => Promise<void>;
   integration: () => Promise<void>;
   release: () => Promise<void>;
+  /**
+   * Extra suites (a11y, security, load, explore), one backend per suite name. Each runs after e2e against the same
+   * started app. A requested suite with no backend here is reported NOT_RUN, never as a pass.
+   */
+  extras?: Partial<Record<string, () => Promise<void>>>;
 }
+
+/** Phases with their own steps above. Any other suite a run requests is an extra suite. */
+const CORE_SUITES = ['unit', 'integration', 'e2e', 'smoke'];
 
 
 
@@ -118,6 +126,18 @@ export async function runQaPipeline(input: PipelineInput): Promise<PipelineResul
           } else {
             outcomes.set('e2e', 'NOT_RUN');
           }
+        }
+
+        // Extra suites run after e2e, only while every earlier gate is green. A failure stops the rest, as above.
+        for (const suite of input.suites.filter((s) => !CORE_SUITES.includes(s))) {
+          const run = backends.extras?.[suite];
+          if (!run || phase !== 'DONE' || cancelled()) {
+            outcomes.set(suite, 'NOT_RUN');
+            continue;
+          }
+          const ok = await attempt(run);
+          outcomes.set(suite, ok ? 'PASS' : 'FAIL');
+          if (!ok) phase = cancelled() ? 'CANCELLED' : 'TESTS_FAILED';
         }
       }
     }
