@@ -1,6 +1,6 @@
 import { evaluateGate, type GateMode, type SuiteOutcome } from './gate.js';
 
-export type PhaseName = 'lease' | 'build' | 'unit' | 'start' | 'smoke' | 'e2e' | 'release';
+export type PhaseName = 'lease' | 'build' | 'unit' | 'integration' | 'start' | 'smoke' | 'e2e' | 'release';
 
 export interface PipelineBackends {
   lease: () => Promise<void>;
@@ -9,6 +9,7 @@ export interface PipelineBackends {
   start: () => Promise<void>;
   smoke: () => Promise<void>;
   e2e: () => Promise<void>;
+  integration: () => Promise<void>;
   release: () => Promise<void>;
 }
 
@@ -86,6 +87,18 @@ export async function runQaPipeline(input: PipelineInput): Promise<PipelineResul
       const ok = await attempt(backends.unit);
       outcomes.set('unit', ok ? 'PASS' : 'FAIL');
       if (!ok) phase = cancelled() ? 'CANCELLED' : 'TESTS_FAILED';
+    }
+
+    // Integration runs only after a green unit suite (plan-v2 B2). When it does not run, it is reported NOT_RUN.
+    if (input.suites.includes('integration')) {
+      const unitGreen = !wantsUnit || outcomes.get('unit') === 'PASS';
+      if (phase === 'DONE' && unitGreen) {
+        const ok = await attempt(backends.integration);
+        outcomes.set('integration', ok ? 'PASS' : 'FAIL');
+        if (!ok) phase = cancelled() ? 'CANCELLED' : 'TESTS_FAILED';
+      } else if (!outcomes.has('integration')) {
+        outcomes.set('integration', 'NOT_RUN');
+      }
     }
 
     if (phase === 'DONE' || phase === 'TESTS_FAILED') {

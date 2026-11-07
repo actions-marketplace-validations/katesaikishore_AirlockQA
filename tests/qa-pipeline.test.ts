@@ -14,12 +14,36 @@ function stubs(over: Partial<Record<PhaseName, () => Promise<void>>> = {}) {
     start: over.start ?? ok('start'),
     smoke: over.smoke ?? ok('smoke'),
     e2e: over.e2e ?? ok('e2e'),
+    integration: over.integration ?? ok('integration'),
     release: over.release ?? ok('release'),
   } as any;
   return { calls, backends };
 }
 
 const SUITES = ['unit', 'e2e'] as const;
+
+describe('qa pipeline: integration', () => {
+  it('runs integration after a green unit suite, before the app starts', async () => {
+    const { calls, backends } = stubs();
+    const r = await runQaPipeline({ suites: ['unit', 'integration', 'smoke'], gate: 'default', backends });
+    expect(calls.indexOf('unit')).toBeLessThan(calls.indexOf('integration'));
+    expect(r.suites.find((s) => s.suite === 'integration')).toMatchObject({ status: 'PASS' });
+  });
+
+  it('a unit failure stops integration, which is reported NOT_RUN', async () => {
+    const { calls, backends } = stubs({ unit: async () => { throw new Error('x'); } });
+    const r = await runQaPipeline({ suites: ['unit', 'integration'], gate: 'default', backends });
+    expect(calls).not.toContain('integration');
+    expect(r.suites.find((s) => s.suite === 'integration')).toMatchObject({ status: 'NOT_RUN' });
+  });
+
+  it('a failing integration suite is a failure, not a pass', async () => {
+    const { backends } = stubs({ integration: async () => { throw new Error('y'); } });
+    const r = await runQaPipeline({ suites: ['integration'], gate: 'strict', backends });
+    expect(r.suites.find((s) => s.suite === 'integration')).toMatchObject({ status: 'FAIL' });
+    expect(r.exitCode).toBe(1);
+  });
+});
 
 describe('qa pipeline: order and cleanup', () => {
   it('runs LEASE, BUILD, UNIT, START, SMOKE, E2E, RELEASE in that order on a green run', async () => {
