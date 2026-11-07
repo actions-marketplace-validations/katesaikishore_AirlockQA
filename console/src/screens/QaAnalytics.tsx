@@ -3,7 +3,7 @@ import { useApp } from '../app-context';
 import { formatRatio, type QaAnalytics } from '../qa';
 import { Card, Kpi, Loading, RetryBlock } from '../ui';
 
-/** Pass, fail and flake rates from the QA analytics endpoint, with suite hotspots. Findings are not stored yet. */
+/** Fail and flake rates over suite results, suite hotspots, and the distinct findings stored for QA runs. */
 export function QaAnalyticsPanel() {
   const { api, call } = useApp();
   const [data, setData] = useState<QaAnalytics | null>(null);
@@ -27,11 +27,12 @@ export function QaAnalyticsPanel() {
     content = <Loading text="Loading QA analytics" />;
   } else {
     const hotspots = [...(data.hotspots || [])].sort((a, b) => Number(b.failures) - Number(a.failures));
+    const findings = [...(data.findings || [])].sort((a, b) => Number(b.buildsOpen) - Number(a.buildsOpen));
     content = (
       <>
         <section className="lv-grid lv-grid-kpi" aria-label="QA rates">
-          <Kpi label="Fail rate" value={formatRatio(data.failRate || { failed: 0, total: 0 }, 'failed')} foot="Finished runs with a failed suite" />
-          <Kpi label="Flake rate" value={formatRatio(data.flakeRate || { flaky: 0, total: 0 }, 'flaky')} foot="Finished runs with a flaky suite" />
+          <Kpi label="Fail rate" value={formatRatio(data.failRate || { failed: 0, total: 0 }, 'failed')} foot={`Suites that failed, across ${Number(data.runs) || 0} finished runs`} />
+          <Kpi label="Flake rate" value={formatRatio(data.flakeRate || { flaky: 0, total: 0 }, 'flaky')} foot={`Suites that passed only on a rerun, across ${Number(data.runs) || 0} finished runs`} />
         </section>
         <Card title="Suite hotspots">
           {hotspots.length ? (
@@ -53,6 +54,30 @@ export function QaAnalyticsPanel() {
             <p className="lv-muted">No suite failures recorded yet.</p>
           )}
         </Card>
+        <Card title="Findings">
+          {findings.length ? (
+            <>
+              <div className="lv-table-wrap">
+                <table className="lv-table lv-table-compact" id="qa-findings-summary">
+                  <caption className="sr-only">Distinct findings across QA runs</caption>
+                  <thead><tr><th scope="col">Fingerprint</th><th scope="col">First seen at</th><th scope="col">Runs open</th></tr></thead>
+                  <tbody>
+                    {findings.map((f) => (
+                      <tr key={f.fingerprint}>
+                        <td className="lv-mono">{f.fingerprint}</td>
+                        <td className="lv-mono">{(f.firstSeenSha || '').slice(0, 7) || 'unknown'}</td>
+                        <td className="lv-mono">{String(f.buildsOpen)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <p className="lv-muted lv-small">
+                {findings.length} distinct finding{findings.length === 1 ? '' : 's'}. Open a run to see what each one is.
+              </p>
+            </>
+          ) : <p className="lv-muted">No findings stored yet.</p>}
+        </Card>
       </>
     );
   }
@@ -61,9 +86,6 @@ export function QaAnalyticsPanel() {
     <section className="qa-analytics" id="qa-analytics" aria-labelledby="qa-analytics-title">
       <h2 id="qa-analytics-title" className="lv-card-title">Analytics</h2>
       <div id="qa-analytics-content">{content}</div>
-      <p className="lv-muted lv-small" id="qa-findings-note">
-        Findings are not stored yet. Findings from QA runs are not saved or counted on this page.
-      </p>
     </section>
   );
 }

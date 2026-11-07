@@ -109,21 +109,35 @@ export interface QaRunSummary {
   suites: QaSuiteOutcome[];
   /** strict or default, as requested. Absent when the server does not report it. */
   gateMode?: string | null;
-  gate: { exitCode: number; reasons: string[] } | null;
+  gate: { exitCode: number; reasons: string[]; continueOnFailure?: boolean } | null;
   createdAt?: string | null;
   error?: string | null;
+}
+
+/** A finding stored for a run. Origin is always sandbox self-reported: it comes from the app's own test output. */
+export interface QaFinding {
+  klass: string;
+  severity: string;
+  origin: string;
+  route: string;
+  assertion: string;
+  fingerprint: string;
 }
 
 export interface QaRunDetail extends QaRunSummary {
   /** The sealed result: { algorithm, seal, signature, publicKeyPem, keyId? }. Null until the run finishes. */
   evidence: unknown | null;
+  findings?: QaFinding[];
 }
 
 export interface QaAnalytics {
   failRate: { failed: number; total: number };
   flakeRate: { flaky: number; total: number };
   hotspots: Array<{ suite: string; failures: number }>;
-  findings?: unknown;
+  runs?: number;
+  suiteResults?: number;
+  /** One entry per distinct bug (fingerprint): the commit it was first seen on and how many runs it has stayed open. */
+  findings?: Array<{ fingerprint: string; firstSeenSha: string; buildsOpen: number }>;
 }
 
 /** PASS, FAIL, NOT_RUN and FLAKY are the statuses the console shows. Anything else is UNKNOWN, never a pass. */
@@ -137,12 +151,32 @@ export function suiteStatusLabel(status: string | null | undefined): 'PASS' | 'F
   }
 }
 
-/** "2 of 10 runs (20%)", or a plain note when nothing has finished yet. */
+/**
+ * "2 of 10 suite results (20%)", or a plain note when nothing has finished yet. The API counts suite results (one per
+ * suite per finished run), not runs.
+ */
 export function formatRatio(part: { failed?: number; flaky?: number; total: number }, key: 'failed' | 'flaky'): string {
   const total = Number(part.total) || 0;
   if (total <= 0) return 'No finished runs yet';
   const count = Number(part[key]) || 0;
-  return `${count} of ${total} runs (${Math.round((count / total) * 100)}%)`;
+  return `${count} of ${total} suite results (${Math.round((count / total) * 100)}%)`;
+}
+
+/** The reasons that belong to one suite: lines the worker prefixed with "<suite>: ", without the prefix. */
+export function reasonsForSuite(reasons: string[] | null | undefined, suite: string): string[] {
+  const prefix = `${suite}: `;
+  return (reasons ?? []).filter((r) => r.startsWith(prefix)).map((r) => r.slice(prefix.length));
+}
+
+/** The gate verdict in words. A default gate passes with warnings when only test suites failed; say so. */
+export function gateVerdict(gate: { exitCode: number; reasons: string[] } | null, mode: string | null | undefined): string {
+  if (!gate) return 'Not decided yet';
+  if (gate.exitCode !== 0) return `Failed (exit ${gate.exitCode})`;
+  const warned = gate.reasons.some((r) => r.startsWith('warning: '));
+  if (!warned) return 'Passed';
+  return mode === 'default' || !mode
+    ? 'Passed with warnings: the default gate fails only on build and health-check failures'
+    : 'Passed with warnings';
 }
 
 // ---------------------------------------------------------------------------
