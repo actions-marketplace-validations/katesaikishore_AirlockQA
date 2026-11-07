@@ -43,7 +43,8 @@ export class CausalXRay {
       };
 
       try {
-        await route.continue({ headers });
+        // fallback (not continue) so the AirlockGateway context route still decides.
+        await route.fallback({ headers });
       } catch {
         // Route already handled or closed
       }

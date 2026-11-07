@@ -45,7 +45,7 @@ describe('Browser-context fixture replay prototype', () => {
     expect(synthesizer.getServedCount()).toBe(0);
   });
 
-  it('continues requests outside the configured target hosts', async () => {
+  it('falls back to the next handler for requests outside the configured target hosts', async () => {
     const recorder = new ShadowRecorder(testCatalogPath);
     const synthesizer = new ShadowSynthesizer(recorder);
     let routeHandler: ((route: any) => Promise<void>) | undefined;
@@ -64,9 +64,38 @@ describe('Browser-context fixture replay prototype', () => {
         postData: () => null,
       }),
       continue: async () => continued.push('continued'),
+      fallback: async () => continued.push('fallback'),
       fulfill: async () => continued.push('fulfilled'),
     });
 
-    expect(continued).toEqual(['continued']);
+    expect(continued).toEqual(['fallback']);
+  });
+
+  it('never fabricates a Stripe response for an unmatched request; it falls back and reports the miss', async () => {
+    const recorder = new ShadowRecorder(testCatalogPath);
+    const synthesizer = new ShadowSynthesizer(recorder);
+    let routeHandler: ((route: any) => Promise<void>) | undefined;
+    const context = {
+      route: async (_pattern: string, handler: (route: any) => Promise<void>) => {
+        routeHandler = handler;
+      },
+    };
+    const calls: string[] = [];
+
+    await synthesizer.activate(context as any, ['*']);
+    await routeHandler?.({
+      request: () => ({
+        url: () => 'https://api.stripe.com/v1/charges/unrecorded',
+        method: () => 'POST',
+        postData: () => 'amount=1',
+      }),
+      continue: async () => calls.push('continue'),
+      fallback: async () => calls.push('fallback'),
+      fulfill: async () => calls.push('fulfill'),
+    });
+
+    expect(calls).toEqual(['fallback']);
+    expect(synthesizer.getServedCount()).toBe(0);
+    expect(synthesizer.getMissedRequests()).toEqual(['POST https://api.stripe.com/v1/charges/unrecorded']);
   });
 });
