@@ -536,17 +536,17 @@ program
 // ==========================================
 program
   .command('warp <duration>')
-  .description('Fast-forward virtual clock across kernel, V8, and DOM simultaneously (e.g. "+14 days", "+1 hour")')
+  .description('Preview a browser-page Date offset (e.g. "+14 days", "+1 hour"); runs with no page, so it only computes the offset and changes no clock')
   .action(async (duration) => {
     logger.banner();
     const { TimeWarper } = await import('../src/timewarp/time-warper.js');
     const warper = new TimeWarper();
     const result = await warper.warp(duration);
-    logger.moat(1, 'Virtual Time-Warp Applied');
+    logger.moat(1, 'Browser Date Offset Computed (no page attached, nothing was changed)');
     console.log(`Previous Time: ${result.previousTimeIso}`);
     console.log(`Advanced Time: ${result.targetTimeIso}`);
     console.log(`Delta:         ${result.deltaMs > 0 ? '+' : ''}${(result.deltaMs / 1000 / 3600 / 24).toFixed(2)} days (${result.durationString})`);
-    console.log(`Synchronized:  ${result.clockLayersSynchronized.join(', ')}`);
+    console.log(`Scope:         ${result.scope} (only a browser page's new Date() and Date.now() can be offset; timers, the system clock and services are not affected)`);
   });
 
 // ==========================================
