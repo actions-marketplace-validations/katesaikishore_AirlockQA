@@ -248,3 +248,52 @@ export function smokeWorkflow(targetUrl: string): z.infer<typeof WorkflowSchema>
     ],
   };
 }
+
+// ---------------------------------------------------------------------------
+// QA runs (cloud QA pipeline). A QA run builds a public repository at a pushed commit on a staging slot and runs
+// the suites below. Request bodies are strict: unknown keys are refused. Commands are npm script NAMES only; the
+// sandbox, not the name pattern, is the security boundary for what those scripts do.
+// ---------------------------------------------------------------------------
+
+export const QA_SCRIPT_NAME_RE = /^[a-z0-9][a-z0-9:_-]{0,39}$/;
+export const QA_SUITES = ['unit', 'integration', 'e2e', 'smoke', 'explore', 'a11y', 'security', 'load'] as const;
+export const QA_GATES = ['strict', 'default'] as const;
+/** Per-test and per-suite outcome. A test passes only if every attempt passed; a stopped suite is never green. */
+export const QA_TEST_STATUSES = ['PASS', 'FAIL', 'FLAKY', 'BLOCKED', 'NOT_RUN', 'INCOMPLETE'] as const;
+/**
+ * Who produced a finding. first_party_observed: the worker's own gateway or browser saw it.
+ * sandbox_self_reported: the user's own code or report produced it (cannot be verified by us).
+ * heuristic_lead: a crawler or probe guess, for a human to triage. Leads never fail a strict gate unless promoted.
+ */
+export const QA_FINDING_ORIGINS = ['first_party_observed', 'sandbox_self_reported', 'heuristic_lead'] as const;
+export const QA_FINDING_SEVERITIES = ['S1', 'S2', 'S3', 'S4'] as const;
+
+const SHA40_RE = /^[0-9a-f]{40}$/;
+const PUBLIC_REPO_RE = /^https:\/\/github\.com\/[A-Za-z0-9_][A-Za-z0-9_.-]{0,99}\/[A-Za-z0-9_][A-Za-z0-9_.-]{0,99}$/;
+
+export const CreateQaRunBodySchema = z
+  .object({
+    repo: z
+      .string()
+      .regex(PUBLIC_REPO_RE, 'repo must be a public https://github.com/<owner>/<repo> URL')
+      .refine((u) => !u.includes('..'), 'repo must not contain ..'),
+    sha: z.string().regex(SHA40_RE, 'sha must be the full 40-character lowercase commit SHA'),
+    branch: z.string().min(1).max(100).regex(/^[A-Za-z0-9._/-]+$/).optional(),
+    scripts: z
+      .object({
+        install: z.string().regex(QA_SCRIPT_NAME_RE).optional(),
+        build: z.string().regex(QA_SCRIPT_NAME_RE).optional(),
+        start: z.string().regex(QA_SCRIPT_NAME_RE).optional(),
+        test: z.string().regex(QA_SCRIPT_NAME_RE).optional(),
+        'test:integration': z.string().regex(QA_SCRIPT_NAME_RE).optional(),
+      })
+      .strict()
+      .default({}),
+    port: z.number().int().min(1024).max(65535).default(3000),
+    healthPath: z.string().regex(/^\/[A-Za-z0-9._~/-]{0,200}$/).default('/'),
+    suites: z.array(z.enum(QA_SUITES)).min(1).max(8).default(['unit']),
+    gate: z.enum(QA_GATES).default('default'),
+    timeoutMinutes: z.number().int().min(5).max(60).default(45),
+  })
+  .strict();
+export type CreateQaRunBody = z.infer<typeof CreateQaRunBodySchema>;
