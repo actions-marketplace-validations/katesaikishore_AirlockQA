@@ -287,6 +287,10 @@ export const CreateQaRunBodySchema = z
         test: z.string().regex(QA_SCRIPT_NAME_RE).optional(),
         'test:integration': z.string().regex(QA_SCRIPT_NAME_RE).optional(),
         'test:e2e': z.string().regex(QA_SCRIPT_NAME_RE).optional(),
+        'test:a11y': z.string().regex(QA_SCRIPT_NAME_RE).optional(),
+        'test:security': z.string().regex(QA_SCRIPT_NAME_RE).optional(),
+        'test:load': z.string().regex(QA_SCRIPT_NAME_RE).optional(),
+        'test:explore': z.string().regex(QA_SCRIPT_NAME_RE).optional(),
       })
       .strict()
       .default({}),

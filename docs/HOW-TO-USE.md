@@ -391,6 +391,38 @@ airlock qa --wait --gate strict
 airlock qa --wait --suites unit,e2e,a11y,security --continue-on-failure
 ```
 
+The `qa` block in `airlock.config.json` tells the cloud how to build, start and test your app. Every value in `scripts` is the **name** of an npm script in your `package.json`, never a shell command:
+
+```json
+{
+  "qa": {
+    "healthPath": "/health",
+    "scripts": {
+      "start": "start",
+      "test": "test",
+      "test:integration": "test:integration",
+      "test:e2e": "test:e2e",
+      "test:a11y": "test:a11y",
+      "test:security": "test:security",
+      "test:load": "test:load",
+      "test:explore": "test:explore"
+    }
+  }
+}
+```
+
+| Key | Default | Notes |
+| --- | --- | --- |
+| `healthPath` | `/` | The smoke check asks for this path and needs a 2xx answer. |
+| `scripts.start` | `npm start` | Starts the app. It must listen on the `PORT` environment variable; the cloud sets it to `3000`. |
+| `scripts.test` | `test` | The `unit` suite. |
+| `scripts["test:integration"]`, `scripts["test:e2e"]` | as named | Used by the `integration` and `e2e` suites. `e2e` runs against the started app (`BASE_URL` is set). |
+| `scripts["test:a11y"]`, `["test:security"]`, `["test:load"]`, `["test:explore"]` | none | **Required** for those suites. Without one, the suite is reported `NOT_RUN` with the reason. |
+
+Before any script runs, the cloud installs dependencies with `npm ci` (falling back to `npm install`) and runs `npm run build` when your `package.json` has a `build` script. The `install` and `build` keys and the `port` field are accepted but not used yet: the install and build commands are fixed, and the app always runs on port 3000.
+
+`airlock qa --dry-run` prints the exact request, so you can check what will be sent before you use a run of your daily quota.
+
 Gates: `default` fails only when the build or the health check (smoke) fails; other failing or unrun suites are reported as warnings. `strict` also fails on any suite that failed, did not run or was flaky, and on any first-party S1 or S2 finding. Heuristic leads never fail a gate unless someone promotes them.
 
 ### `airlock audit [bundlePath]`

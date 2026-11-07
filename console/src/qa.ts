@@ -10,7 +10,12 @@ export const QA_SUITES = ['unit', 'integration', 'e2e', 'smoke', 'explore', 'a11
 export type QaSuite = (typeof QA_SUITES)[number];
 export const QA_GATES = ['strict', 'default'] as const;
 export type QaGate = (typeof QA_GATES)[number];
-export const QA_SCRIPT_NAMES = ['install', 'build', 'start', 'test', 'test:integration', 'test:e2e'] as const;
+export const QA_SCRIPT_NAMES = [
+  'install', 'build', 'start', 'test', 'test:integration', 'test:e2e', 'test:a11y', 'test:security', 'test:load', 'test:explore',
+] as const;
+/** Suites that run only when the request names a script for them (scripts['test:<suite>']). */
+export const QA_SCRIPTED_SUITES = ['a11y', 'security', 'load', 'explore'] as const;
+const HEALTH_PATH_RE = /^\/[A-Za-z0-9._~/-]{0,200}$/;
 export type QaScriptName = (typeof QA_SCRIPT_NAMES)[number];
 
 export const QA_SCRIPT_NAME_RE = /^[a-z0-9][a-z0-9:_-]{0,39}$/;
@@ -26,6 +31,9 @@ export interface QaFormInput {
   suites: string[];
   gate: string;
   scripts: Record<QaScriptName, string>;
+  /** Optional: the path the health check asks for (default "/"). */
+  healthPath?: string;
+  continueOnFailure?: boolean;
 }
 
 /** The request body POST /v1/qa-runs accepts. Optional keys are left out when empty. */
@@ -36,9 +44,11 @@ export interface QaRunRequest {
   suites: QaSuite[];
   gate: QaGate;
   scripts: Partial<Record<QaScriptName, string>>;
+  healthPath?: string;
+  continueOnFailure?: boolean;
 }
 
-export type QaFormErrors = Partial<Record<'repo' | 'sha' | 'branch' | 'suites' | 'gate' | `scripts.${QaScriptName}`, string>>;
+export type QaFormErrors = Partial<Record<'repo' | 'sha' | 'branch' | 'suites' | 'gate' | 'healthPath' | `scripts.${QaScriptName}`, string>>;
 
 export type QaFormResult = { ok: true; body: QaRunRequest } | { ok: false; errors: QaFormErrors };
 
@@ -74,10 +84,23 @@ export function validateQaForm(input: QaFormInput): QaFormResult {
       scripts[name] = value;
     }
   }
+  const healthPath = (input.healthPath || '').trim();
+  if (healthPath && !HEALTH_PATH_RE.test(healthPath)) {
+    errors.healthPath = 'Use a path that starts with /, for example /health.';
+  }
   if (Object.keys(errors).length > 0) return { ok: false, errors };
   const body: QaRunRequest = { repo, sha, suites, gate, scripts };
   if (branch) body.branch = branch;
+  if (healthPath) body.healthPath = healthPath;
+  if (input.continueOnFailure) body.continueOnFailure = true;
   return { ok: true, body };
+}
+
+/** Requested suites that need a script name but have none: they would be reported NOT_RUN. */
+export function scriptedSuitesWithoutScript(suites: string[], scripts: Partial<Record<QaScriptName, string>>): string[] {
+  return suites.filter(
+    (suite) => (QA_SCRIPTED_SUITES as readonly string[]).includes(suite) && !(scripts[`test:${suite}` as QaScriptName] || '').trim(),
+  );
 }
 
 /** Wording for an error from the QA API. Quota (402) and concurrency (429) show the server's own message. */
