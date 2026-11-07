@@ -59,19 +59,19 @@ export function QaAnalyticsPanel() {
           {findings.length ? (
             <>
               <div className="lv-table-wrap">
-                <table className="lv-table lv-table-compact" id="qa-findings-summary">
+                <table className="lv-table lv-table-compact lv-table-stack" id="qa-findings-summary">
                   <caption className="sr-only">Distinct findings across QA runs</caption>
                   <thead><tr><th scope="col">Severity</th><th scope="col">Finding</th><th scope="col">First seen at</th><th scope="col">Runs from first to last seen</th></tr></thead>
                   <tbody>
                     {findings.map((f) => (
                       <tr key={f.fingerprint}>
-                        <td className="lv-mono">{f.severity || '?'}</td>
-                        <td>
+                        <td data-label="Severity" className="lv-mono">{f.severity || '?'}</td>
+                        <td data-label="Finding">
                           {f.assertion || f.fingerprint}
                           {f.route && f.route !== '/' ? <span className="lv-muted lv-mono"> {f.route}</span> : null}
                         </td>
-                        <td className="lv-mono">{(f.firstSeenSha || '').slice(0, 7) || 'unknown'}</td>
-                        <td className="lv-mono">{String(f.buildsOpen)}</td>
+                        <td data-label="First seen" className="lv-mono">{(f.firstSeenSha || '').slice(0, 7) || 'unknown'}</td>
+                        <td data-label="Run span" className="lv-mono">{String(f.buildsOpen)}</td>
                       </tr>
                     ))}
                   </tbody>

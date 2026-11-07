@@ -55,3 +55,59 @@
 .sample-banner { padding: 10px 32px; background: #fff3e2; border-bottom: 1px solid #f0d9b5; color: #6b3b05; font-size: 13.5px; }
 .sample-banner a { color: inherit; font-weight: 700; }
 .boot-error { max-width: 480px; margin: 20vh auto; padding: 24px; text-align: center; }
+
+/* ---- Layout fixes for the React console (they override the shared rules in public/styles.css) ---- */
+
+/* Headings take focus when the screen changes (for screen readers); that is not a keyboard focus, so no ring. */
+.cx .lv-title:focus, .cx .lv-title:focus-visible { outline: none; }
+
+/* Tables fill their card. */
+.cx .lv-table { width: 100%; border-collapse: collapse; }
+.cx .lv-table td { overflow-wrap: anywhere; }
+
+/* Cards in a row share one height. */
+.cx .lv-two-col { align-items: stretch; }
+
+/* KPI rows: five cards fit on one line on a laptop instead of leaving one alone on a second row. */
+.cx .lv-grid-kpi { grid-template-columns: repeat(auto-fit, minmax(min(180px, 100%), 1fr)); }
+
+/* Label/value lists: the same look whether or not the item carries lv-meta-item; no browser indent. */
+.cx .lv-meta > div { min-width: 0; }
+.cx .lv-meta > div > dt { font-size: 12px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: #5A6961; }
+.cx .lv-meta > div > dd { margin: 2px 0 0; min-width: 0; overflow-wrap: anywhere; }
+
+/* Space between a button row and the command blocks under it, and between stacked command blocks. */
+.cx .lv-actions + .lv-code-wrap, .cx .lv-code-wrap + .lv-code-wrap, .cx .lv-code-wrap + p { margin-top: 10px; }
+
+/* Header: title block and actions line up on their centre line. */
+.cx .lv-head { align-items: center; }
+
+@media (max-width: 768px) {
+  /* One-line commands: the Copy button sits at the right of the command, not on a line above it.
+     Multi-line blocks keep the button in the top-right corner, above the text. */
+  .cx .lv-code-wrap:not(.lv-code-multi) > .lv-code { padding: 14px 84px 14px 14px; }
+  .cx .lv-code-wrap:not(.lv-code-multi) > .lv-btn { top: 50%; transform: translateY(-50%); }
+  .cx .lv-code-multi > .lv-code { padding: 48px 14px 14px; }
+  .cx .lv-code-multi > .lv-btn { top: 8px; transform: none; }
+  .cx .lv-head { align-items: flex-start; }
+}
+
+@media (max-width: 640px) {
+  .app-topbar { padding: 10px 14px; gap: 8px 10px; }
+  /* The workspace name stays on one line; the signed-in email chip is in the menu's profile already. */
+  .topbar-crumb > span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  .topbar-actions .preview-chip { display: none; }
+
+  /* Tables marked lv-table-stack become one block per row, each cell with its column name. */
+  .cx .lv-table-stack thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .cx .lv-table-stack, .cx .lv-table-stack tbody, .cx .lv-table-stack tr, .cx .lv-table-stack td { display: block; width: 100%; }
+  .cx .lv-table-stack tr { padding: 12px 0; border-bottom: 1px solid #EEF2EE; }
+  .cx .lv-table-stack tr:last-child { border-bottom: 0; }
+  .cx .lv-table-stack td { display: grid; grid-template-columns: 84px minmax(0, 1fr); gap: 10px; align-items: start; padding: 4px 0; border: 0; }
+  .cx .lv-table-stack td > * { grid-column: 2; justify-self: start; max-width: 100%; min-width: 0; }
+  .cx .lv-table-stack td::before { content: attr(data-label); font-size: 11.5px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: #5A6961; padding-top: 2px; }
+}
+/* Onboarding and help cards: button row, command stack and footnote each get their own breathing room. */
+.cx .lv-card > .lv-actions + .lv-stack, .cx .lv-card > .lv-sub + .lv-actions { margin-top: 14px; }
+.cx .lv-card > .lv-stack + p { margin-top: 10px; margin-bottom: 0; }
+.cx .lv-stack > * + * { margin-top: 10px; }

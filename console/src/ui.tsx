@@ -92,7 +92,7 @@ export function CopyButton({ label = 'Copy', getText }: { label?: string; getTex
 
 export function CodeBlock({ text, label }: { text: string; label?: string }) {
   return (
-    <div className="lv-code-wrap">
+    <div className={'lv-code-wrap' + (text.includes('\n') ? ' lv-code-multi' : '')}>
       <pre className="lv-code" tabIndex={0}><code>{text}</code></pre>
       <CopyButton label={label} getText={() => text} />
     </div>

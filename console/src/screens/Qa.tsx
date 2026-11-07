@@ -5,7 +5,7 @@ import { usePolling } from '../hooks';
 import { formatRelative, isActive } from '../lib';
 import { navigate } from '../router';
 import { CodeBlock, Card, Loading, PageHeader, RetryBlock, StatusPill } from '../ui';
-import type { QaRunSummary } from '../qa';
+import { shortRepo, type QaRunSummary } from '../qa';
 import { QaAnalyticsPanel } from './QaAnalytics';
 import { QaForm } from './QaForm';
 import { QaRunDetailScreen } from './QaRunDetail';
@@ -56,7 +56,7 @@ function QaRunList({ openForm }: { openForm: boolean }) {
   } else {
     table = (
       <div className="lv-table-wrap">
-        <table className="lv-table" id="qa-run-table">
+        <table className="lv-table lv-table-stack" id="qa-run-table">
           <caption className="sr-only">QA runs</caption>
           <thead>
             <tr>
@@ -70,14 +70,18 @@ function QaRunList({ openForm }: { openForm: boolean }) {
           <tbody>
             {runs.map((run) => (
               <tr key={run.id}>
-                <td>
+                <td data-label="Run">
                   <a className="lv-link lv-mono" href={'#qa/' + encodeURIComponent(run.id)}>{run.id}</a>
-                  {run.repo ? <div className="lv-muted lv-small lv-wrap">{run.repo}{run.sha ? ' @ ' + run.sha.slice(0, 7) : ''}</div> : null}
+                  {run.repo ? (
+                    <div className="lv-muted lv-small qa-repo" title={run.repo}>
+                      {shortRepo(run.repo)}{run.sha ? <span className="lv-mono"> @ {run.sha.slice(0, 7)}</span> : null}
+                    </div>
+                  ) : null}
                 </td>
-                <td><StatusPill status={run.status} /></td>
-                <td className="lv-mono">{run.phase || '—'}</td>
-                <td>{suiteSummary(run)}</td>
-                <td>{formatRelative(run.createdAt)}</td>
+                <td data-label="Status"><StatusPill status={run.status} /></td>
+                <td data-label="Phase" className="lv-mono">{run.phase || '—'}</td>
+                <td data-label="Suites">{suiteSummary(run)}</td>
+                <td data-label="Started" className="qa-nowrap">{formatRelative(run.createdAt)}</td>
               </tr>
             ))}
           </tbody>
@@ -87,7 +91,7 @@ function QaRunList({ openForm }: { openForm: boolean }) {
   }
 
   return (
-    <>
+    <main className="lv-main" id="live-qa">
       <PageHeader
         title="QA"
         subtitle="Cloud QA runs: a public repository at a commit, built and tested on Airlock Cloud. The list refreshes while a run is queued or running."
@@ -108,7 +112,7 @@ function QaRunList({ openForm }: { openForm: boolean }) {
         {table}
       </Card>
       <QaAnalyticsPanel />
-    </>
+    </main>
   );
 }
 

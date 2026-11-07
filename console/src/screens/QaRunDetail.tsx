@@ -3,7 +3,7 @@ import { useApp } from '../app-context';
 import { usePolling } from '../hooks';
 import { formatDateTime, isActive } from '../lib';
 import { Card, Loading, PageHeader, RetryBlock, StatusPill } from '../ui';
-import { gateVerdict, reasonsForSuite, suiteStatusLabel, verifyQaSeal, type QaFinding, type QaRunDetail, type SealCheck } from '../qa';
+import { cleanReason, gateVerdict, reasonsForSuite, suiteStatusLabel, verifyQaSeal, type QaFinding, type QaRunDetail, type SealCheck } from '../qa';
 
 const SEAL_COPY: Record<SealCheck['state'], { title: string; body: string; tone: string }> = {
   verified: {
@@ -59,7 +59,7 @@ function SealCard({ evidence }: { evidence: unknown | null }) {
       <p className={'qa-seal-state ' + copy.tone} id="qa-seal-state" role="status">{copy.title}</p>
       <p className="lv-muted lv-small">{copy.body}</p>
       {shape ? (
-        <dl className="lv-meta">
+        <dl className="lv-meta qa-meta">
           <div><dt>Algorithm</dt><dd className="lv-mono">{typeof shape.algorithm === 'string' ? shape.algorithm : 'not reported'}</dd></div>
           <div><dt>Key id</dt><dd className="lv-mono lv-wrap">{typeof shape.keyId === 'string' ? shape.keyId : 'not reported'}</dd></div>
           <div><dt>Signature</dt><dd className="lv-mono lv-wrap">{typeof shape.signature === 'string' ? shape.signature : 'not reported'}</dd></div>
@@ -86,15 +86,15 @@ function FindingsCard({ findings }: { findings: QaFinding[] | undefined }) {
       {list.length ? (
         <>
           <div className="lv-table-wrap">
-            <table className="lv-table" id="qa-findings-table">
+            <table className="lv-table lv-table-stack" id="qa-findings-table">
               <caption className="sr-only">Findings from this run</caption>
               <thead><tr><th scope="col">Severity</th><th scope="col">Finding</th><th scope="col">Route</th></tr></thead>
               <tbody>
                 {list.map((f) => (
                   <tr key={f.fingerprint}>
-                    <td className="lv-mono">{f.severity}</td>
-                    <td>{f.assertion} <span className="lv-muted lv-mono">({f.klass})</span></td>
-                    <td className="lv-mono">{f.route}</td>
+                    <td data-label="Severity" className="lv-mono">{f.severity}</td>
+                    <td data-label="Finding">{f.assertion} <span className="lv-muted lv-mono">({f.klass})</span></td>
+                    <td data-label="Route" className="lv-mono">{f.route}</td>
                   </tr>
                 ))}
               </tbody>
@@ -124,7 +124,7 @@ function RunBody({ run }: { run: QaRunDetail }) {
         }
       />
       <Card title="Run">
-        <dl className="lv-meta" id="qa-run-meta">
+        <dl className="lv-meta qa-meta" id="qa-run-meta">
           <div><dt>Phase</dt><dd className="lv-mono">{run.phase || 'not reported'}</dd></div>
           <div><dt>Repository</dt><dd className="lv-wrap">{run.repo || 'not reported'}</dd></div>
           <div><dt>Commit</dt><dd className="lv-mono lv-wrap">{run.sha || 'not reported'}</dd></div>
@@ -136,7 +136,7 @@ function RunBody({ run }: { run: QaRunDetail }) {
       <Card title="Suites">
         {run.suites && run.suites.length ? (
           <div className="lv-table-wrap">
-            <table className="lv-table" id="qa-suite-table">
+            <table className="lv-table lv-table-stack" id="qa-suite-table">
               <caption className="sr-only">Suite results</caption>
               <thead><tr><th scope="col">Suite</th><th scope="col">Status</th><th scope="col">Reasons</th></tr></thead>
               <tbody>
@@ -144,11 +144,11 @@ function RunBody({ run }: { run: QaRunDetail }) {
                   const reasons = entry.reasons && entry.reasons.length ? entry.reasons : reasonsForSuite(gateReasons, entry.suite);
                   return (
                   <tr key={entry.suite}>
-                    <td className="lv-mono">{entry.suite}</td>
-                    <td className="lv-mono">{suiteStatusLabel(entry.status)}</td>
-                    <td>
+                    <td data-label="Suite" className="lv-mono">{entry.suite}</td>
+                    <td data-label="Status" className="lv-mono">{suiteStatusLabel(entry.status)}</td>
+                    <td data-label="Reasons">
                       {reasons.length ? (
-                        <ul className="qa-reasons">{reasons.map((reason, index) => <li key={index}>{reason}</li>)}</ul>
+                        <ul className="qa-reasons">{reasons.map((reason, index) => <li key={index}>{cleanReason(reason)}</li>)}</ul>
                       ) : <span className="lv-muted">None reported</span>}
                     </td>
                   </tr>
@@ -160,7 +160,7 @@ function RunBody({ run }: { run: QaRunDetail }) {
         ) : <p className="lv-muted">No suite results yet.</p>}
       </Card>
       <Card title="Gate">
-        <dl className="lv-meta">
+        <dl className="lv-meta qa-meta">
           <div><dt>Mode</dt><dd className="lv-mono">{run.gateMode || 'not reported'}</dd></div>
           {run.gate && typeof run.gate.continueOnFailure === 'boolean' ? (
             <div><dt>Continue on failure</dt><dd>{run.gate.continueOnFailure ? 'Yes' : 'No'}</dd></div>
@@ -200,8 +200,10 @@ export function QaRunDetailScreen({ id }: { id: string }) {
   useEffect(() => { setRun(null); setLoaded(false); void load(); }, [load]);
   usePolling(load, Boolean(run && isActive(run.status)));
 
-  if (!loaded && !run) return <Loading text="Loading QA run" />;
-  if (error && !run) return <RetryBlock error={error} retry={() => { void load(); }} />;
-  if (!run) return <Loading text="Loading QA run" />;
-  return <div id="qa-run-detail"><RunBody run={run} /></div>;
+  let body;
+  if (!loaded && !run) body = <Loading text="Loading QA run" />;
+  else if (error && !run) body = <RetryBlock error={error} retry={() => { void load(); }} />;
+  else if (!run) body = <Loading text="Loading QA run" />;
+  else body = <div id="qa-run-detail"><RunBody run={run} /></div>;
+  return <main className="lv-main" id="live-qa-run">{body}</main>;
 }
