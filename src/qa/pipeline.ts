@@ -67,14 +67,21 @@ export async function runQaPipeline(input: PipelineInput): Promise<PipelineResul
   let phase: RunPhase = 'DONE';
 
   const cancelled = () => signal?.aborted === true;
+  let lastError: unknown;
   const attempt = async (fn: () => Promise<void>): Promise<boolean> => {
     if (cancelled()) return false;
     try {
       await fn();
       return true;
-    } catch {
+    } catch (err) {
+      lastError = err;
       return false;
     }
+  };
+  // A backend may say which phase its failure belongs to (the build step can fail because the app never came up).
+  const phaseOf = (err: unknown, fallback: RunPhase): RunPhase => {
+    const p = (err as { phase?: RunPhase } | undefined)?.phase;
+    return p === 'DEPLOY_UNHEALTHY' || p === 'SLOT_UNAVAILABLE' ? p : fallback;
   };
 
   // Phases. Each early exit sets the phase; nothing returns from here, so release below always runs once leased.
@@ -90,7 +97,7 @@ export async function runQaPipeline(input: PipelineInput): Promise<PipelineResul
 
     if (phase === 'DONE') {
       if (!(await attempt(backends.build))) {
-        phase = cancelled() ? 'CANCELLED' : 'BUILD_FAILED';
+        phase = cancelled() ? 'CANCELLED' : phaseOf(lastError, 'BUILD_FAILED');
       } else {
         outcomes.set('build', 'PASS');
       }

@@ -249,3 +249,17 @@ describe('console qa: explore and finding sources', () => {
     expect(cleanReason('7) a.spec.js:60:1 › banner after a +15 day time warp ──')).toBe('7) a.spec.js:60:1 › banner after a +15 day time warp');
   });
 });
+
+describe('console qa form: app port', () => {
+  test('sends a valid port and refuses a bad one', async () => {
+    const { validateQaForm, QA_SCRIPT_NAMES } = await import('../console/src/qa');
+    const scripts = Object.fromEntries(QA_SCRIPT_NAMES.map((n) => [n, ''])) as any;
+    const base = { repo: 'https://github.com/acme/app', sha: 'a'.repeat(40), branch: '', suites: ['smoke'], gate: 'default', scripts };
+    const ok = validateQaForm({ ...base, port: '8000' });
+    expect(ok.ok && ok.body.port).toBe(8000);
+    const bad = validateQaForm({ ...base, port: '80' });
+    expect(bad.ok).toBe(false);
+    if (!bad.ok) expect(Object.keys(bad.errors)).toEqual(['port']);
+    expect(validateQaForm({ ...base, port: '' }).ok && (validateQaForm({ ...base }) as any).body.port).toBeUndefined();
+  });
+});

@@ -245,3 +245,19 @@ describe('qa pipeline: continue on failure', () => {
     expect(calls.at(-1)).toBe('release');
   });
 });
+
+describe('qa pipeline: a build step can say which phase its failure belongs to', () => {
+  it('an app that never came up is DEPLOY_UNHEALTHY, not BUILD_FAILED; the slot is still released', async () => {
+    const { calls, backends } = stubs({ build: async () => { throw Object.assign(new Error('not listening'), { phase: 'DEPLOY_UNHEALTHY' }); } });
+    const r = await runQaPipeline({ suites: ['smoke'], gate: 'default', backends });
+    expect(r.phase).toBe('DEPLOY_UNHEALTHY');
+    expect(calls.at(-1)).toBe('release');
+    expect(r.exitCode).toBe(1);
+  });
+
+  it('a plain build failure, or an unknown phase, stays BUILD_FAILED', async () => {
+    const a = await runQaPipeline({ suites: ['smoke'], gate: 'default', backends: stubs({ build: async () => { throw new Error('npm ci'); } }).backends });
+    const b = await runQaPipeline({ suites: ['smoke'], gate: 'default', backends: stubs({ build: async () => { throw Object.assign(new Error('x'), { phase: 'DONE' }); } }).backends });
+    expect([a.phase, b.phase]).toEqual(['BUILD_FAILED', 'BUILD_FAILED']);
+  });
+});

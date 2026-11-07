@@ -36,6 +36,8 @@ export interface QaFormInput {
   scripts: Record<QaScriptName, string>;
   /** Optional: the path the health check asks for (default "/"). */
   healthPath?: string;
+  /** Optional: the port the app listens on inside the sandbox (default 3000). */
+  port?: string;
   continueOnFailure?: boolean;
 }
 
@@ -48,10 +50,11 @@ export interface QaRunRequest {
   gate: QaGate;
   scripts: Partial<Record<QaScriptName, string>>;
   healthPath?: string;
+  port?: number;
   continueOnFailure?: boolean;
 }
 
-export type QaFormErrors = Partial<Record<'repo' | 'sha' | 'branch' | 'suites' | 'gate' | 'healthPath' | `scripts.${QaScriptName}`, string>>;
+export type QaFormErrors = Partial<Record<'repo' | 'sha' | 'branch' | 'suites' | 'gate' | 'healthPath' | 'port' | `scripts.${QaScriptName}`, string>>;
 
 export type QaFormResult = { ok: true; body: QaRunRequest } | { ok: false; errors: QaFormErrors };
 
@@ -91,8 +94,14 @@ export function validateQaForm(input: QaFormInput): QaFormResult {
   if (healthPath && !HEALTH_PATH_RE.test(healthPath)) {
     errors.healthPath = 'Use a path that starts with /, for example /health.';
   }
+  const portText = (input.port || '').trim();
+  const port = portText ? Number(portText) : undefined;
+  if (portText && !(/^\d{4,5}$/.test(portText) && (port as number) >= 1024 && (port as number) <= 65535)) {
+    errors.port = 'Use a port number from 1024 to 65535.';
+  }
   if (Object.keys(errors).length > 0) return { ok: false, errors };
   const body: QaRunRequest = { repo, sha, suites, gate, scripts };
+  if (port !== undefined) body.port = port;
   if (branch) body.branch = branch;
   if (healthPath) body.healthPath = healthPath;
   if (input.continueOnFailure) body.continueOnFailure = true;
