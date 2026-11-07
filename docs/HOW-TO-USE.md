@@ -396,6 +396,7 @@ The `qa` block in `airlock.config.json` tells the cloud how to build, start and 
 ```json
 {
   "qa": {
+    "port": 3000,
     "healthPath": "/health",
     "scripts": {
       "start": "start",
@@ -414,13 +415,21 @@ The `qa` block in `airlock.config.json` tells the cloud how to build, start and 
 | Key | Default | Notes |
 | --- | --- | --- |
 | `healthPath` | `/` | The smoke check asks for this path and needs a 2xx answer. |
-| `scripts.start` | `npm start` | Starts the app. It must listen on the `PORT` environment variable; the cloud sets it to `3000`. |
+| `port` | `3000` | The port your app listens on inside the sandbox; `PORT` is set to it. |
+| `scripts.start` | `npm start` | Starts the app. It must listen on `0.0.0.0` at `port`. |
 | `scripts.test` | `test` | The `unit` suite. |
 | `scripts["test:integration"]`, `scripts["test:e2e"]` | as named | Used by the `integration` and `e2e` suites. `e2e` runs against the started app (`BASE_URL` is set). |
 | `scripts["test:a11y"]`, `["test:security"]`, `["test:load"]` | none | **Required** for those suites. Without one, the suite is reported `NOT_RUN` with the reason. |
 | `scripts["test:explore"]` | none | Optional. When set, your script runs instead of Airlock's checker. |
 
-Before any script runs, the cloud installs dependencies with `npm ci` (falling back to `npm install`) and runs `npm run build` when your `package.json` has a `build` script. The `install` and `build` keys and the `port` field are accepted but not used yet: the install and build commands are fixed, and the app always runs on port 3000.
+Before any script runs, the cloud installs dependencies with the package manager your lockfile names: `pnpm install --frozen-lockfile` for `pnpm-lock.yaml`, `yarn install --frozen-lockfile` for `yarn.lock` (both through corepack, at the version in your `packageManager` field), otherwise `npm ci` (falling back to `npm install`). devDependencies are installed. Then it runs your `build` script when there is one, and starts the app with `NODE_ENV=production`.
+
+- **Port.** Your app gets `PORT` set to the `port` in the `qa` block (default 3000) and `HOST=0.0.0.0`. If your start script fixes its own port (for example `astro dev --port 8000`), set `port` to match.
+- **Listen on all interfaces.** The health check comes from outside the sandbox, so the app must listen on `0.0.0.0`, not only on `localhost`. Many dev servers default to `localhost`; pass `--host 0.0.0.0` in the start script. When the app only answers on `localhost`, the run says so after about 5 minutes.
+- **Node 22.** The sandbox runs Node 22. A project that requires a newer Node fails at install, with that reason.
+- **No environment variables yet.** A build that needs, for example, `DATABASE_URL` cannot run yet.
+- When a run fails, its reasons include the sandbox's own last error lines, and the phase says whether the build failed (`BUILD_FAILED`) or the app did not come up (`DEPLOY_UNHEALTHY`).
+- The `install` and `build` script names are accepted but not used yet: the install and build commands are fixed as above.
 
 #### The `explore` suite: Airlock's own checker
 

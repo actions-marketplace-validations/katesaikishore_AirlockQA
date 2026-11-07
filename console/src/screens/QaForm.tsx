@@ -43,6 +43,7 @@ export function QaForm({ onClose, onCreated }: Props) {
   const [gate, setGate] = useState<string>('default');
   const [scripts, setScripts] = useState<Record<QaScriptName, string>>(blankScripts);
   const [healthPath, setHealthPath] = useState('');
+  const [port, setPort] = useState('');
   const [continueOnFailure, setContinueOnFailure] = useState(false);
   const missingScripts = scriptedSuitesWithoutScript(suites, scripts);
   const [errors, setErrors] = useState<QaFormErrors>({});
@@ -59,7 +60,7 @@ export function QaForm({ onClose, onCreated }: Props) {
   const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setServerError(null);
-    const result = validateQaForm({ repo, sha, branch, suites, gate, scripts, healthPath, continueOnFailure });
+    const result = validateQaForm({ repo, sha, branch, suites, gate, scripts, healthPath, port, continueOnFailure });
     if (!result.ok) {
       setErrors(result.errors);
       const first = result.errors.repo ? repoRef.current : result.errors.sha ? shaRef.current : null;
@@ -160,6 +161,14 @@ export function QaForm({ onClose, onCreated }: Props) {
             aria-invalid={errors.healthPath ? true : undefined} aria-describedby={errors.healthPath ? errorId('healthPath') : undefined}
             value={healthPath} onChange={(event) => setHealthPath(event.target.value)} />
           {fieldError('healthPath')}
+        </div>
+        <div className="lv-field">
+          <label htmlFor="qa-port">App port (optional)</label>
+          <input id="qa-port" className="lv-input lv-mono" name="port" type="text" inputMode="numeric" autoComplete="off" placeholder="3000"
+            aria-invalid={errors.port ? true : undefined} aria-describedby={errors.port ? errorId('port') : 'qa-port-hint'}
+            value={port} onChange={(event) => setPort(event.target.value)} />
+          <p id="qa-port-hint" className="lv-hint">The port your app listens on (on 0.0.0.0). PORT is set to it.</p>
+          {fieldError('port')}
         </div>
       </div>
       <details className="lv-details" open={missingScripts.length > 0 || undefined}>
