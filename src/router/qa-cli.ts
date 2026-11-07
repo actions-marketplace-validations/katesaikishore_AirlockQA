@@ -1,5 +1,6 @@
 import type { CreateQaRunBody } from '../../cloud/shared/contract.js';
 import { cloudRequest } from './cloud-api.js';
+import { canonicalJson, verifyEd25519 } from '../utils/crypto.js';
 import { buildQaRunRequest, QaPreflightError, type BuildQaRunInput } from './qa-preflight.js';
 
 export interface QaCliDeps {
@@ -118,4 +119,12 @@ export async function waitForQaRun(
     if (Date.now() >= deadline) throw new QaPreflightError(`QA run ${id} did not finish in time (last status ${run.status})`);
     if (intervalMs > 0) await new Promise((r) => setTimeout(r, intervalMs));
   }
+}
+
+/** Check the service's signature over a sealed QA result, with the key the service published with that result. */
+export function verifyQaSeal(evidence: unknown): boolean {
+  if (!evidence || typeof evidence !== 'object') return false;
+  const e = evidence as { algorithm?: unknown; seal?: unknown; signature?: unknown; publicKeyPem?: unknown };
+  if (e.algorithm !== 'Ed25519' || typeof e.signature !== 'string' || typeof e.publicKeyPem !== 'string' || e.seal === undefined) return false;
+  return verifyEd25519(canonicalJson(e.seal), e.signature, e.publicKeyPem);
 }

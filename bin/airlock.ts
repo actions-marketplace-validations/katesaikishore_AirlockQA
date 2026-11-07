@@ -781,7 +781,10 @@ program
     if (!opts.wait) return;
     const run = await waitForQaRun(target, submitted.id, { intervalMs: 15_000, timeoutMs: 75 * 60_000 });
     console.log(JSON.stringify(run, null, 2));
-    process.exitCode = run.status === 'SUCCESS' && run.gate?.exitCode === 0 ? 0 : 1;
+    const { verifyQaSeal } = await import('../src/router/qa-cli.js');
+    const sealed = (run as { evidence?: unknown }).evidence;
+    logger.info(verifyQaSeal(sealed) ? 'Sealed result: signature verified with the service key' : 'Sealed result: NOT verified (missing or altered)');
+    process.exitCode = run.status === 'SUCCESS' && run.gate?.exitCode === 0 && verifyQaSeal(sealed) ? 0 : 1;
   });
 
 program.parse(process.argv);

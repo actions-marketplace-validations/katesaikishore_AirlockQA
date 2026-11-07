@@ -82,3 +82,27 @@ describe('airlock qa: submitting and waiting', () => {
     await expect(waitForQaRun({ apiUrl: 'https://api.qbrin.cloud', apiKey: 'k', fetcher }, 'run_qa_1', { intervalMs: 0, timeoutMs: 1 })).rejects.toThrow(/did not finish/);
   });
 });
+
+import { verifyQaSeal } from '../src/router/qa-cli.js';
+import { canonicalJson, signEd25519, ed25519PublicKeyPem } from '../src/utils/crypto.js';
+import * as crypto from 'node:crypto';
+
+describe('airlock qa: checking the sealed result', () => {
+  const { privateKey } = crypto.generateKeyPairSync('ed25519');
+  const privPem = privateKey.export({ type: 'pkcs8', format: 'pem' }).toString();
+  const pubPem = ed25519PublicKeyPem(privPem);
+  const seal = { v: 1, runId: 'run_qa_1', phase: 'DONE', status: 'SUCCESS', suites: [{ suite: 'smoke', status: 'PASS' }], exitCode: 0 };
+  const evidence = { algorithm: 'Ed25519', keyId: 'k', seal, signature: signEd25519(canonicalJson(seal), privPem), publicKeyPem: pubPem };
+
+  it('verifies a sealed result against the published key', () => {
+    expect(verifyQaSeal(evidence)).toBe(true);
+  });
+
+  it('refuses a result whose seal was changed after signing', () => {
+    expect(verifyQaSeal({ ...evidence, seal: { ...seal, suites: [{ suite: 'smoke', status: 'FAIL' }] } })).toBe(false);
+  });
+
+  it('refuses a result with no evidence at all', () => {
+    expect(verifyQaSeal(null)).toBe(false);
+  });
+});
