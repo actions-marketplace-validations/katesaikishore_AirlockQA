@@ -751,12 +751,13 @@ program
   .option('--dry-run', 'print the request that would be submitted, submit nothing')
   .option('--suites <list>', 'comma-separated suites (unit,integration,e2e,smoke,explore,a11y,security,load)', 'unit')
   .option('--gate <mode>', 'strict or default', 'default')
+  .option('--continue-on-failure', 'still run a11y, security, load and explore after a failing test suite (build, start and smoke still stop the run)')
   .option('--wait', 'wait for the run to finish and exit 0 only if the gate passed')
   .action(async (opts) => {
     const { prepareQaDryRun, realQaDeps } = await import('../src/router/qa-cli.js');
     const suites = String(opts.suites).split(',').map((x: string) => x.trim()).filter(Boolean);
     const gate = opts.gate === 'strict' ? 'strict' : 'default';
-    const result = await prepareQaDryRun({ suites, gate }, realQaDeps());
+    const result = await prepareQaDryRun({ suites, gate, continueOnFailure: opts.continueOnFailure === true }, realQaDeps());
     if (!result.ok) {
       logger.error(result.message);
       process.exitCode = 1;

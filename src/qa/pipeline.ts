@@ -36,6 +36,11 @@ export interface PipelineInput {
   gate: GateMode;
   backends: PipelineBackends;
   signal?: AbortSignal;
+  /**
+   * When true, a failing test suite does not stop the extra suites (a11y, security, load, explore). Build, start and
+   * smoke failures still stop everything, because the app itself cannot be tested. Off by default.
+   */
+  continueOnFailure?: boolean;
 }
 
 export interface PipelineResult {
@@ -131,7 +136,8 @@ export async function runQaPipeline(input: PipelineInput): Promise<PipelineResul
         // Extra suites run after e2e, only while every earlier gate is green. A failure stops the rest, as above.
         for (const suite of input.suites.filter((s) => !CORE_SUITES.includes(s))) {
           const run = backends.extras?.[suite];
-          if (!run || phase !== 'DONE' || cancelled()) {
+          const stopped = phase !== 'DONE' && !(input.continueOnFailure && phase === 'TESTS_FAILED');
+          if (!run || stopped || cancelled()) {
             outcomes.set(suite, 'NOT_RUN');
             continue;
           }

@@ -294,6 +294,8 @@ export const CreateQaRunBodySchema = z
     healthPath: z.string().regex(/^\/[A-Za-z0-9._~/-]{0,200}$/).default('/'),
     suites: z.array(z.enum(QA_SUITES)).min(1).max(8).default(['unit']),
     gate: z.enum(QA_GATES).default('default'),
+    /** Run the extra suites even after a failing test suite (build, start and smoke still stop the run). */
+    continueOnFailure: z.boolean().default(false),
     timeoutMinutes: z.number().int().min(5).max(60).default(45),
   })
   .strict();

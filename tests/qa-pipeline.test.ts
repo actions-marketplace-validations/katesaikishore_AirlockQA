@@ -189,3 +189,59 @@ describe('qa pipeline: extra suites (a11y, security, load, explore)', () => {
     expect(r.exitCode).toBe(1);
   });
 });
+
+describe('qa pipeline: continue on failure', () => {
+  function withExtras(over: Partial<Record<PhaseName, () => Promise<void>>> = {}, extraFail: string[] = []) {
+    const { calls, backends } = stubs(over);
+    const extras: Record<string, () => Promise<void>> = {};
+    for (const name of ['a11y', 'security', 'load', 'explore']) {
+      extras[name] = async () => {
+        calls.push(name);
+        if (extraFail.includes(name)) throw new Error(`${name} failed`);
+      };
+    }
+    return { calls, backends: { ...backends, extras } as PipelineBackends };
+  }
+  const SUITES_ALL = ['unit', 'e2e', 'a11y', 'security', 'load', 'explore'];
+
+  it('by default, a unit failure stops the extra suites (existing behaviour)', async () => {
+    const { calls, backends } = withExtras({ unit: async () => { throw new Error('x'); } });
+    const r = await runQaPipeline({ suites: SUITES_ALL, gate: 'default', backends });
+    expect(calls).not.toContain('a11y');
+    expect(r.suites.find((s) => s.suite === 'a11y')).toMatchObject({ status: 'NOT_RUN' });
+  });
+
+  it('with continueOnFailure, a unit failure still runs the extra suites', async () => {
+    const { calls, backends } = withExtras({ unit: async () => { throw new Error('x'); } });
+    const r = await runQaPipeline({ suites: SUITES_ALL, gate: 'default', backends, continueOnFailure: true });
+    expect(calls).toEqual(expect.arrayContaining(['a11y', 'security', 'load', 'explore']));
+    expect(r.suites.find((s) => s.suite === 'unit')).toMatchObject({ status: 'FAIL' });
+    expect(r.suites.find((s) => s.suite === 'e2e')).toMatchObject({ status: 'NOT_RUN' }); // still depends on unit
+    expect(r.phase).toBe('TESTS_FAILED');
+    expect(calls.at(-1)).toBe('release');
+  });
+
+  it('with continueOnFailure, one failing extra does not stop the next extra', async () => {
+    const { calls, backends } = withExtras({}, ['a11y']);
+    const r = await runQaPipeline({ suites: SUITES_ALL, gate: 'default', backends, continueOnFailure: true });
+    expect(calls).toEqual(expect.arrayContaining(['security', 'load', 'explore']));
+    expect(r.suites.find((s) => s.suite === 'a11y')).toMatchObject({ status: 'FAIL' });
+    expect(r.suites.find((s) => s.suite === 'explore')).toMatchObject({ status: 'PASS' });
+  });
+
+  it('with continueOnFailure, a build failure still stops everything', async () => {
+    const { calls, backends } = withExtras({ build: async () => { throw new Error('npm ci'); } });
+    const r = await runQaPipeline({ suites: SUITES_ALL, gate: 'default', backends, continueOnFailure: true });
+    expect(r.phase).toBe('BUILD_FAILED');
+    expect(calls).not.toContain('a11y');
+    expect(calls.at(-1)).toBe('release');
+  });
+
+  it('with continueOnFailure, an unhealthy app (smoke) still stops everything', async () => {
+    const { calls, backends } = withExtras({ smoke: async () => { throw new Error('502'); } });
+    const r = await runQaPipeline({ suites: SUITES_ALL, gate: 'default', backends, continueOnFailure: true });
+    expect(r.phase).toBe('DEPLOY_UNHEALTHY');
+    expect(calls).not.toContain('a11y');
+    expect(calls.at(-1)).toBe('release');
+  });
+});

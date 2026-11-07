@@ -43,6 +43,7 @@ export interface BuildQaRunInput {
   isPushed: (sha: string, repo: string) => Promise<boolean>;
   dirty?: boolean;
   gate?: 'strict' | 'default';
+  continueOnFailure?: boolean;
 }
 
 export interface PreparedQaRun {
@@ -81,6 +82,7 @@ export async function buildQaRunRequest(input: BuildQaRunInput): Promise<Prepare
     healthPath: input.config.qa?.healthPath,
     suites: input.suites,
     gate: input.gate ?? 'default',
+    continueOnFailure: input.continueOnFailure === true,
   });
   if (!parsed.success) {
     throw new QaPreflightError(parsed.error.issues.map((i) => `${i.path.join('.') || 'body'}: ${i.message}`).join('; '));

@@ -15,6 +15,7 @@ export interface QaCliDeps {
 export interface QaCliOptions {
   suites: string[];
   gate: 'strict' | 'default';
+  continueOnFailure?: boolean;
 }
 
 export type DryRunResult =
@@ -38,6 +39,7 @@ export async function prepareQaDryRun(opts: QaCliOptions, deps: QaCliDeps): Prom
       config,
       suites: opts.suites,
       gate: opts.gate,
+      continueOnFailure: opts.continueOnFailure === true,
       dirty,
       isPushed: deps.isPushed,
     });
