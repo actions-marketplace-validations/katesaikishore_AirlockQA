@@ -1,3 +1,5 @@
+import type { CreateQaRunBody } from '../../cloud/shared/contract.js';
+import { cloudRequest } from './cloud-api.js';
 import { buildQaRunRequest, QaPreflightError, type BuildQaRunInput } from './qa-preflight.js';
 
 export interface QaCliDeps {
@@ -15,7 +17,7 @@ export interface QaCliOptions {
 }
 
 export type DryRunResult =
-  | { ok: true; body: unknown; warnings: string[] }
+  | { ok: true; body: CreateQaRunBody; warnings: string[] }
   | { ok: false; message: string };
 
 /** `airlock qa --dry-run`: prepare and check the request, print it, submit nothing. */
@@ -77,4 +79,43 @@ export function realQaDeps(cwd: string = process.cwd()): QaCliDeps {
       }
     },
   };
+}
+
+export interface QaTarget {
+  apiUrl: string;
+  apiKey: string;
+  fetcher?: typeof fetch;
+}
+
+export interface QaRunDetail {
+  id: string;
+  status: string;
+  phase: string | null;
+  suites: Array<{ suite: string; status: string }>;
+  gate: { exitCode: number; reasons: string[] } | null;
+  failureReason?: string | null;
+  error?: string | null;
+}
+
+const TERMINAL_QA = new Set(['SUCCESS', 'FAILED', 'CANCELLED']);
+
+/** Submit a prepared request. Returns the run id; nothing is run until the stage worker claims it. */
+export async function submitQaRun(body: unknown, target: QaTarget): Promise<{ id: string; status: string }> {
+  return cloudRequest<{ id: string; status: string }>(target, 'POST', '/v1/qa-runs', body);
+}
+
+/** Poll until the run is terminal. Times out with an explicit message rather than reporting a guess. */
+export async function waitForQaRun(
+  target: QaTarget,
+  id: string,
+  opts: { intervalMs?: number; timeoutMs?: number } = {}
+): Promise<QaRunDetail> {
+  const intervalMs = opts.intervalMs ?? 15_000;
+  const deadline = Date.now() + (opts.timeoutMs ?? 60 * 60_000);
+  for (;;) {
+    const run = await cloudRequest<QaRunDetail>(target, 'GET', `/v1/qa-runs/${encodeURIComponent(id)}`);
+    if (TERMINAL_QA.has(run.status)) return run;
+    if (Date.now() >= deadline) throw new QaPreflightError(`QA run ${id} did not finish in time (last status ${run.status})`);
+    if (intervalMs > 0) await new Promise((r) => setTimeout(r, intervalMs));
+  }
 }
