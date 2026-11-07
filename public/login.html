@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#f7f8f6">
   <title>Sign in · Airlock Cloud</title>
+  <meta name="description" content="Sign in or create a free Airlock Cloud account.">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
@@ -18,6 +19,13 @@
     .si-btn { transition: background-color .15s ease, transform .15s ease; cursor: pointer; text-decoration: none; }
     .si-btn:hover { transform: translateY(-1px); }
     .si-btn-pri:hover { background: #245A49 !important; }
+    .si :focus-visible { outline: 3px solid #2F6F5B; outline-offset: 2px; }
+    .si-input:focus { border-color: #2F6F5B !important; box-shadow: 0 0 0 3px rgba(47, 111, 91, 0.2); }
+    .si-input[aria-invalid="true"] { border-color: #B91C1C !important; }
+    .si-mode { height: 40px; border: 0; border-radius: 9px; background: transparent; color: #46544C; font: 600 15px 'DM Sans', system-ui, sans-serif; cursor: pointer; }
+    .si-mode[aria-pressed="true"] { background: #FFFFFF; color: #15211C; box-shadow: 0 1px 3px rgba(21, 33, 28, 0.15); }
+    .si-btn[disabled] { opacity: .7; cursor: progress; transform: none; }
+    [hidden] { display: none !important; }
     @keyframes si-rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
     @keyframes si-glow { 0%,100% { opacity: 0; } 50% { opacity: 1; } }
     @keyframes si-pass { 0% { left: 6%; opacity: 0; } 20% { opacity: 1; } 80% { opacity: 1; } 100% { left: 90%; opacity: 0; } }
@@ -26,7 +34,7 @@
       .si [data-anim] { animation: none !important; }
     }
   </style>
-  <script src="/login.js" defer></script>
+  <script type="module" src="/login.js"></script>
 </head>
 <body>
 <div class="si" style="min-height: 100vh; display: flex; flex-direction: column; background: rgb(247, 248, 245); color: rgb(21, 33, 28); font-family: 'DM Sans', system-ui, -apple-system, sans-serif; font-size: 16px; line-height: 1.6;">
@@ -55,7 +63,7 @@
         <span style="width: 20px; height: 2px; background: rgb(127, 214, 174);"></span>AirlockQA console
       </div>
       <h1 id="si-story" style="margin: 16px 0px 0px; font: 800 clamp(32px, 3.4vw, 44px) / 1.08 Manrope, system-ui, sans-serif; letter-spacing: -0.03em; color: rgb(255, 255, 255); text-wrap: balance;">Your tests, behind a safety door.</h1>
-      <p style="margin: 16px 0px 0px; max-width: 460px; font-size: 17px; line-height: 1.65; color: rgb(201, 216, 207);">Sign in to see every run, what the safety door allowed or stopped, and the signed receipt each run left behind.</p>
+      <p style="margin: 16px 0px 0px; max-width: 460px; font-size: 17px; line-height: 1.65; color: rgb(201, 216, 207);">Sign in to see every run, what the safety door allowed or stopped, and the signed run evidence each run left behind.</p>
       
       <!-- Animated Safety Door SVG -->
       <div aria-hidden="true" style="position: relative; margin-top: 32px; height: 128px; border: 1px solid rgb(40, 66, 55); border-radius: 18px; background: rgb(15, 29, 23);">
@@ -74,11 +82,11 @@
       <ul style="list-style: none; margin: 28px 0px 0px; padding: 0px; display: grid; gap: 12px; font-size: 15.5px; color: rgb(231, 242, 236);">
         <li style="display: flex; align-items: flex-start; gap: 12px;">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7FD6AE" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg>
-          Real keys never enter the test browser
+          Hosted runs never hold your application secrets
         </li>
         <li style="display: flex; align-items: flex-start; gap: 12px;">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7FD6AE" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg>
-          Every run ends with a receipt you can verify
+          Every run ends with signed run evidence you can verify
         </li>
         <li style="display: flex; align-items: flex-start; gap: 12px;">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7FD6AE" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg>
@@ -87,41 +95,53 @@
       </ul>
     </section>
 
-    <!-- Sign-in card -->
+    <!-- Account card -->
     <section aria-labelledby="si-title" style="width: 100%; max-width: 480px; justify-self: center; animation: 0.7s ease 0.08s 1 normal both running si-rise;">
       <div style="padding: clamp(24px, 4vw, 40px); border: 1px solid rgb(227, 232, 226); border-radius: 24px; background: rgb(255, 255, 255); box-shadow: rgba(21, 33, 28, 0.08) 0px 24px 60px;">
-        <span style="display: inline-block; font-size: 11.5px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: rgb(47, 111, 91);">WORKSPACE ACCESS</span>
-        <h2 id="si-title" style="margin: 8px 0px 0px; font: 800 28px / 1.2 Manrope, system-ui, sans-serif; letter-spacing: -0.02em; color: rgb(21, 33, 28);">Sign in to Airlock Cloud</h2>
-        <p style="margin: 8px 0px 0px; font-size: 15.5px; color: rgb(90, 105, 97);">Authentication is not connected in this preview. You can enter the sample workspace to explore the console.</p>
+        <span style="display: inline-block; font-size: 11.5px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: rgb(47, 111, 91);">Workspace access</span>
+        <h2 id="si-title" tabindex="-1" style="margin: 8px 0px 0px; font: 800 28px / 1.2 Manrope, system-ui, sans-serif; letter-spacing: -0.02em; color: rgb(21, 33, 28);">Sign in to Airlock Cloud</h2>
+        <p id="si-sub" style="margin: 8px 0px 0px; font-size: 15.5px; color: rgb(70, 84, 76);">Use your email and password. The free plan includes 100 hosted runs a day.</p>
 
-        <!-- Primary Demo Login Action -->
-        <button class="si-btn demo-login" id="demo-login" type="button" style="margin-top: 26px; width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; height: 52px; border: 0px; border-radius: 14px; background: rgb(47, 111, 91); color: rgb(255, 255, 255); font: 700 16px 'DM Sans', system-ui, sans-serif; cursor: pointer; box-shadow: 0 4px 14px rgba(47, 111, 91, 0.3);">
-          Continue to sample workspace <span>→</span>
-        </button>
-
-        <div style="margin: 22px 0px; display: flex; align-items: center; gap: 12px; font-size: 12px; font-weight: 700; letter-spacing: 0.08em; color: rgb(90, 105, 97);">
-          <span style="flex: 1 1 0%; height: 1px; background: rgb(227, 232, 226);"></span>
-          PREVIEW ACCESS
-          <span style="flex: 1 1 0%; height: 1px; background: rgb(227, 232, 226);"></span>
+        <div role="group" aria-label="Account action" style="margin-top: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; border-radius: 12px; background: #EEF3EF;">
+          <button type="button" class="si-mode" id="mode-signin" data-mode="signin" aria-pressed="true">Sign in</button>
+          <button type="button" class="si-mode" id="mode-signup" data-mode="signup" aria-pressed="false">Create account</button>
         </div>
 
-        <div style="padding: 14px; border: 1px solid rgb(227, 232, 226); border-radius: 12px; background: rgb(251, 252, 250); font-size: 13.5px; color: rgb(70, 84, 76);">
-          <strong style="color: rgb(21, 33, 28); display: block; margin-bottom: 4px;">Local demo session</strong>
-          This button opens sample data in this browser tab. It does not verify credentials or sign in to a production account.
-        </div>
+        <form id="auth-form" method="post" action="/login" novalidate style="margin-top: 20px; display: grid; gap: 16px;">
+          <div id="name-row" hidden>
+            <label for="auth-name" style="display: block; font-size: 14px; font-weight: 600; color: #15211C;">Name <span style="font-weight: 400; color: #46544C;">(optional)</span></label>
+            <input id="auth-name" name="name" type="text" autocomplete="name" maxlength="80" class="si-input" style="display: block; width: 100%; height: 48px; margin-top: 6px; padding: 0 14px; border: 1px solid #7F9086; border-radius: 12px; background: #FFFFFF; color: #15211C; font: 400 16px 'DM Sans', system-ui, sans-serif;">
+          </div>
+          <div>
+            <label for="auth-email" style="display: block; font-size: 14px; font-weight: 600; color: #15211C;">Email</label>
+            <input id="auth-email" name="email" type="email" autocomplete="email" inputmode="email" required maxlength="254" class="si-input" style="display: block; width: 100%; height: 48px; margin-top: 6px; padding: 0 14px; border: 1px solid #7F9086; border-radius: 12px; background: #FFFFFF; color: #15211C; font: 400 16px 'DM Sans', system-ui, sans-serif;">
+          </div>
+          <div>
+            <label for="auth-password" style="display: block; font-size: 14px; font-weight: 600; color: #15211C;">Password</label>
+            <input id="auth-password" name="password" type="password" autocomplete="current-password" required maxlength="200" class="si-input" style="display: block; width: 100%; height: 48px; margin-top: 6px; padding: 0 14px; border: 1px solid #7F9086; border-radius: 12px; background: #FFFFFF; color: #15211C; font: 400 16px 'DM Sans', system-ui, sans-serif;">
+            <p id="password-rule" hidden style="margin: 6px 0 0; font-size: 13.5px; color: #46544C;">Use at least 10 characters.</p>
+          </div>
 
-        <p class="auth-error" id="auth-error" role="alert" hidden style="margin-top: 14px; padding: 10px; border-radius: 8px; background: rgb(254, 242, 242); color: rgb(185, 28, 28); font-size: 13.5px;">
-          Could not open the sample workspace. Please try again.
+          <p class="auth-error" id="auth-error" role="alert" hidden style="margin: 0; padding: 10px 12px; border-radius: 8px; background: rgb(254, 242, 242); color: rgb(153, 27, 27); font-size: 14px;"></p>
+
+          <button class="si-btn si-btn-pri" id="auth-submit" type="submit" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; height: 52px; border: 0px; border-radius: 14px; background: rgb(47, 111, 91); color: rgb(255, 255, 255); font: 700 16px 'DM Sans', system-ui, sans-serif; box-shadow: 0 4px 14px rgba(47, 111, 91, 0.3);">Sign in</button>
+        </form>
+
+        <p id="signup-note" hidden style="margin: 16px 0 0; padding: 12px 14px; border: 1px solid rgb(227, 232, 226); border-radius: 12px; background: rgb(251, 252, 250); font-size: 13.5px; color: rgb(70, 84, 76);">Email addresses are not verified yet and Airlock Cloud sends no emails, so there is no email password reset. Keep your password somewhere safe.</p>
+
+        <p style="margin: 18px 0 0; font-size: 14.5px; color: rgb(70, 84, 76);">
+          <span id="switch-text">New to Airlock Cloud?</span>
+          <button type="button" id="switch-mode" class="si-link" style="padding: 0; border: 0; background: none; color: #245A49; font: 700 14.5px 'DM Sans', system-ui, sans-serif; text-decoration: underline; cursor: pointer;">Create a free account</button>
         </p>
       </div>
 
-      <a href="/console" class="si-btn" style="margin-top: 16px; display: flex; align-items: center; gap: 14px; padding: 18px 20px; border: 1px dashed rgb(201, 214, 204); border-radius: 18px; background: rgb(251, 252, 250); color: rgb(21, 33, 28); text-decoration: none;">
-        <span style="flex: 0 0 auto; width: 42px; height: 42px; border-radius: 12px; background: rgb(234, 241, 251); color: rgb(36, 88, 155); display: inline-flex; align-items: center; justify-content: center;">
+      <a href="/console" id="demo-login" class="si-btn" style="margin-top: 16px; display: flex; align-items: center; gap: 14px; padding: 16px 20px; border: 1px dashed rgb(201, 214, 204); border-radius: 18px; background: rgb(251, 252, 250); color: rgb(21, 33, 28); text-decoration: none;">
+        <span style="flex: 0 0 auto; width: 38px; height: 38px; border-radius: 12px; background: rgb(234, 241, 251); color: rgb(36, 88, 155); display: inline-flex; align-items: center; justify-content: center;">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="12.5" rx="2"></rect><path d="M8.5 20.5h7M12 16.5v4"></path></svg>
         </span>
         <span style="flex: 1 1 0%; min-width: 0px;">
-          <span style="display: block; font-size: 15.5px; font-weight: 700;">Just looking?</span>
-          <span style="display: block; font-size: 14px; color: rgb(90, 105, 97);">Explore the sample workspace — no sign-in needed.</span>
+          <span style="display: block; font-size: 15px; font-weight: 700;">Explore the sample workspace</span>
+          <span style="display: block; font-size: 13.5px; color: rgb(70, 84, 76);">Opens the console with sample data in this browser tab. It does not sign you in.</span>
         </span>
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2F6F5B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>
       </a>

@@ -1,25 +1,12 @@
+// Classic script loaded before the console module. It only records whether a sample (demo)
+// session exists. The console module (dashboard.js) decides the mode: it asks the API who is
+// signed in first, then falls back to the sample session, then redirects to /login.
 const DEMO_SESSION_KEY = "airlock-demo-session";
 
-let hasDemoSession = false;
 try {
-  hasDemoSession = window.sessionStorage.getItem(DEMO_SESSION_KEY) === "preview";
+  if (window.sessionStorage.getItem(DEMO_SESSION_KEY) === "preview") {
+    document.documentElement.dataset.demoSession = "preview";
+  }
 } catch {
-  hasDemoSession = false;
-}
-
-if (!hasDemoSession) {
-  const requestedPath = window.location.pathname + window.location.search + window.location.hash;
-  window.location.replace("/login?next=" + encodeURIComponent(requestedPath));
-} else {
-  document.documentElement.dataset.demoSession = "preview";
-  document.addEventListener("click", function (event) {
-    const signOutControl = event.target.closest("[data-demo-signout]");
-    if (!signOutControl) return;
-    event.preventDefault();
-    try {
-      window.sessionStorage.removeItem(DEMO_SESSION_KEY);
-    } finally {
-      window.location.assign("/login");
-    }
-  });
+  // Storage can be blocked; the console treats that as "no sample session".
 }

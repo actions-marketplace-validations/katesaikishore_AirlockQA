@@ -289,3 +289,26 @@ describe('HtmlReporter escaping', () => {
 });
 
 export type { ComplianceProofBundle };
+
+describe('AirlockLedger.fromBlocks', () => {
+  it('rebuilds a ledger from valid blocks and keeps the Merkle root', () => {
+    const original = new AirlockLedger();
+    original.append('ACTION_DISPATCH', { action: 'goto', target: 'https://example.com' });
+    original.append('PROXY_INTERCEPT', { url: 'https://example.com/', method: 'GET', verdict: 'ALLOWED' });
+    const rebuilt = AirlockLedger.fromBlocks(original.getBlocks());
+    expect(rebuilt.getMerkleRoot()).toBe(original.getMerkleRoot());
+    expect(rebuilt.verifyChain().valid).toBe(true);
+  });
+
+  it('rejects blocks whose payload was changed', () => {
+    const original = new AirlockLedger();
+    original.append('ACTION_DISPATCH', { action: 'goto', target: 'https://example.com' });
+    const blocks = JSON.parse(JSON.stringify(original.getBlocks()));
+    blocks[1].payload.target = 'https://evil.example';
+    expect(() => AirlockLedger.fromBlocks(blocks)).toThrow(/Cannot rebuild ledger/);
+  });
+
+  it('rejects an empty block list', () => {
+    expect(() => AirlockLedger.fromBlocks([])).toThrow(/Cannot rebuild ledger/);
+  });
+});

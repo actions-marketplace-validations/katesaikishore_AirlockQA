@@ -1,4 +1,103 @@
+import { api } from "./api.js";
 import { createSampleRun, sampleAnalytics, sampleMetrics, sampleRuns } from "./dashboard-data.js";
+
+// ---------------------------------------------------------------------------
+// Mode: LIVE (signed in to Airlock Cloud), SAMPLE (demo session) or redirect to /login.
+// ---------------------------------------------------------------------------
+const DEMO_SESSION_KEY = "airlock-demo-session";
+
+function hasDemoSession() {
+  try {
+    return window.sessionStorage.getItem(DEMO_SESSION_KEY) === "preview";
+  } catch (error) {
+    return false;
+  }
+}
+
+async function resolveMode() {
+  let me = null;
+  let failure = null;
+  try {
+    me = await api.me();
+  } catch (error) {
+    failure = error;
+  }
+  if (me && me.user) return { mode: "live", me: me };
+  if (hasDemoSession()) return { mode: "sample" };
+  // Only a 401 means "signed out". A proxy 429, a 5xx or a network failure must not log anyone out.
+  if (failure && failure.status !== 401) return { mode: "error", message: failure.message };
+  return { mode: "redirect" };
+}
+
+const boot = await resolveMode();
+if (boot.mode === "redirect") {
+  const requestedPath = window.location.pathname + window.location.search + window.location.hash;
+  window.location.replace("/login?next=" + encodeURIComponent(requestedPath));
+  await new Promise(function () {});
+}
+if (boot.mode === "error") {
+  document.documentElement.dataset.mode = "error";
+  const panel = document.createElement("div");
+  panel.className = "boot-error";
+  panel.setAttribute("role", "alert");
+  const title = document.createElement("h1");
+  title.textContent = "Airlock Cloud is not reachable";
+  const detail = document.createElement("p");
+  detail.textContent = boot.message || "Check your connection and try again.";
+  const retry = document.createElement("button");
+  retry.type = "button";
+  retry.textContent = "Try again";
+  retry.addEventListener("click", function () { window.location.reload(); });
+  panel.append(title, detail, retry);
+  document.body.append(panel);
+  await new Promise(function () {});
+}
+document.documentElement.dataset.mode = boot.mode;
+const live = boot.mode === "live" ? await import("./console-live.js") : null;
+
+async function signOut() {
+  if (live) {
+    try {
+      await api.logout();
+    } catch (error) {
+      showToast("Could not sign out: " + (error && error.message ? error.message : "try again."));
+      const announcer = byId("live-announcer");
+      if (announcer) announcer.textContent = "Sign out failed. You are still signed in.";
+      return;
+    }
+    const tokenHost = byId("new-key-host");
+    if (tokenHost) tokenHost.replaceChildren();
+  } else {
+    try {
+      window.sessionStorage.removeItem(DEMO_SESSION_KEY);
+    } catch (error) {
+      // Ignore blocked storage.
+    }
+  }
+  window.location.replace("/login");
+}
+
+// Back/forward can restore the console from the browser cache after sign-out: re-check the session.
+window.addEventListener("pageshow", async function (event) {
+  if (!event.persisted) return;
+  const goToLogin = function () { window.location.replace("/login?next=" + encodeURIComponent(window.location.pathname + window.location.hash)); };
+  if (live) {
+    try {
+      const me = await api.me();
+      if (!me) goToLogin();
+    } catch (error) {
+      // A transient failure is not a sign-out.
+    }
+  } else if (!hasDemoSession()) {
+    goToLogin();
+  }
+});
+document.addEventListener("click", function (event) {
+  const control = event.target instanceof Element ? event.target.closest("[data-demo-signout]") : null;
+  if (!control) return;
+  event.preventDefault();
+  signOut();
+});
 
 const motionPreference = window.matchMedia("(prefers-reduced-motion: reduce)");
 let reducedMotion = motionPreference.matches;
@@ -26,6 +125,13 @@ function showToast(message) {
   toast.classList.add("is-visible");
   window.clearTimeout(toastTimer);
   toastTimer = window.setTimeout(function () { toast.classList.remove("is-visible"); }, 2200);
+}
+
+if (live) {
+  live.mount({ api: api, me: boot.me, toast: showToast, signOut: signOut });
+} else {
+  const banner = byId("sample-banner");
+  if (banner) banner.hidden = false;
 }
 
 // The dashboard supports all 16 views from the redesign.
@@ -61,8 +167,22 @@ const navItems = Array.from(document.querySelectorAll("[data-nav]"));
 const viewPanels = Array.from(document.querySelectorAll("[data-view-panel]"));
 const knownViews = new Set(viewPanels.map(function (panel) { return panel.dataset.viewPanel; }));
 
+function hashParts() {
+  const raw = window.location.hash.replace(/^#\/?/, "").replace(/^view-/, "");
+  const slash = raw.indexOf("/");
+  let param = "";
+  try {
+    param = slash === -1 ? "" : decodeURIComponent(raw.slice(slash + 1));
+  } catch (error) {
+    param = "";
+  }
+  return { value: slash === -1 ? raw : raw.slice(0, slash), param: param };
+}
+
+let currentViewKey = "";
+
 function viewFromHash() {
-  const value = window.location.hash.replace(/^#\/?/, "").replace(/^view-/, "");
+  const value = hashParts().value;
   const resolved = viewAliases[value] || value;
   if (knownViews.has(resolved)) return resolved;
   return knownViews.has("dashboard") ? "dashboard" : (viewPanels[0] && viewPanels[0].dataset.viewPanel) || "dashboard";
@@ -88,7 +208,9 @@ function showView(view, options) {
     }
     if (item.hasAttribute("aria-pressed")) item.setAttribute("aria-pressed", String(selected));
   });
-  if (nextView === "run-detail" && activeRun) renderRunDetail(activeRun);
+  const viewParam = settings.param !== undefined ? settings.param : hashParts().param;
+  currentViewKey = nextView + "/" + viewParam;
+  if (!live && nextView === "run-detail" && activeRun) renderRunDetail(activeRun);
   const headingNames = {
     dashboard: "Overview",
     runs: "Test runs",
@@ -108,9 +230,11 @@ function showView(view, options) {
     settings: "Settings"
   };
   setText("page-heading", headingNames[nextView] || "Overview");
-  if (settings.updateHash && window.location.hash !== "#" + nextView) {
-    window.location.hash = nextView;
+  const targetHash = settings.hash || nextView;
+  if (settings.updateHash && window.location.hash !== "#" + targetHash) {
+    window.location.hash = targetHash;
   }
+  if (live) live.onShow(nextView, viewParam);
   if (settings.focus) {
     const panel = viewPanels.find(function (candidate) { return candidate.dataset.viewPanel === nextView; });
     const heading = panel && panel.querySelector("h1, h2, [data-view-heading]");
@@ -130,7 +254,11 @@ navItems.forEach(function (item) {
     showView(view, { updateHash: true });
   });
 });
-window.addEventListener("hashchange", function () { showView(viewFromHash()); });
+window.addEventListener("hashchange", function () {
+  const view = viewFromHash();
+  if (view + "/" + hashParts().param === currentViewKey) return;
+  showView(view);
+});
 if (viewPanels.length) showView(viewFromHash());
 
 const globalSearchButton = byId("open-run-search");
@@ -279,13 +407,13 @@ function filterRunTable() {
 
 const searchInput = byId("run-search");
 const statusFilter = byId("run-status-filter");
-if (searchInput) searchInput.addEventListener("input", filterRunTable);
-if (statusFilter) statusFilter.addEventListener("change", filterRunTable);
+if (!live && searchInput) searchInput.addEventListener("input", filterRunTable);
+if (!live && statusFilter) statusFilter.addEventListener("change", filterRunTable);
 const fullSearchInput = byId("run-search-full");
 const fullStatusFilter = byId("run-status-filter-full");
-if (fullSearchInput) fullSearchInput.addEventListener("input", filterRunTable);
-if (fullStatusFilter) fullStatusFilter.addEventListener("change", filterRunTable);
-renderRunTable();
+if (!live && fullSearchInput) fullSearchInput.addEventListener("input", filterRunTable);
+if (!live && fullStatusFilter) fullStatusFilter.addEventListener("change", filterRunTable);
+if (!live) renderRunTable();
 
 function renderList(container, entries, renderItem) {
   if (!container) return;
@@ -394,7 +522,7 @@ function renderSampleMetrics() {
   });
   document.querySelectorAll("[data-sample-run-count]").forEach(function (element) { element.textContent = String(sampleRuns.length); });
 }
-renderSampleMetrics();
+if (!live) renderSampleMetrics();
 
 // Optional chart hooks let the static markup keep a useful fallback when SVG
 // or JavaScript rendering is unavailable.
@@ -413,8 +541,10 @@ function renderBars(selector, values) {
     });
   });
 }
-renderBars('[data-preview-chart="runs"]', sampleAnalytics.dailyRuns);
-renderBars('[data-preview-chart="pass-rate"]', sampleAnalytics.dailyPassRate);
+if (!live) {
+  renderBars('[data-preview-chart="runs"]', sampleAnalytics.dailyRuns);
+  renderBars('[data-preview-chart="pass-rate"]', sampleAnalytics.dailyPassRate);
+}
 
 // Make the status filter useful with common label values in markup.
 if (statusFilter) {
@@ -939,6 +1069,9 @@ window.addEventListener("keydown", function (e) {
   }
 });
 
+// Sections 2-6 only make sense on the sample markup. Live mode replaces those panels.
+if (!live) {
+
 // 2. Self-Healing Interactive Review Queue
 document.addEventListener("click", function (e) {
   const target = e.target;
@@ -1032,4 +1165,5 @@ if (window.fetch && (window.location.hostname === "localhost" || window.location
       console.log("Loaded live checkpoints:", data.length);
     }
   }).catch(function () {});
+}
 }

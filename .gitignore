@@ -21,3 +21,5 @@ artifacts/gui-qa/*.webm
 artifacts/*.webm
 tests/generated/
 *.tgz
+
+cloud/data/
