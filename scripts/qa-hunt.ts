@@ -115,7 +115,8 @@ async function createReportPr(out: string, statuses: Array<{ repo: string; statu
   const branch = `airlock-qa/hunt-${new Date().toISOString().slice(0, 10)}`;
   await run('git', ['switch', '-c', branch], root);
   await run('git', ['add', '--', rel], root);
-  await run('git', ['commit', '-m', `qa: Airlock QA hunt for ${new Date().toISOString().slice(0, 10)}`], root);
+  // CI runners start with no git identity; do not fail the report PR because of it.
+  await run('git', ['-c', 'user.name=Airlock QA', '-c', 'user.email=qa@qbrin.cloud', 'commit', '-m', `qa: Airlock QA hunt for ${new Date().toISOString().slice(0, 10)}`], root);
   await run('git', ['push', '-u', 'origin', 'HEAD'], root);
   const body = [
     'Automated Airlock QA hunt over public repositories.',
