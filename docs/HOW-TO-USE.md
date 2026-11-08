@@ -575,8 +575,9 @@ bun run cli serve -p 4100
 ```bash
 bun run qa:gui
 ```
-This script executes:
-- Headless browser verification across desktop (1280x800) and mobile (390x844).
+This script (`scripts/gui-smoke.ts`, Playwright and axe-core) executes:
+- Every console section found in the navigation, so new sections are covered automatically: heading, content, no page errors.
+- Headless browser verification across desktop (1440x900) and mobile (390x844), with no sideways scrolling.
 - Axe-core accessibility auditing (enforcing **0 violations**).
 - Proof generation saved to `artifacts/gui-qa/`.
 

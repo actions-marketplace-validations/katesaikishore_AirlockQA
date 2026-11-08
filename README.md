@@ -220,7 +220,7 @@ To produce bundles that can be verified later, add `AIRLOCK_SIGNING_KEY` as a re
 | `bun test` | Run the test suite. |
 | `bun run cli <command>` | Run the CLI from source. |
 | `bun run demo:server` | Start the demo store on port 3900. |
-| `bun run qa:gui` | Drive the staging UI. Requires `agent-browser` and Chrome; not run in CI. |
+| `bun run qa:gui` | GUI smoke and axe accessibility suite with Playwright: the site, every console section, the dashboard recording and the demo store. Runs locally with no network, and in CI. `BASE_URL=<url>` tests a deployment instead. |
 
 Install a browser with `bunx playwright install chromium`. The CLI uses `AIRLOCK_CHROME_PATH` when `browser.executablePath` is not set. The browser-based tests read `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` instead.
 

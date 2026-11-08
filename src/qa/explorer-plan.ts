@@ -1,6 +1,6 @@
 /**
  * The exploration planner: decides which controls the crawler may act on, and in what order. It drives nothing itself;
- * the browser driver (agent-browser) carries out the plan. Everything here is deterministic for a given seed, so a
+ * the browser driver (Playwright) carries out the plan. Everything here is deterministic for a given seed, so a
  * finding can be replayed by replaying its seed.
  */
 export interface UiElement {
