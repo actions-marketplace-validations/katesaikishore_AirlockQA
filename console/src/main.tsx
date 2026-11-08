@@ -1,4 +1,6 @@
 import { StrictMode } from 'react';
+// Keyboard access to scrollable code blocks and panels (the same helper the static console pages load).
+import '../../public/scroll-regions.js';
 import { createRoot } from 'react-dom/client';
 import App from './App';
 import { AppProvider, DEMO_SESSION_KEY, redirectToLogin, type Mode } from './app-context';

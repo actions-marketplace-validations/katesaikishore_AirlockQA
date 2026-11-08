@@ -12,6 +12,8 @@
 .nav-workspace-text { flex: 1 1 0; min-width: 0; }
 .nav-workspace-name { display: block; font-size: 14px; font-weight: 700; color: #15211c; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .nav-workspace-plan { display: block; font-size: 12.5px; color: #5a6961; }
+/* The shared a:hover rule (public/styles.css) turns link text dark green, which is unreadable on this button. */
+.nav-cta:hover, .nav-cta:focus-visible { color: #fff; background: #245a49; }
 .nav-cta { display: flex; align-items: center; justify-content: center; gap: 8px; height: 40px; border-radius: 11px; background: #2f6f5b; color: #fff; font-size: 14.5px; font-weight: 600; text-decoration: none; }
 .nav-groups { display: flex; flex-direction: column; gap: 10px; }
 .nav-group { display: flex; flex-direction: column; gap: 2px; }
