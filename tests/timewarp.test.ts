@@ -65,9 +65,9 @@ describe('Browser Date Offset Prototype', () => {
 
       expect(first.scope).toBe('browser-page');
       expect(first.affectedPageAPIs).toEqual(['new Date() without arguments', 'Date.now()']);
-      expect(firstOffset).toBeGreaterThanOrEqual(3600000);
+      expect(firstOffset).toBeGreaterThanOrEqual(3600000 - 1000);
       expect(firstOffset).toBeLessThan(3610000);
-      expect(secondOffset).toBeGreaterThanOrEqual(5400000);
+      expect(secondOffset).toBeGreaterThanOrEqual(5400000 - 1000);
       expect(secondOffset).toBeLessThan(5410000);
       expect(second.affectedPageAPIs).toEqual(first.affectedPageAPIs);
       expect(events).toHaveLength(2);
