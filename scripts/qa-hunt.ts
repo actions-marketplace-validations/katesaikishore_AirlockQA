@@ -112,7 +112,8 @@ async function createReportPr(out: string, statuses: Array<{ repo: string; statu
   if (dirty.length) throw new Error('--create-pr needs a clean working tree (commit or stash other changes first)');
   const repo = await run('gh', ['repo', 'view', '--json', 'nameWithOwner', '--jq', '.nameWithOwner'], root);
   const base = await run('gh', ['repo', 'view', repo, '--json', 'defaultBranchRef', '--jq', '.defaultBranchRef.name'], root);
-  const branch = `airlock-qa/hunt-${new Date().toISOString().slice(0, 10)}`;
+  const stamp = new Date().toISOString().slice(0, 16).replace(/[-:T]/g, ''); // YYYYMMDDHHMM
+  const branch = `airlock-qa/hunt-${stamp}`;
   await run('git', ['switch', '-c', branch], root);
   await run('git', ['add', '--', rel], root);
   // CI runners start with no git identity; do not fail the report PR because of it.
