@@ -44,6 +44,9 @@ jobs:
       - name: Build TypeScript
         run: bun run build
 
+      - name: GUI smoke and accessibility (Playwright and axe)
+        run: bun run qa:gui
+
       - name: Start demo store
         run: |
           bun ./examples/demo-store/server.ts > /tmp/airlockqa-demo-store.log 2>&1 &
@@ -85,5 +88,6 @@ jobs:
           path: |
             .airlock/compliance/
             .airlock/dataset/
+            artifacts/gui-qa/pr/
           retention-days: 30
           if-no-files-found: warn

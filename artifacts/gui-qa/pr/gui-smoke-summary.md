@@ -1,35 +1,52 @@
 # GUI smoke results
 
-- Staging: https://staging.qbrin.cloud
-- Captured: 2026-11-06 12:52 UTC
+- Site: local dashboard (public/)
+- Captured: 2026-11-08 07:35 UTC
+- Driver: Playwright 1.65.0
 
-- AXE: marketing: 0 violations (1 rule groups need manual review).
+- AXE: marketing: 0 violations (2 rule groups need manual review).
 - PASS: axe accessibility audit: marketing
-- AXE: login: 0 violations (1 rule groups need manual review).
+- PASS: home page renders and its Sign in link opens the sign-in page
+- AXE: login: 0 violations (0 rule groups need manual review).
 - PASS: axe accessibility audit: login
-- PASS: sample sign-in disclosure and no credential form
-- PASS: login redirect stays on the same origin
-- AXE: overview: 0 violations (2 rule groups need manual review).
-- PASS: axe accessibility audit: overview
-- AXE: runs: 0 violations (2 rule groups need manual review).
-- PASS: axe accessibility audit: runs
-- AXE: run-detail: 0 violations (1 rule groups need manual review).
-- PASS: axe accessibility audit: run-detail
-- PASS: run filtering, empty state, detail view, evidence copy, and back navigation
-- AXE: explorer: 0 violations (1 rule groups need manual review).
-- PASS: axe accessibility audit: explorer
-- AXE: analytics: 0 violations (2 rule groups need manual review).
-- PASS: axe accessibility audit: analytics
-- AXE: audit: 0 violations (1 rule groups need manual review).
-- PASS: axe accessibility audit: audit
-- PASS: sample evidence export contains only disclosed preview data
-- AXE: integrations: 0 violations (1 rule groups need manual review).
-- PASS: axe accessibility audit: integrations
-- PASS: Three.js canvas render, replay, CLI tabs, clipboard, and local recording fallback
-- AXE: integrations-mobile: 0 violations (1 rule groups need manual review).
-- PASS: axe accessibility audit: integrations-mobile
-- PASS: mobile console at 390px has no horizontal overflow
-- PASS: staging GUI journey completed through mouse-driven navigation
+- PASS: sign-in form and sample workspace link are shown
+- PASS: sign-in redirect stays on the same origin
+- AXE: console Recorder: 0 violations (1 rule groups need manual review).
+- PASS: axe accessibility audit: console Recorder
+- AXE: console Overview: 0 violations (1 rule groups need manual review).
+- PASS: axe accessibility audit: console Overview
+- AXE: console Runs1: 0 violations (1 rule groups need manual review).
+- PASS: axe accessibility audit: console Runs1
+- AXE: console Tests: 0 violations (3 rule groups need manual review).
+- PASS: axe accessibility audit: console Tests
+- AXE: console Analytics: 0 violations (1 rule groups need manual review).
+- PASS: axe accessibility audit: console Analytics
+- AXE: console Self-healing3: 0 violations (1 rule groups need manual review).
+- PASS: axe accessibility audit: console Self-healing3
+- AXE: console Checkpoints: 0 violations (1 rule groups need manual review).
+- PASS: axe accessibility audit: console Checkpoints
+- AXE: console Request policy: 0 violations (1 rule groups need manual review).
+- PASS: axe accessibility audit: console Request policy
+- AXE: console Evidence: 0 violations (1 rule groups need manual review).
+- PASS: axe accessibility audit: console Evidence
+- AXE: console Time warp: 0 violations (1 rule groups need manual review).
+- PASS: axe accessibility audit: console Time warp
+- AXE: console Fixtures: 0 violations (1 rule groups need manual review).
+- PASS: axe accessibility audit: console Fixtures
+- AXE: console Chaos report: 0 violations (1 rule groups need manual review).
+- PASS: axe accessibility audit: console Chaos report
+- AXE: console Bug capsules: 0 violations (1 rule groups need manual review).
+- PASS: axe accessibility audit: console Bug capsules
+- AXE: console Usage & keys: 0 violations (1 rule groups need manual review).
+- PASS: axe accessibility audit: console Usage & keys
+- AXE: console Settings: 0 violations (1 rule groups need manual review).
+- PASS: axe accessibility audit: console Settings
+- PASS: all 15 console sections open with a heading, content and no page errors
+- PASS: run search opens the runs view
+- AXE: console mobile: 0 violations (1 rule groups need manual review).
+- PASS: axe accessibility audit: console mobile
+- PASS: no sideways scrolling at 390px in all 15 sections
+- PASS: signing out returns to the sign-in page
 - PASS: local dashboard saved a valid five-second Three.js WebM preview
 - AXE: demo-login: 0 violations (0 rule groups need manual review).
 - PASS: axe accessibility audit: demo-login
@@ -38,4 +55,4 @@
 - PASS: axe accessibility audit: demo-checkout
 - PASS: demo login, invalid and valid coupons, total calculation, and raw-phantom rejection
 
-- Result: PASS (22 checks)
+- Result: PASS (30 checks)

@@ -41,7 +41,7 @@
     }
     button {
       background: var(--cyan);
-      color: #fff;
+      color: #0f172a; /* dark text: white on cyan is below the 4.5:1 contrast ratio */
       border: none;
       cursor: pointer;
       font-weight: 600;
@@ -52,7 +52,7 @@
   </style>
 </head>
 <body>
-  <div class="container">
+  <main class="container">
     <h1>🚀 Acme Cloud SaaS Store</h1>
     <p style="color: #94a3b8; margin-bottom: 2rem;">AirlockQA Demonstration Sandbox Application</p>
 
@@ -104,7 +104,7 @@
       </div>
       <div id="checkout-status" class="hidden success"></div>
     </div>
-  </div>
+  </main>
 
   <script>
     let subtotal = 0;

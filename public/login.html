@@ -31,7 +31,8 @@
     @keyframes si-pass { 0% { left: 6%; opacity: 0; } 20% { opacity: 1; } 80% { opacity: 1; } 100% { left: 90%; opacity: 0; } }
     @keyframes si-stop { 0% { left: 6%; opacity: 0; } 20% { opacity: 1; } 50% { left: 40.5%; opacity: 1; } 70% { left: 40.5%; opacity: 1; } 100% { left: 35%; opacity: 0; } }
     @media (prefers-reduced-motion: reduce) {
-      .si [data-anim] { animation: none !important; }
+      /* Every animation on the page, including the looping decorative request chips set in inline styles. */
+      .si *, .si *::before, .si *::after { animation: none !important; transition-duration: 0s !important; }
     }
   </style>
   <script type="module" src="/login.js"></script>
