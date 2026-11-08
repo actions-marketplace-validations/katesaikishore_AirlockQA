@@ -866,7 +866,10 @@ sync
       const auth = resolveCloudAuth({ apiUrl: opts.apiUrl });
       if (!auth) throw new Error('Not signed in. Run "airlock login" (or set AIRLOCK_API_KEY) first.');
       const artifacts = await listSyncArtifacts({ apiUrl: auth.apiUrl, apiKey: auth.apiKey }, Number(opts.limit) || 50);
-      if (opts.json) console.log(JSON.stringify({ artifacts }, null, 2));
+      // Commander's parent sync command also declares --json; use the raw argv as a fallback so
+      // `sync list --json` means JSON regardless of which command object parsed the flag.
+      const asJson = opts.json === true || process.argv.includes('--json');
+      if (asJson) console.log(JSON.stringify({ artifacts }, null, 2));
       else if (artifacts.length === 0) console.log('No synced artifacts yet.');
       else for (const a of artifacts) console.log(`${a.id}  ${a.kind.padEnd(10)}  ${String(a.plaintextSize).padStart(8)} B  ${a.name}`);
     })()
