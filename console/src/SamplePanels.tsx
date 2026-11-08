@@ -27,6 +27,13 @@ const PANELS: Partial<Record<View, ComponentType>> = {
 
 export default function SamplePanel({ view }: { view: View }) {
   const Panel = PANELS[view];
-  if (!Panel) return <p className="lv-muted">Sign in to Airlock Cloud to see QA runs. This screen has no sample data.</p>;
+  if (!Panel) {
+    return (
+      <main className="lv-main" id={'sample-' + view}>
+        <h1 className="lv-title" tabIndex={-1}>{view === 'qa' ? 'QA' : 'Not in the sample'}</h1>
+        <p className="lv-muted">This screen has no sample data. <a href="/login">Sign in to Airlock Cloud</a> to see your QA runs.</p>
+      </main>
+    );
+  }
   return <Panel />;
 }

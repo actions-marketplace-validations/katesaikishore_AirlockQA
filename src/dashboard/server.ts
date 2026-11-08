@@ -337,6 +337,8 @@ export function startDashboardServer(
         '/': 'index.html',
         '/login': 'login.html',
         '/console': 'console.html',
+        // The built React console (public/app, base /app/); production serves the same build at /console.
+        '/app': 'app/index.html',
       };
       const assetPath = publicRoutes[normalizedRoute]
         || decodedPath.replace(/^[/\\]+/, '').replace(/[\\]/g, path.sep);

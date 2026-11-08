@@ -187,28 +187,7 @@ async function siteJourney(browser: Browser): Promise<void> {
     await expectPath(page, BASE_URL, '/console');
     pass('sign-in redirect stays on the same origin');
 
-    // Every console section, found from the navigation itself so new sections are covered without editing this file.
-    await expectText(page, '#page-heading', 'Overview');
-    const navItems = await page.$$eval('#console-nav [data-nav]', (els) =>
-      els.filter((e) => (e as HTMLElement).offsetParent !== null).map((e) => ({ nav: e.getAttribute('data-nav') || '', label: (e.textContent || '').replace(/\s+\d+$/, '').replace(/\s+/g, ' ').trim() })));
-    const unique = [...new Map(navItems.filter((n) => n.nav).map((n) => [n.nav, n])).values()];
-    if (unique.length < 5) fail(`console navigation lists only ${unique.length} sections`);
-    for (const item of unique) {
-      const before = pageErrors.length;
-      await page.locator(`#console-nav [data-nav="${item.nav}"]`).first().click();
-      await page.waitForTimeout(400);
-      const heading = ((await page.locator('#page-heading').textContent().catch(() => '')) ?? '').trim();
-      if (!heading) fail(`console section "${item.label}" shows no heading`);
-      const visible = await page.evaluate(() => {
-        const main = document.querySelector('main') ?? document.body;
-        return (main as HTMLElement).innerText.trim().length;
-      });
-      if (visible < 40) fail(`console section "${item.label}" rendered almost nothing`);
-      if (pageErrors.length > before) fail(`console section "${item.label}" threw: ${pageErrors.slice(before).join(' | ').slice(0, 200)}`);
-      await shot(page, `console-${item.nav}.png`);
-      await audit(page, `console ${item.label}`);
-    }
-    pass(`all ${unique.length} console sections open with a heading, content and no page errors`);
+    const unique = await consoleSections(page, pageErrors, 'console');
 
     // Run search reaches the runs view
     await page.locator('#open-run-search').click();
@@ -230,16 +209,7 @@ async function siteJourney(browser: Browser): Promise<void> {
       }
     }
 
-    // Phone width: no sideways scrolling on every section
-    await page.setViewportSize({ width: 390, height: 844 });
-    for (const item of unique) {
-      await page.evaluate((nav) => (document.querySelector(`#console-nav [data-nav="${nav}"]`) as HTMLElement | null)?.click(), item.nav);
-      await page.waitForTimeout(250);
-      await evalTrue(page, 'document.documentElement.scrollWidth <= window.innerWidth', `console section "${item.label}" scrolls sideways at 390px`);
-    }
-    await shot(page, 'console-mobile.png');
-    await audit(page, 'console mobile');
-    pass(`no sideways scrolling at 390px in all ${unique.length} sections`);
+    await consoleAtPhoneWidth(page, unique, 'console');
 
     // Sign out
     await page.setViewportSize({ width: 1440, height: 900 });
@@ -249,6 +219,70 @@ async function siteJourney(browser: Browser): Promise<void> {
       await expectPath(page, BASE_URL, '/login');
       pass('signing out returns to the sign-in page');
     }
+  } finally {
+    await context.close();
+  }
+}
+
+type NavItem = { nav: string; label: string };
+
+/**
+ * Every console section, found from the navigation itself so new sections are covered without editing this file:
+ * a heading, some content, no page errors, a screenshot and an axe audit each.
+ */
+async function consoleSections(page: Page, pageErrors: string[], tag: string): Promise<NavItem[]> {
+  await page.locator('#console-nav [data-nav]').first().waitFor({ state: 'visible', timeout: 15_000 }).catch(() => fail(`${tag}: no console navigation`));
+  const navItems = await page.$$eval('#console-nav [data-nav]', (els) =>
+    els.filter((e) => (e as HTMLElement).offsetParent !== null).map((e) => ({ nav: e.getAttribute('data-nav') || '', label: (e.textContent || '').replace(/\s*\d+$/, '').replace(/\s+/g, ' ').trim() })));
+  const unique = [...new Map(navItems.filter((n) => n.nav).map((n) => [n.nav, n])).values()];
+  if (unique.length < 5) fail(`${tag}: navigation lists only ${unique.length} sections`);
+  for (const item of unique) {
+    const before = pageErrors.length;
+    await page.locator(`#console-nav [data-nav="${item.nav}"]`).first().click();
+    await page.waitForTimeout(500);
+    const heading = ((await page.locator('#page-heading').first().textContent().catch(() => '')) ?? '').trim();
+    if (!heading) fail(`${tag} section "${item.label}" shows no heading`);
+    const visible = await page.evaluate(() => {
+      const main = document.querySelector('main') ?? document.body;
+      return (main as HTMLElement).innerText.trim().length;
+    });
+    if (visible < 40) fail(`${tag} section "${item.label}" rendered almost nothing`);
+    if (pageErrors.length > before) fail(`${tag} section "${item.label}" threw: ${pageErrors.slice(before).join(' | ').slice(0, 200)}`);
+    await shot(page, `${tag}-${item.nav}.png`);
+    await audit(page, `${tag} ${item.label}`);
+  }
+  pass(`${tag}: all ${unique.length} sections open with a heading, content and no page errors`);
+  return unique;
+}
+
+/** No sideways scrolling at phone width in any section. */
+async function consoleAtPhoneWidth(page: Page, sections: NavItem[], tag: string): Promise<void> {
+  await page.setViewportSize({ width: 390, height: 844 });
+  for (const item of sections) {
+    await page.evaluate((nav) => (document.querySelector(`#console-nav [data-nav="${nav}"]`) as HTMLElement | null)?.click(), item.nav);
+    await page.waitForTimeout(250);
+    await evalTrue(page, 'document.documentElement.scrollWidth <= window.innerWidth', `${tag} section "${item.label}" scrolls sideways at 390px`);
+  }
+  await shot(page, `${tag}-mobile.png`);
+  await audit(page, `${tag} mobile`);
+  pass(`${tag}: no sideways scrolling at 390px in all ${sections.length} sections`);
+  await page.setViewportSize({ width: 1440, height: 900 });
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// 1b. The React console (console/src, built to public/app). Production serves it at /console; the local dashboard
+//     serves it at /app/. It is opened in sample mode, as "Explore the demo" does.
+// ---------------------------------------------------------------------------------------------------------------
+async function appConsoleJourney(browser: Browser, consoleUrl: string): Promise<void> {
+  const { context, page } = await newPage(browser);
+  const pageErrors: string[] = [];
+  page.on('pageerror', (e) => pageErrors.push(e.message));
+  try {
+    await page.goto(`${BASE_URL}/login`, { waitUntil: 'load' });
+    await page.evaluate(() => window.sessionStorage.setItem('airlock-demo-session', 'preview'));
+    await page.goto(consoleUrl, { waitUntil: 'load' });
+    const sections = await consoleSections(page, pageErrors, 'app');
+    await consoleAtPhoneWidth(page, sections, 'app');
   } finally {
     await context.close();
   }
@@ -351,6 +385,12 @@ async function main(): Promise<number> {
       }
       console.log(`site: ${BASE_URL}`);
       await siteJourney(browser);
+      // Locally /console is the static preview console and the React console is at /app/; a deployment serves the
+      // React console at /console, which siteJourney has just covered.
+      if (local) {
+        if (fs.existsSync(path.join(ROOT, 'public/app/index.html'))) await appConsoleJourney(browser, `${BASE_URL}/app/`);
+        else fail('public/app is not built: run "bun run build" first (the React console is part of this suite)');
+      }
     }
     if (ONLY.has('capture')) await captureJourney(browser);
     if (ONLY.has('demo')) await demoJourney(browser);

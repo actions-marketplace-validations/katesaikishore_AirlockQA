@@ -1,7 +1,7 @@
 # GUI smoke results
 
 - Site: local dashboard (public/)
-- Captured: 2026-11-08 07:35 UTC
+- Captured: 2026-11-08 08:09 UTC
 - Driver: Playwright 1.65.0
 
 - AXE: marketing: 0 violations (2 rule groups need manual review).
@@ -15,14 +15,14 @@
 - PASS: axe accessibility audit: console Recorder
 - AXE: console Overview: 0 violations (1 rule groups need manual review).
 - PASS: axe accessibility audit: console Overview
-- AXE: console Runs1: 0 violations (1 rule groups need manual review).
-- PASS: axe accessibility audit: console Runs1
+- AXE: console Runs: 0 violations (1 rule groups need manual review).
+- PASS: axe accessibility audit: console Runs
 - AXE: console Tests: 0 violations (3 rule groups need manual review).
 - PASS: axe accessibility audit: console Tests
 - AXE: console Analytics: 0 violations (1 rule groups need manual review).
 - PASS: axe accessibility audit: console Analytics
-- AXE: console Self-healing3: 0 violations (1 rule groups need manual review).
-- PASS: axe accessibility audit: console Self-healing3
+- AXE: console Self-healing: 0 violations (1 rule groups need manual review).
+- PASS: axe accessibility audit: console Self-healing
 - AXE: console Checkpoints: 0 violations (1 rule groups need manual review).
 - PASS: axe accessibility audit: console Checkpoints
 - AXE: console Request policy: 0 violations (1 rule groups need manual review).
@@ -41,12 +41,48 @@
 - PASS: axe accessibility audit: console Usage & keys
 - AXE: console Settings: 0 violations (1 rule groups need manual review).
 - PASS: axe accessibility audit: console Settings
-- PASS: all 15 console sections open with a heading, content and no page errors
+- PASS: console: all 15 sections open with a heading, content and no page errors
 - PASS: run search opens the runs view
 - AXE: console mobile: 0 violations (1 rule groups need manual review).
 - PASS: axe accessibility audit: console mobile
-- PASS: no sideways scrolling at 390px in all 15 sections
+- PASS: console: no sideways scrolling at 390px in all 15 sections
 - PASS: signing out returns to the sign-in page
+- AXE: app Recorder: 0 violations (1 rule groups need manual review).
+- PASS: axe accessibility audit: app Recorder
+- AXE: app Overview: 0 violations (1 rule groups need manual review).
+- PASS: axe accessibility audit: app Overview
+- AXE: app Runs: 0 violations (1 rule groups need manual review).
+- PASS: axe accessibility audit: app Runs
+- AXE: app QA: 0 violations (1 rule groups need manual review).
+- PASS: axe accessibility audit: app QA
+- AXE: app Tests: 0 violations (3 rule groups need manual review).
+- PASS: axe accessibility audit: app Tests
+- AXE: app Analytics: 0 violations (1 rule groups need manual review).
+- PASS: axe accessibility audit: app Analytics
+- AXE: app Self-healing: 0 violations (1 rule groups need manual review).
+- PASS: axe accessibility audit: app Self-healing
+- AXE: app Checkpoints: 0 violations (1 rule groups need manual review).
+- PASS: axe accessibility audit: app Checkpoints
+- AXE: app Request policy: 0 violations (1 rule groups need manual review).
+- PASS: axe accessibility audit: app Request policy
+- AXE: app Evidence: 0 violations (1 rule groups need manual review).
+- PASS: axe accessibility audit: app Evidence
+- AXE: app Time warp: 0 violations (1 rule groups need manual review).
+- PASS: axe accessibility audit: app Time warp
+- AXE: app Fixtures: 0 violations (1 rule groups need manual review).
+- PASS: axe accessibility audit: app Fixtures
+- AXE: app Chaos report: 0 violations (1 rule groups need manual review).
+- PASS: axe accessibility audit: app Chaos report
+- AXE: app Bug capsules: 0 violations (1 rule groups need manual review).
+- PASS: axe accessibility audit: app Bug capsules
+- AXE: app Usage & keys: 0 violations (1 rule groups need manual review).
+- PASS: axe accessibility audit: app Usage & keys
+- AXE: app Settings: 0 violations (1 rule groups need manual review).
+- PASS: axe accessibility audit: app Settings
+- PASS: app: all 16 sections open with a heading, content and no page errors
+- AXE: app mobile: 0 violations (0 rule groups need manual review).
+- PASS: axe accessibility audit: app mobile
+- PASS: app: no sideways scrolling at 390px in all 16 sections
 - PASS: local dashboard saved a valid five-second Three.js WebM preview
 - AXE: demo-login: 0 violations (0 rule groups need manual review).
 - PASS: axe accessibility audit: demo-login
@@ -55,4 +91,4 @@
 - PASS: axe accessibility audit: demo-checkout
 - PASS: demo login, invalid and valid coupons, total calculation, and raw-phantom rejection
 
-- Result: PASS (30 checks)
+- Result: PASS (49 checks)

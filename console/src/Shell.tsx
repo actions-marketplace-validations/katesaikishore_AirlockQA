@@ -252,7 +252,7 @@ export function Footer() {
 
 export function SampleBanner() {
   return (
-    <div className="sample-banner" id="sample-banner" role="note">
+    <div className="sample-banner" id="sample-banner" role="region" aria-label="Sample data notice">
       <strong>Sample data.</strong> Everything in this console is illustrative and does not come from your account. <a href="/login">Sign in</a> to see your real runs.
     </div>
   );
