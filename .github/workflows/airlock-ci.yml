@@ -5,6 +5,10 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+    # Report-only PRs (from the hunt or the report command) do not change code; they do not need browser QA.
+    paths-ignore:
+      - 'qa-hunt/**'
+      - 'qa-reports/**'
 
 jobs:
   airlock-qa:
