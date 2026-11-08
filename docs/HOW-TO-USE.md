@@ -449,6 +449,36 @@ Each run lists its findings with a severity (S1 to S4) and who saw them: **Airlo
 
 Gates: `default` fails only when the build or the health check (smoke) fails; other failing or unrun suites are reported as warnings. `strict` also fails on any suite that failed, did not run or was flaky, and on any first-party S1 or S2 finding. Heuristic leads never fail a gate unless someone promotes them.
 
+### `airlock ai doctor | ask | explain` (AI help with no API key)
+
+Airlock's AI help uses a coding agent that is already installed and signed in on your machine, so you never paste a
+model API key into Airlock. Supported agents, tried in this order with `auto`:
+
+| Agent | Command Airlock runs |
+|---|---|
+| Claude Code | `claude -p --output-format json --permission-mode plan` |
+| Antigravity | `agy -p ... --output-format json --mode plan --sandbox` (installed at `~/.gemini/bin/agy`) |
+| Codex | `codex exec --sandbox read-only --skip-git-repo-check --ephemeral` |
+| Gemini CLI | `gemini -o json --approval-mode default` |
+
+Each agent runs in a new, empty temporary folder, in its read-only or plan mode, and is told to answer from the
+prompt alone. It cannot edit your files or run commands. Whatever the agent's own account and data policy is applies
+to the text Airlock sends it.
+
+```bash
+airlock ai doctor --probe          # which agents are installed, and whether each one answers
+airlock ai ask "why would next start ignore PORT?"
+airlock ai explain latest          # why the most recent failed cloud QA run failed, and the smallest fix
+airlock ai explain run_qa_123 --agent agy
+airlock ai explain latest --show-prompt   # see exactly what would be sent, send nothing
+```
+
+- `--agent auto|claude|agy|codex|gemini` (or `AIRLOCK_AGENT`) picks the agent. With `auto`, an agent that is missing,
+  signed out or misconfigured is skipped and the next one is tried; if none answers, every reason is printed.
+- `doctor` says how to fix each signed-out agent (for example run `claude` once and sign in).
+- `explain` sends the run's status, phase, suites, gate reasons and findings. Output from your repository's commands
+  is marked as data, and the answer is labelled as an AI suggestion that Airlock has not verified.
+
 ### `airlock audit [bundlePath]`
 Verifies a signed run-evidence bundle (spec **2.0.0**). It recomputes the ledger hash chain and the Merkle root from the blocks embedded in the bundle, then checks a signature that covers **every field** of the bundle (everything except `signature` itself). It exits with code `1` on any failure.
 

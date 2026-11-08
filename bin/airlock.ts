@@ -788,4 +788,37 @@ program
     process.exitCode = run.status === 'SUCCESS' && run.gate?.exitCode === 0 && verifyQaSeal(sealed) ? 0 : 1;
   });
 
+// ==========================================
+// COMMAND: AI (a coding agent already signed in on this machine; no API key)
+// ==========================================
+const ai = program
+  .command('ai')
+  .description('Use a local coding agent (Claude Code, Antigravity, Codex or Gemini CLI) for AI help, with no API key');
+
+ai.command('doctor')
+  .description('Show which local agents are installed; --probe also checks that each one answers')
+  .option('--probe', 'send each installed agent a one-word prompt')
+  .option('--json', 'print JSON')
+  .action((opts) => cloudAction(async () => (await import('../src/ai/commands.js')).aiDoctorCommand({ probe: opts.probe, json: opts.json }))());
+
+ai.command('ask <question...>')
+  .description('Ask the local agent a question (it runs read-only, in an empty folder)')
+  .option('--agent <name>', 'auto, claude, agy (Antigravity), codex or gemini (default: AIRLOCK_AGENT or auto)')
+  .option('--model <model>', 'model name passed to the agent')
+  .action((question: string[], opts) =>
+    cloudAction(async () => (await import('../src/ai/commands.js')).aiAskCommand(question.join(' '), { agent: opts.agent, model: opts.model }))()
+  );
+
+ai.command('explain <qaRunId>')
+  .description('Explain why a cloud QA run failed and suggest the smallest fix ("latest" = most recent failed run)')
+  .option('--agent <name>', 'auto, claude, agy (Antigravity), codex or gemini (default: AIRLOCK_AGENT or auto)')
+  .option('--model <model>', 'model name passed to the agent')
+  .option('--show-prompt', 'print the prompt that would be sent, and send nothing')
+  .option('--api-url <url>', 'Airlock Cloud API base URL')
+  .action((qaRunId: string, opts) =>
+    cloudAction(async () =>
+      (await import('../src/ai/commands.js')).aiExplainCommand(qaRunId, { agent: opts.agent, model: opts.model, showPrompt: opts.showPrompt, apiUrl: opts.apiUrl })
+    )()
+  );
+
 program.parse(process.argv);
