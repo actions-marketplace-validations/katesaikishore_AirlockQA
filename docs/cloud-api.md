@@ -103,6 +103,66 @@ Rules:
 
 `QUEUED`, `RUNNING`, `SUCCESS` (every step passed), `FAILED` (a step failed, the run timed out or the browser failed), `POLICY_VIOLATION` (the service guard refused the target or a redirect to it) and `CANCELLED`.
 
+### QA runs (key or session)
+
+A QA run builds and starts a public GitHub repository at a pushed commit in the staging sandbox, runs the requested
+suites, and stores findings and failure screenshots. It is what `airlock qa` submits. The request body is strict:
+commands are npm script **names**, never shell commands; `${env:NAME}` and real secrets are refused.
+
+| Method and path | Result |
+| :--- | :--- |
+| `POST /v1/qa-runs` | `202 { id, status: "QUEUED" }` |
+| `GET /v1/qa-runs?limit` | `{ runs: [...] }` for this workspace, newest first |
+| `GET /v1/qa-runs/:id` | `{ phase, suites, gate, findings, artifacts, evidence }` |
+| `GET /v1/qa-runs/:id/artifacts` | `{ artifacts: [{ name, size, sha256, contentType, route, note, createdAt }] }` |
+| `GET /v1/qa-runs/:id/artifacts/:name` | The JPEG/PNG bytes, only to the owning workspace; `Cache-Control: no-store` |
+| `GET /v1/qa-analytics` | Findings/hotspots over the workspace's recent QA runs |
+
+`POST /v1/qa-runs` body:
+
+```json
+{
+  "repo": "https://github.com/owner/app",
+  "sha": "0123456789abcdef0123456789abcdef01234567",
+  "branch": "main",
+  "suites": ["smoke", "unit", "e2e", "explore"],
+  "gate": "strict",
+  "scripts": { "start": "start", "test": "test", "test:e2e": "test:e2e" },
+  "healthPath": "/health",
+  "port": 3000,
+  "continueOnFailure": false,
+  "timeoutMinutes": 45
+}
+```
+
+- Only public `https://github.com/<owner>/<repo>` URLs and full 40-character SHAs are accepted. Private repositories are
+  not supported.
+- The service installs dependencies with the package manager named by the lockfile, builds, starts the app on `PORT`,
+  and runs `smoke` first. `unit`, `integration`, `e2e`, `a11y`, `security`, `load` and `explore` run according to the
+  request. `explore` without a `test:explore` script runs Airlock's own checker.
+- A QA run has its own daily quota (`AIRLOCK_QA_RUNS_PER_DAY`, default 5) and timeout. Only one QA run may be queued or
+  running on the shared staging host at a time; concurrent submissions get `429 RATE_LIMITED`.
+- Screenshots are taken by the checker for failing routes (up to six). Their names and SHA-256 are part of the signed
+  seal; the bytes are stored under the service data directory and served only to the owning workspace.
+
+**Run phases:** `DONE`, `BUILD_FAILED`, `DEPLOY_UNHEALTHY`, `TESTS_FAILED`, `SLOT_UNAVAILABLE`, `CANCELLED`.
+
+### Synced local artifacts (key or session)
+
+The CLI encrypts traces, checkpoints, healing logs, fixtures and capsules with `AIRLOCK_SYNC_KEY` before upload. The
+service stores only AES-256-GCM ciphertext and metadata; it never receives the passphrase.
+
+| Method and path | Result |
+| :--- | :--- |
+| `POST /v1/sync/artifacts` | `201 { artifact }`. Body: `{ kind, name, contentType, plaintextSize, sha256, payloadBase64, encrypted: true }`. Kinds: `trace`, `checkpoint`, `healing`, `fixtures`, `capsule`. |
+| `GET /v1/sync/artifacts?limit` | `{ artifacts: [{ id, kind, name, plaintextSize, storedSize, sha256, contentType, encrypted, createdAt }] }` |
+| `GET /v1/sync/artifacts/:id` | The ciphertext bytes (`application/octet-stream`, `no-store`), only to the owning workspace. |
+| `DELETE /v1/sync/artifacts/:id` | `204`; removes the metadata and the ciphertext. |
+
+Limits: 2 MB per artifact, 200 artifacts and 50 MB per workspace. The service cannot decrypt or scan the content; losing
+`AIRLOCK_SYNC_KEY` makes the uploaded artifacts unreadable. These are backups/transfers, not executable fixtures or
+cross-run checkpoints.
+
 ## Evidence
 
 Each finished run has a bundle in the `2.0.0` evidence format, signed with the service's Ed25519 key. Verify it with `airlock audit` and `AIRLOCK_TRUSTED_PUBLIC_KEY` set to the key from `GET /v1/evidence-key`, or with `POST /v1/evidence/verify`. A bundle shows that the recorded ledger was not changed after signing. It does not show that the target application is secure and it is not a compliance assessment.

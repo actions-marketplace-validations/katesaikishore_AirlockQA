@@ -46,6 +46,8 @@ Use a dedicated staging API credential and a disposable test project before addi
 
 ## Capability boundaries
 
+Hosted workflows now have browser-page `warp`, run-scoped `restoreCheckpoint`, same-origin `fixture` and one-click `chaos` observation steps. They still do not provide OS/kernel clocks, VM snapshots, network fault injection or a server-side fixture store.
+
 Coverage is not the same as feature support. The TypeScript repository contains prototypes for browser-context request interception, browser-state checkpointing, browser `Date` offset, fixture replay, diagnostic events, and a chaos report. It does not currently prove guest/OS clock changes, backend/database time synchronization, kernel fault injection, full-process network capture, VM-memory snapshots, multi-tenant cloud isolation, live authentication, or compliance certification. Keep these as explicitly unsupported or simulated until infrastructure and contract tests exist.
 
 The plan follows Playwright's guidance to use retrying assertions and actionability checks for browser tests, and the OWASP Web Security Testing Guide's categories for identity, authorization, session management, input validation, error handling, client-side behavior, and deployment configuration:

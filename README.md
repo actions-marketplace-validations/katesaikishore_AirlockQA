@@ -19,15 +19,16 @@ Read this table before relying on a feature. Each row describes what this reposi
 | Phantom credential substitution | Implemented | Exact string match in request headers and in text request bodies. Other bodies are passed through unchanged. |
 | Request policy (egress rules) | Implemented, scoped | Covers browser-context requests and the standalone HTTP proxy. It is not an operating-system firewall. |
 | Evidence signing and `audit` | Implemented | HMAC-SHA256 or Ed25519. The SOC 2 mapping fields are `NOT_ASSESSED`; this is not a certification. |
-| Browser checkpoints and `fork` | Implemented | Saves cookies, storage and DOM hash, then restores them into new contexts. It does not capture process or VM memory. |
-| `chaos` | Prototype | Clicks one action and reports whether the observed request carried an idempotency key. It does not inject faults. |
-| `warp` | Prototype | The CLI command has no effect on the browser clock. The runner API can offset `Date` on one page. |
+| Browser checkpoints and `fork` | Implemented | Saves cookies, storage and DOM hash, restores them in this run with `restoreCheckpoint` (or into new contexts with `fork`). It does not capture process or VM memory. |
+| `chaos` | Observation only | The CLI and a `chaos` workflow step click once and report whether the observed mutation carried an idempotency key. No replay and no fault injection. |
+| `warp` | Implemented, browser-page only | A `warp` workflow step offsets `Date` on the page in local and hosted runs. The standalone CLI command is still a no-op. Servers, databases, cron and TLS keep real time. |
 | `teleport` | Prototype | Generates a repro spec from a capsule file. It does not replay the capsule. |
 | Self-healing locators | Partial | `airlockLocator` accepts an optional healer for a fallback tier. Compiled specs do not pass one, so no healing runs by default. `healer.datasetDir` is used by the dataset command and console; `healer.confidenceThreshold` applies only when a caller passes the runner's healer. `healer.autoHeal` and `healer.saveMutations` are not read yet. |
 | `serve` (web console) | Partial | Evidence and checkpoint views read local files. Run lists and metrics are sample data. |
 | `qa` (hosted QA on a public repository) | Implemented (hosted) | Builds and starts a pushed commit of a public GitHub repo, runs smoke/unit/e2e/explore (and a11y/security/load when scripts are named), stores findings and failure screenshots, and seals the result. Public repos only; no env/secrets yet; one QA run at a time on the shared staging host. |
 | `qa report` | Implemented | Downloads a run, its findings and screenshots, writes `report.md`, can comment on a PR or open a report PR in a repository you own. |
 | `ai` (local agent help) | Implemented | `airlock ai ask/explain/doctor` uses an already-signed-in local coding agent; no model API key is stored by Airlock. |
+| Browser fixtures (`fixture` workflow step) | Implemented, browser-only | Serves a same-origin, method-specific response in the page; no upstream request. No server-side fixture store. |
 | `sync` (encrypted local data) | Implemented | Uploads traces, checkpoints, healing logs, fixtures and capsules, encrypted on the client with `AIRLOCK_SYNC_KEY`. The server stores only ciphertext and metadata; 200 artifacts / 50 MB per workspace, 2 MB each. |
 | Airlock Cloud (`login`, `test --cloud`, `usage`, `runs`) | Implemented (hosted) | A hosted service runs declarative workflows in an isolated browser and returns signed evidence. The free plan allows 100 runs per workspace per day. The service is operated separately and is not open source. |
 
@@ -243,6 +244,7 @@ Install a browser with `bunx playwright install chromium`. The CLI uses `AIRLOCK
 - [QA on GitHub](docs/qa-github.md): the pull-request workflow, the report command and its limits.
 - [Go-to-market](docs/go-to-market.md): the open-source-to-cloud plan and the guardrails for public reports.
 - [Encrypted local sync](docs/local-sync.md): what `airlock sync` uploads, how the key works and its limits.
+- [Product boundary](docs/product-boundary.md): exactly what runs in the hosted service and what stays local.
 - [Product claims and implementation plan](docs/five-impossible-moats-implementation-plan.md): the status of each advertised capability.
 
 ## License

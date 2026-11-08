@@ -298,9 +298,15 @@ Execution stops at the first failing step and the command exits with code 1.
 | `expectVisible` | `selector` | the element is not visible |
 | `expectText` | `selector`, `text` | the element's text does not contain `text` |
 | `checkpoint` | `name` | the checkpoint cannot be saved (used later by `airlock fork`) |
+| `restoreCheckpoint` | `name` | the checkpoint does not exist in this run |
+| `warp` | `duration` (for example `+14 days`) | the page clock cannot be offset |
+| `fixture` | `url` (same-origin), `method`, `status`, `headers`, `body` | the route cannot be registered |
+| `chaos` | `selector`, optional `endpointPattern` | the click cannot be performed |
 | `request` | `url`, `method`, `headers`, `body`, `phantomSecret`, `expectStatus` | the status differs from `expectStatus`, or the request errors |
 
 `request` steps are sent with `fetch` from the page, so they pass through the gateway. Use `expectStatus: 403` to prove that a destructive endpoint is blocked. `${env:NAME}` in any string is replaced with the environment variable; an unset variable fails the step. Step logs show the uninterpolated value.
+
+`warp`, `restoreCheckpoint`, `fixture` and `chaos` also run in hosted workflows. `warp` moves only the page's `Date` APIs (not servers, databases or TLS). `restoreCheckpoint` restores a checkpoint saved earlier in the same run; hosted runs do not keep it after the run. `fixture` serves a same-origin response and sends no upstream request; off-host fixture URLs are rejected. `chaos` observes one click for an idempotency key; it does not replay requests or inject faults.
 
 The step timeout is `compiler.defaultTimeoutMs`.
 
