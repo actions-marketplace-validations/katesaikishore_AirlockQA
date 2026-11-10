@@ -12,7 +12,7 @@ PREVIEW
 </span>
 </div>
 <p style={{"margin": "6px 0px 0px", "maxWidth": "780px", "fontSize": "15.5px", "color": "rgb(90, 105, 97)"}}>
-When something breaks in a test environment, a capsule keeps the last moments before the error. AirlockQA turns it into a Playwright test that reproduces the bug.
+When something breaks in a test environment, a capsule keeps the last moments before the error. QAFind turns it into a Playwright test that reproduces the bug.
 </p>
 <div role="note" style={{"marginTop": "18px", "display": "flex", "gap": "12px", "alignItems": "flex-start", "padding": "14px 16px", "border": "1px solid rgb(243, 211, 174)", "borderRadius": "14px", "background": "rgb(255, 251, 245)"}}>
 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9A4A07" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{"flex": "0 0 auto", "marginTop": "1px"}}>
@@ -422,7 +422,7 @@ TypeError: Cannot read properties of undefined (reading 'total') · checkout.js:
 Repro test
 </h3>
 <p style={{"margin": "2px 0px 0px", "font": "500 12.5px \"JetBrains Mono\", monospace", "color": "rgb(169, 196, 182)"}}>
-npx airlock teleport{" "}
+npx qafind teleport{" "}
 <span className="sc-interp">
 cap_7f2a91
 </span>

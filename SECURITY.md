@@ -2,12 +2,12 @@
 
 ## Reporting a vulnerability
 
-Email security@qbrin.cloud with steps to reproduce and the affected version. Do not open a public issue.
+Email security@qafind.si with steps to reproduce and the affected version. Do not open a public issue.
 We aim to acknowledge within two business days.
 
 ## Scope
 
-This repository contains the local/CI CLI. The hosted service at qbrin.cloud is operated separately and is
+This repository contains the local/CI CLI. The hosted service at qafind.si is operated separately and is
 not part of this repository. Please do not test against systems you do not own or have permission to test.
 
 ## Expectations

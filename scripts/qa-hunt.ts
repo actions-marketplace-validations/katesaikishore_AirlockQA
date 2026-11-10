@@ -1,13 +1,13 @@
 #!/usr/bin/env bun
 /**
- * Run Airlock QA against a list of public repositories, one at a time, and write a report for each.
+ * Run QAFind against a list of public repositories, one at a time, and write a report for each.
  *
  *   bun scripts/qa-hunt.ts --repos scripts/qa-hunt-repos.txt --max 5 --suites smoke,explore
  *   bun scripts/qa-hunt.ts --max 3 --create-pr
  *
  * The service runs one QA job at a time; this script waits for each. A failed build or a failed suite is a result,
- * not an exception: it is written into the report and the next repository is tried. Screenshots from Airlock's own
- * checker are downloaded by `airlock qa report`.
+ * not an exception: it is written into the report and the next repository is tried. Screenshots from QAFind's own
+ * checker are downloaded by `qafind report`.
  */
 import { execFile } from 'node:child_process';
 import * as fs from 'node:fs';
@@ -113,14 +113,14 @@ async function createReportPr(out: string, statuses: Array<{ repo: string; statu
   const repo = await run('gh', ['repo', 'view', '--json', 'nameWithOwner', '--jq', '.nameWithOwner'], root);
   const base = await run('gh', ['repo', 'view', repo, '--json', 'defaultBranchRef', '--jq', '.defaultBranchRef.name'], root);
   const stamp = new Date().toISOString().slice(0, 16).replace(/[-:T]/g, ''); // YYYYMMDDHHMM
-  const branch = `airlock-qa/hunt-${stamp}`;
+  const branch = `qafind/hunt-${stamp}`;
   await run('git', ['switch', '-c', branch], root);
   await run('git', ['add', '--', rel], root);
   // CI runners start with no git identity; do not fail the report PR because of it.
-  await run('git', ['-c', 'user.name=Airlock QA', '-c', 'user.email=qa@qbrin.cloud', 'commit', '-m', `qa: Airlock QA hunt for ${new Date().toISOString().slice(0, 10)}`], root);
+  await run('git', ['-c', 'user.name=QAFind', '-c', 'user.email=qa@qafind.si', 'commit', '-m', `qa: QAFind hunt for ${new Date().toISOString().slice(0, 10)}`], root);
   await run('git', ['push', '-u', 'origin', 'HEAD'], root);
   const body = [
-    'Automated Airlock QA hunt over public repositories.',
+    'Automated QAFind hunt over public repositories.',
     '',
     '| Repository | Status | Run |',
     '| :--- | :--- | :--- |',
@@ -130,7 +130,7 @@ async function createReportPr(out: string, statuses: Array<{ repo: string; statu
   ].join('\n');
   const bodyFile = path.join(out, 'PR_BODY.md');
   fs.writeFileSync(bodyFile, body + '\n');
-  const url = await run('gh', ['pr', 'create', '--repo', repo, '--base', base, '--head', branch, '--title', `Airlock QA hunt: ${statuses.length} repositories`, '--body-file', bodyFile], root);
+  const url = await run('gh', ['pr', 'create', '--repo', repo, '--base', base, '--head', branch, '--title', `QAFind hunt: ${statuses.length} repositories`, '--body-file', bodyFile], root);
   process.stdout.write(`PR: ${url}\n`);
 }
 
@@ -139,10 +139,10 @@ async function main(): Promise<void> {
   const repos = readRepos(args.repos);
   if (repos.length === 0) throw new Error(`no repositories in ${args.repos}`);
   const auth = resolveCloudAuth({});
-  if (!auth) throw new Error('Not signed in. Run "airlock login" (or set AIRLOCK_API_KEY) first.');
+  if (!auth) throw new Error('Not signed in. Run "qafind login" (or set QAFIND_API_KEY) first.');
   const target: QaTarget = { apiUrl: auth.apiUrl, apiKey: auth.apiKey };
   fs.mkdirSync(args.out, { recursive: true });
-  const summary: string[] = ['# Airlock QA hunt', '', `Run at ${new Date().toISOString()}`, '', '| Repository | Status | Phase | Findings | Report |', '| :--- | :--- | :--- | :--- | :--- |'];
+  const summary: string[] = ['# QAFind hunt', '', `Run at ${new Date().toISOString()}`, '', '| Repository | Status | Phase | Findings | Report |', '| :--- | :--- | :--- | :--- | :--- |'];
   const statuses: Array<{ repo: string; status: string; id: string }> = [];
   let used = 0;
   for (const repo of repos) {

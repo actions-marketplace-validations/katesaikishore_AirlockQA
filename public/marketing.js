@@ -1,4 +1,4 @@
-// AirlockQA Marketing Site - Interactive Logic
+// QAFind Marketing Site - Interactive Logic
 document.addEventListener('DOMContentLoaded', () => {
   const root = document.querySelector('.al');
   if (!root) return;
@@ -64,7 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // 4. Copy to Clipboard
   document.querySelectorAll('[data-copy-target]').forEach(btn => {
     btn.addEventListener('click', async () => {
-      const textToCopy = btn.getAttribute('data-copy-target') || 'npm install --save-dev airlockqa';
+      const textToCopy = btn.getAttribute('data-copy-target') || 'npm install --save-dev qafind';
       try {
         if (navigator.clipboard) {
           await navigator.clipboard.writeText(textToCopy);

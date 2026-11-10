@@ -8,7 +8,7 @@ import { loadConfig } from '../src/config/loader.js';
 import { TraceRecorder } from '../src/compiler/trace-recorder.js';
 import { AstGenerator } from '../src/compiler/ast-generator.js';
 import { InteractionRecorder, REDACTED_VALUE } from '../src/compiler/interaction-recorder.js';
-import { AirlockRunner } from '../src/runner/airlock-runner.js';
+import { QAFindRunner } from '../src/runner/qafind-runner.js';
 import { executeWorkflow } from '../src/runner/workflow-executor.js';
 import { loadWorkflow, WorkflowStepSchema } from '../src/config/workflow-schema.js';
 import { runPlaywrightSpecs, type LocalTestRunResult } from '../src/router/local-test-runner.js';
@@ -32,8 +32,8 @@ const packageVersion = (() => {
 const program = new Command();
 
 program
-  .name('airlock')
-  .description('AirlockQA: Zero-Trust, Self-Compiling, Time-Traveling AI QA Engine')
+  .name('qafind')
+  .description('QAFind: Zero-Trust, Self-Compiling, Time-Traveling AI QA Engine')
   .version(packageVersion);
 
 // ==========================================
@@ -41,17 +41,17 @@ program
 // ==========================================
 program
   .command('init')
-  .description('Initialize AirlockQA configuration and sample policies')
+  .description('Initialize QAFind configuration and sample policies')
   .action(() => {
     logger.banner();
-    const configPath = path.resolve(process.cwd(), 'airlock.config.json');
+    const configPath = path.resolve(process.cwd(), 'qafind.config.json');
     if (fs.existsSync(configPath)) {
-      logger.warn('airlock.config.json already exists in this directory');
+      logger.warn('qafind.config.json already exists in this directory');
       return;
     }
 
     const sampleConfig = {
-      projectName: 'Acme SaaS Airlock QA',
+      projectName: 'Acme SaaS QAFind',
       baseUrl: 'http://localhost:3900',
       browser: {
         headless: true,
@@ -109,28 +109,28 @@ program
       healer: {
         autoHeal: true,
         confidenceThreshold: 0.8,
-        datasetDir: './.airlock/dataset',
+        datasetDir: './.qafind/dataset',
         saveMutations: true,
       },
       forker: {
-        checkpointsDir: './.airlock/checkpoints',
+        checkpointsDir: './.qafind/checkpoints',
         maxParallelForks: 5,
       },
       // signingKey is intentionally left unset; supply it via config or environment (see docs).
       compliance: {
-        outputDir: './.airlock/compliance',
+        outputDir: './.qafind/compliance',
         generateHtmlReport: true,
       },
     };
 
     writeJsonFile(configPath, sampleConfig);
-    ensureDir('./.airlock/checkpoints');
-    ensureDir('./.airlock/compliance');
-    ensureDir('./.airlock/dataset');
-    ensureDir('./.airlock/traces');
+    ensureDir('./.qafind/checkpoints');
+    ensureDir('./.qafind/compliance');
+    ensureDir('./.qafind/dataset');
+    ensureDir('./.qafind/traces');
     ensureDir('./examples/tests');
 
-    logger.success('Initialized AirlockQA workspace successfully: airlock.config.json created');
+    logger.success('Initialized QAFind workspace successfully: qafind.config.json created');
   });
 
 // ==========================================
@@ -140,7 +140,7 @@ program
   .command('explore [url]')
   .description('Open a browser and record your clicks, typing, key presses and selections into a trace')
   .option('-n, --name <name>', 'Suite name for the trace (default: derived from the URL host)')
-  .option('-o, --out <path>', 'Trace output path (default: .airlock/traces/<name>-trace.json)')
+  .option('-o, --out <path>', 'Trace output path (default: .qafind/traces/<name>-trace.json)')
   .option('--output <path>', 'Alias for --out')
   .option('--headless', 'Record without a visible window (for scripted sessions)')
   .action(async (urlArg, opts) => {
@@ -148,7 +148,7 @@ program
     const config = loadConfig();
     const targetUrl = urlArg || config.baseUrl;
     const suiteName = opts.name || suiteNameFromUrl(targetUrl);
-    const tracePath = path.resolve(process.cwd(), opts.out || opts.output || `.airlock/traces/${suiteName}-trace.json`);
+    const tracePath = path.resolve(process.cwd(), opts.out || opts.output || `.qafind/traces/${suiteName}-trace.json`);
 
     logger.moat(2, 'Recording Session', `Opening ${targetUrl}. Use the browser; close the window or press Ctrl+C here to save the trace.`);
 
@@ -199,7 +199,7 @@ program
     if (actions === 0) {
       logger.warn('No interactions were captured.');
     } else {
-      logger.info(`Next: airlock compile ${path.relative(process.cwd(), tracePath)}`);
+      logger.info(`Next: qafind compile ${path.relative(process.cwd(), tracePath)}`);
     }
     process.exit(process.exitCode ?? 0);
   });
@@ -249,7 +249,7 @@ program
       fs.writeFileSync(outPath, compiledCode, 'utf8');
 
       logger.success(`Compiled ${trace.steps.length} trace steps to ${outPath}`);
-      logger.info(`Run it with: airlock test --local ${path.relative(process.cwd(), outPath)}`);
+      logger.info(`Run it with: qafind test --local ${path.relative(process.cwd(), outPath)}`);
     } catch (err) {
       logger.error(`Compilation failed: ${err instanceof Error ? err.message : String(err)}`);
       process.exitCode = 1;
@@ -261,11 +261,11 @@ program
 // ==========================================
 program
   .command('test [specPath]')
-  .description('Run spec files locally with Playwright Test, or submit a run request to Airlock Cloud')
+  .description('Run spec files locally with Playwright Test, or submit a run request to QAFind Cloud')
   .option('-l, --local', 'Run locally without submitting to a Cloud API')
-  .option('-c, --cloud', 'Submit a run request to Airlock Cloud (requires AIRLOCK_API_KEY)')
+  .option('-c, --cloud', 'Submit a run request to QAFind Cloud (requires QAFIND_API_KEY)')
   .option('-u, --url <url>', 'Target base URL')
-  .option('-s, --suite <name>', 'Suite name sent to Airlock Cloud (default: spec file name, then projectName)')
+  .option('-s, --suite <name>', 'Suite name sent to QAFind Cloud (default: spec file name, then projectName)')
   .option('-w, --workflow <file>', 'Cloud: JSON file with the workflow to run (default: the config workflow)')
   .option('--no-wait', 'Cloud: submit the run and exit without waiting for the result')
   .option('--timeout <seconds>', 'Cloud: how long to wait for the result', '600')
@@ -301,7 +301,7 @@ program
 // ==========================================
 program
   .command('run [specPath]')
-  .description('Run the workflow defined in airlock.config.json (or a spec file) and generate run evidence')
+  .description('Run the workflow defined in qafind.config.json (or a spec file) and generate run evidence')
   .option('-u, --url <url>', 'Target base URL')
   .option('-w, --workflow <file>', 'JSON file containing a workflow (instead of the "workflow" key in the config)')
   .action(async (specPath, opts) => {
@@ -323,7 +323,7 @@ program
 
       const workflow = loadWorkflow(opts.workflow);
       if (!workflow) {
-        logger.error('No workflow to run. Add a "workflow" section to airlock.config.json, pass --workflow <file>, or pass a spec path.');
+        logger.error('No workflow to run. Add a "workflow" section to qafind.config.json, pass --workflow <file>, or pass a spec path.');
         process.exitCode = 1;
         return;
       }
@@ -333,7 +333,7 @@ program
         logger.info(`  Secret [${name}]: browser sees placeholder '${secret.phantom}'`);
       }
 
-      const runner = new AirlockRunner(config);
+      const runner = new QAFindRunner(config);
       const browser = await chromium.launch({
         executablePath: config.browser?.executablePath,
         headless: config.browser?.headless,
@@ -393,7 +393,7 @@ program
         workers: opts.workers ? parseInt(opts.workers, 10) : undefined,
       });
 
-      const runner = new AirlockRunner(config);
+      const runner = new QAFindRunner(config);
       const browser = await chromium.launch({
         executablePath: config.browser?.executablePath,
         headless: config.browser?.headless,
@@ -439,7 +439,7 @@ program
     const config = loadConfig();
     const targetPath = bundlePathArg
       ? path.resolve(process.cwd(), bundlePathArg)
-      : path.resolve(process.cwd(), config.compliance?.outputDir || './.airlock/compliance', 'latest-attestation.json');
+      : path.resolve(process.cwd(), config.compliance?.outputDir || './.qafind/compliance', 'latest-attestation.json');
 
     if (!fs.existsSync(targetPath)) {
       logger.error(`Evidence bundle not found at: ${targetPath}`);
@@ -462,9 +462,9 @@ program
     logger.info(`Signing: ${shown(bundle.signingAlgorithm)} (key ${shown(bundle.publicKeyOrKeyId)})`);
     logger.info(`Merkle root: ${shown(bundle.merkleRoot)}`);
 
-    // HMAC needs the shared secret. For Ed25519 the configured key (or AIRLOCK_TRUSTED_PUBLIC_KEY) pins the signer.
+    // HMAC needs the shared secret. For Ed25519 the configured key (or QAFIND_TRUSTED_PUBLIC_KEY) pins the signer.
     let verifyKey: string | undefined;
-    const trustedPublicKey = process.env.AIRLOCK_TRUSTED_PUBLIC_KEY || undefined;
+    const trustedPublicKey = process.env.QAFIND_TRUSTED_PUBLIC_KEY || undefined;
     try {
       const signing = resolveSigningKey(config.compliance?.signingKey);
       if (signing.isDevKey) {
@@ -581,7 +581,7 @@ program
 
       const { ChaosHunter } = await import('../src/chaos/chaos-hunter.js');
       const hunter = new ChaosHunter();
-      const runner = new AirlockRunner(config);
+      const runner = new QAFindRunner(config);
       const browser = await chromium.launch({
         executablePath: config.browser?.executablePath,
         headless: config.browser?.headless,
@@ -700,7 +700,7 @@ function loadChaosFile(file: string): z.infer<typeof ChaosFileSchema> {
 
 
 // ==========================================
-// COMMANDS: AIRLOCK CLOUD ACCOUNT (login, logout, whoami, usage, runs)
+// COMMANDS: QAFIND CLOUD ACCOUNT (login, logout, whoami, usage, runs)
 // ==========================================
 function cloudAction(handler: () => Promise<void> | void): () => Promise<void> {
   return async () => {
@@ -715,36 +715,36 @@ function cloudAction(handler: () => Promise<void> | void): () => Promise<void> {
 
 program
   .command('login')
-  .description('Save an Airlock Cloud API key on this machine (create one in the console under CI/CD & API)')
-  .option('--key <key>', 'API key (prefer the hidden prompt or AIRLOCK_API_KEY; command-line values land in shell history)')
-  .option('--api-url <url>', 'Airlock Cloud API base URL (default: AIRLOCK_CLOUD_URL or https://api.qbrin.cloud)')
+  .description('Save an QAFind Cloud API key on this machine (create one in the console under CI/CD & API)')
+  .option('--key <key>', 'API key (prefer the hidden prompt or QAFIND_API_KEY; command-line values land in shell history)')
+  .option('--api-url <url>', 'QAFind Cloud API base URL (default: QAFIND_CLOUD_URL or https://api.qafind.si)')
   .action((opts) => cloudAction(async () => (await import('../src/router/cloud-commands.js')).loginCommand({ key: opts.key, apiUrl: opts.apiUrl }))());
 
 program
   .command('logout')
-  .description('Remove the saved Airlock Cloud API key from this machine')
+  .description('Remove the saved QAFind Cloud API key from this machine')
   .action(() => cloudAction(async () => (await import('../src/router/cloud-commands.js')).logoutCommand())());
 
 program
   .command('whoami')
-  .description('Show which Airlock Cloud key and plan this machine uses')
-  .option('--api-url <url>', 'Airlock Cloud API base URL')
+  .description('Show which QAFind Cloud key and plan this machine uses')
+  .option('--api-url <url>', 'QAFind Cloud API base URL')
   .action((opts) => cloudAction(async () => (await import('../src/router/cloud-commands.js')).whoamiCommand({ apiUrl: opts.apiUrl }))());
 
 program
   .command('usage')
-  .description('Show today\'s Airlock Cloud run usage and limits')
+  .description('Show today\'s QAFind Cloud run usage and limits')
   .option('--json', 'Print the raw JSON')
-  .option('--api-url <url>', 'Airlock Cloud API base URL')
+  .option('--api-url <url>', 'QAFind Cloud API base URL')
   .action((opts) => cloudAction(async () => (await import('../src/router/cloud-commands.js')).usageCommand({ json: opts.json, apiUrl: opts.apiUrl }))());
 
 program
   .command('runs [runId]')
-  .description('List recent Airlock Cloud runs, or show one run with its steps')
+  .description('List recent QAFind Cloud runs, or show one run with its steps')
   .option('-n, --limit <count>', 'How many runs to list (max 100)', '20')
   .option('--status <status>', 'Only list runs with this status (for example FAILED)')
   .option('--json', 'Print the raw JSON')
-  .option('--api-url <url>', 'Airlock Cloud API base URL')
+  .option('--api-url <url>', 'QAFind Cloud API base URL')
   .action((runId, opts) =>
     cloudAction(async () =>
       (await import('../src/router/cloud-commands.js')).runsCommand(runId, { limit: opts.limit, status: opts.status, json: opts.json, apiUrl: opts.apiUrl })
@@ -756,7 +756,7 @@ program
 // ==========================================
 const qa = program
   .command('qa')
-  .description('Run QA on the pushed commit in Airlock Cloud. --dry-run prints the request without submitting it; --wait waits for the gate verdict.')
+  .description('Run QA on the pushed commit in QAFind Cloud. --dry-run prints the request without submitting it; --wait waits for the gate verdict.')
   .option('--dry-run', 'print the request that would be submitted, submit nothing')
   .option('--suites <list>', 'comma-separated suites (unit,integration,e2e,smoke,explore,a11y,security,load)', 'unit')
   .option('--gate <mode>', 'strict or default', 'default')
@@ -795,7 +795,7 @@ const qa = program
     const { submitQaRun, waitForQaRun } = await import('../src/router/qa-cli.js');
     const auth = resolveCloudAuth({});
     if (!auth) {
-      logger.error('Not signed in. Run "airlock login" (or set AIRLOCK_API_KEY) to submit a QA run.');
+      logger.error('Not signed in. Run "qafind login" (or set QAFIND_API_KEY) to submit a QA run.');
       process.exitCode = 1;
       return;
     }
@@ -826,7 +826,7 @@ qa
   .option('--repo <owner/repo>', 'GitHub repository for --pr or --create-pr (default: the current repository)')
   .option('--create-pr', 'commit the report to a branch and open a pull request in the current repository')
   .option('--title <title>', 'title for --create-pr')
-  .option('--api-url <url>', 'Airlock Cloud API base URL')
+  .option('--api-url <url>', 'QAFind Cloud API base URL')
   .action((runId: string, opts) =>
     cloudAction(async () => (await import('../src/qa/report-command.js')).qaReportCommand(runId, opts))()
   );
@@ -836,17 +836,17 @@ qa
 // ==========================================
 const sync = program
   .command('sync')
-  .description('Upload traces, checkpoints, healing logs, fixtures and capsules to your Airlock Cloud account, encrypted on this machine')
+  .description('Upload traces, checkpoints, healing logs, fixtures and capsules to your QAFind Cloud account, encrypted on this machine')
   .option('--kind <list>', 'comma-separated: trace,checkpoint,healing,fixtures,capsule', 'trace,checkpoint,healing,fixtures,capsule')
   .option('--dry-run', 'list what would be uploaded, send nothing')
   .option('--json', 'print JSON')
-  .option('--api-url <url>', 'Airlock Cloud API base URL')
+  .option('--api-url <url>', 'QAFind Cloud API base URL')
   .action((opts) =>
     cloudAction(async () => {
       const { resolveCloudAuth } = await import('../src/router/cloud-credentials.js');
       const { syncKeyFromEnv, uploadLocalArtifacts, SYNC_KINDS } = await import('../src/router/sync-command.js');
       const auth = resolveCloudAuth({ apiUrl: opts.apiUrl });
-      if (!auth) throw new Error('Not signed in. Run "airlock login" (or set AIRLOCK_API_KEY) first.');
+      if (!auth) throw new Error('Not signed in. Run "qafind login" (or set QAFIND_API_KEY) first.');
       const kinds = String(opts.kind).split(',').map((value: string) => value.trim()).filter(Boolean);
       for (const kind of kinds) if (!(SYNC_KINDS as readonly string[]).includes(kind)) throw new Error(`unknown sync kind: ${kind}`);
       const key = opts.dryRun ? undefined : syncKeyFromEnv();
@@ -867,13 +867,13 @@ sync
   .description('List synced local artifacts for this account')
   .option('--limit <n>', '1 to 100', '50')
   .option('--json', 'print JSON')
-  .option('--api-url <url>', 'Airlock Cloud API base URL')
+  .option('--api-url <url>', 'QAFind Cloud API base URL')
   .action((opts) =>
     cloudAction(async () => {
       const { resolveCloudAuth } = await import('../src/router/cloud-credentials.js');
       const { listSyncArtifacts } = await import('../src/router/sync-command.js');
       const auth = resolveCloudAuth({ apiUrl: opts.apiUrl });
-      if (!auth) throw new Error('Not signed in. Run "airlock login" (or set AIRLOCK_API_KEY) first.');
+      if (!auth) throw new Error('Not signed in. Run "qafind login" (or set QAFIND_API_KEY) first.');
       const artifacts = await listSyncArtifacts({ apiUrl: auth.apiUrl, apiKey: auth.apiKey }, Number(opts.limit) || 50);
       // Commander's parent sync command also declares --json; use the raw argv as a fallback so
       // `sync list --json` means JSON regardless of which command object parsed the flag.
@@ -888,14 +888,14 @@ sync
   .command('download <id>')
   .description('Download and decrypt one synced artifact')
   .option('--out <file>', 'where to write the decrypted file')
-  .option('--api-url <url>', 'Airlock Cloud API base URL')
+  .option('--api-url <url>', 'QAFind Cloud API base URL')
   .action((id: string, opts) =>
     cloudAction(async () => {
       const { resolveCloudAuth } = await import('../src/router/cloud-credentials.js');
       const { syncKeyFromEnv, downloadSyncArtifact } = await import('../src/router/sync-command.js');
       if (!opts.out) throw new Error('--out is required');
       const auth = resolveCloudAuth({ apiUrl: opts.apiUrl });
-      if (!auth) throw new Error('Not signed in. Run "airlock login" (or set AIRLOCK_API_KEY) first.');
+      if (!auth) throw new Error('Not signed in. Run "qafind login" (or set QAFIND_API_KEY) first.');
       await downloadSyncArtifact({ apiUrl: auth.apiUrl, apiKey: auth.apiKey }, id, syncKeyFromEnv(), opts.out);
     })()
   );
@@ -915,7 +915,7 @@ ai.command('doctor')
 
 ai.command('ask <question...>')
   .description('Ask the local agent a question (it runs read-only, in an empty folder)')
-  .option('--agent <name>', 'auto, claude, agy (Antigravity), codex or gemini (default: AIRLOCK_AGENT or auto)')
+  .option('--agent <name>', 'auto, claude, agy (Antigravity), codex or gemini (default: QAFIND_AGENT or auto)')
   .option('--model <model>', 'model name passed to the agent')
   .action((question: string[], opts) =>
     cloudAction(async () => (await import('../src/ai/commands.js')).aiAskCommand(question.join(' '), { agent: opts.agent, model: opts.model }))()
@@ -923,10 +923,10 @@ ai.command('ask <question...>')
 
 ai.command('explain <qaRunId>')
   .description('Explain why a cloud QA run failed and suggest the smallest fix ("latest" = most recent failed run)')
-  .option('--agent <name>', 'auto, claude, agy (Antigravity), codex or gemini (default: AIRLOCK_AGENT or auto)')
+  .option('--agent <name>', 'auto, claude, agy (Antigravity), codex or gemini (default: QAFIND_AGENT or auto)')
   .option('--model <model>', 'model name passed to the agent')
   .option('--show-prompt', 'print the prompt that would be sent, and send nothing')
-  .option('--api-url <url>', 'Airlock Cloud API base URL')
+  .option('--api-url <url>', 'QAFind Cloud API base URL')
   .action((qaRunId: string, opts) =>
     cloudAction(async () =>
       (await import('../src/ai/commands.js')).aiExplainCommand(qaRunId, { agent: opts.agent, model: opts.model, showPrompt: opts.showPrompt, apiUrl: opts.apiUrl })
@@ -949,7 +949,7 @@ interface AttachCommandOptions {
 function localReporterModule(): string | undefined {
   try {
     const repoRoot = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
-    const candidate = path.join(repoRoot, 'src/testing/airlock-reporter.ts');
+    const candidate = path.join(repoRoot, 'src/testing/qafind-reporter.ts');
     return fs.existsSync(candidate) ? candidate : undefined;
   } catch {
     return undefined;
@@ -958,11 +958,11 @@ function localReporterModule(): string | undefined {
 
 program
   .command('attach [projectDir]')
-  .description('Attach the Airlock reporter to an existing Playwright suite without editing its specs (writes a safe wrapper config)')
+  .description('Attach the QAFind reporter to an existing Playwright suite without editing its specs (writes a safe wrapper config)')
   .option('--config <path>', 'Explicit playwright.config.* path (defaults to auto-detect in projectDir)')
-  .option('--reporter-module <module>', 'Reporter module specifier or absolute path (defaults to the local/installed Airlock reporter)')
-  .option('--output-dir <dir>', 'Directory for reporter manifests (default: .airlock/reports)')
-  .option('--force', 'Replace an existing .airlock/playwright.airlock.config.ts')
+  .option('--reporter-module <module>', 'Reporter module specifier or absolute path (defaults to the local/installed QAFind reporter)')
+  .option('--output-dir <dir>', 'Directory for reporter manifests (default: .qafind/reports)')
+  .option('--force', 'Replace an existing .qafind/playwright.qafind.config.ts')
   .option('--dry-run', 'Print the plan without writing the wrapper config')
   .option('--determinism', 'Also generate network record/replay + fixed-clock fixtures via a tsconfig path alias (no spec changes)')
   .option('--json', 'Print the attach plan as JSON (machine-readable stdout)')
@@ -1012,10 +1012,10 @@ program
       logger.info('Next steps:');
       for (const line of plan.instructions) logger.info(`  • ${line}`);
       logger.info('');
-      logger.info('Then: airlock flake .airlock/reports');
+      logger.info('Then: qafind flake .qafind/reports');
       if (plan.determinism) {
         logger.info('');
-        logger.info('Determinism: seed network once with AIRLOCK_ATTACH_NETWORK=record, commit .airlock/network, then run CI with AIRLOCK_ATTACH_NETWORK=replay.');
+        logger.info('Determinism: seed network once with QAFIND_ATTACH_NETWORK=record, commit .qafind/network, then run CI with QAFIND_ATTACH_NETWORK=replay.');
       }
     } catch (error) {
       logger.error(error instanceof Error ? error.message : String(error));
@@ -1088,7 +1088,7 @@ function renderFlakeTerminal(analysis: {
 
 program
   .command('flake [path]')
-  .description('Aggregate Airlock reporter manifests and report flaky tests with probable causes, owners and quarantine recommendations')
+  .description('Aggregate QAFind reporter manifests and report flaky tests with probable causes, owners and quarantine recommendations')
   .option('--json', 'Print the analysis as JSON (machine-readable stdout)')
   .option('--markdown', 'Print a Markdown report suitable for a PR comment')
   .option('--min-runs <count>', 'Minimum appearances before quarantine is allowed (default 1)')
@@ -1096,21 +1096,21 @@ program
   .option('--owner-map <file>', 'JSON map of test id and/or file to owner')
   .option('--quarantine <file>', 'Write quarantine recommendations as JSON')
   .option('--fail-on-flake', 'Exit 1 when any flaky test is found (for CI)')
-  .option('--ledger-dir <dir>', 'Request ledgers written by the attach determinism fixture (default: sibling .airlock/ledgers)')
+  .option('--ledger-dir <dir>', 'Request ledgers written by the attach determinism fixture (default: sibling .qafind/ledgers)')
   .action(async (targetPath: string | undefined, opts: FlakeCommandOptions) => {
     if (opts.json) {
       const toStderr = (...args: unknown[]) => console.error(...args);
       console.log = toStderr;
     }
-    const { readRunReports } = await import('../src/testing/airlock-report.js');
+    const { readRunReports } = await import('../src/testing/qafind-report.js');
     const { analyzeFlakiness, renderFlakeMarkdown } = await import('../src/flake/index.js');
     const { ensureDir, writeJsonFile } = await import('../src/utils/files.js');
     if (!opts.json) logger.banner();
 
-    const target = targetPath ? path.resolve(process.cwd(), targetPath) : path.resolve(process.cwd(), '.airlock/reports');
+    const target = targetPath ? path.resolve(process.cwd(), targetPath) : path.resolve(process.cwd(), '.qafind/reports');
     if (!fs.existsSync(target)) {
-      logger.error(`No Airlock reporter manifests at: ${target}`);
-      logger.info('Attach the reporter first: airlock attach . — then run your suite with the generated wrapper config.');
+      logger.error(`No QAFind reporter manifests at: ${target}`);
+      logger.info('Attach the reporter first: qafind attach . — then run your suite with the generated wrapper config.');
       process.exit(1);
     }
     let ownerMap: Record<string, string> | undefined;
@@ -1132,8 +1132,8 @@ program
 
     const reports = readRunReports(target);
     if (!reports.length) {
-      logger.error(`No valid Airlock run reports found in: ${target}`);
-      logger.info('Run your suite with the reporter first, or pass a file/directory of .airlock/reports/*.json.');
+      logger.error(`No valid QAFind run reports found in: ${target}`);
+      logger.info('Run your suite with the reporter first, or pass a file/directory of .qafind/reports/*.json.');
       process.exit(1);
     }
     const minRuns = opts.minRuns === undefined ? undefined : Number(opts.minRuns);
@@ -1192,7 +1192,7 @@ program
 // ==========================================
 program
   .command('mcp')
-  .description('Run the AirlockQA MCP server over stdio (evidence verification and flake triage)')
+  .description('Run the QAFind MCP server over stdio (evidence verification and flake triage)')
   .action(async () => {
     const { startMcpServer } = await import('../src/mcp/server.js');
     startMcpServer();
@@ -1228,7 +1228,7 @@ interface VerifyMergeCommandOptions {
 
 program
   .command('verify-merge')
-  .description('Triage the Playwright specs a PR affects, report only reproduced regressions, sign the verdict and optionally upload it to Airlock Cloud')
+  .description('Triage the Playwright specs a PR affects, report only reproduced regressions, sign the verdict and optionally upload it to QAFind Cloud')
   .option('--base <ref>', 'Base git ref', 'origin/main')
   .option('--head <ref>', 'Head git ref', 'HEAD')
   .option('--run', 'Run the affected Playwright specs from this CLI (instead of --results)')
@@ -1240,14 +1240,14 @@ program
   .option('--rerun-results <file>', 'Playwright JSON report from the deterministic rerun of the same specs')
   .option('--repo <owner/name>', 'Repository slug')
   .option('--pr <number>', 'Pull request number')
-  .option('--out <file>', 'Write the signed verdict JSON', '.airlock/verified-merge/verdict.json')
+  .option('--out <file>', 'Write the signed verdict JSON', '.qafind/verified-merge/verdict.json')
   .option('--intoto <file>', 'Write an in-toto test-result statement')
   .option('--json', 'Print the signed verdict JSON to stdout')
   .option('--markdown', 'Print the PR-comment Markdown to stdout')
-  .option('--upload', 'Upload the signed verdict to Airlock Cloud')
-  .option('--api-url <url>', 'Airlock Cloud API URL (default: AIRLOCK_CLOUD_URL or https://api.qbrin.cloud)')
-  .option('--token <token>', 'API key (default: AIRLOCK_API_KEY)')
-  .option('--signing-key <key>', 'Signing key (default: AIRLOCK_SIGNING_KEY)')
+  .option('--upload', 'Upload the signed verdict to QAFind Cloud')
+  .option('--api-url <url>', 'QAFind Cloud API URL (default: QAFIND_CLOUD_URL or https://api.qafind.si)')
+  .option('--token <token>', 'API key (default: QAFIND_API_KEY)')
+  .option('--signing-key <key>', 'Signing key (default: QAFIND_SIGNING_KEY)')
   .action(async (opts: VerifyMergeCommandOptions) => {
     if (opts.json) {
       const toStderr = (...args: unknown[]) => console.error(...args);
@@ -1297,7 +1297,7 @@ program
         rerun,
       });
       const signed = signVerdict(verdict, { signingKey: opts.signingKey });
-      const outFile = path.resolve(cwd, opts.out || '.airlock/verified-merge/verdict.json');
+      const outFile = path.resolve(cwd, opts.out || '.qafind/verified-merge/verdict.json');
       ensureDir(path.dirname(outFile));
       writeJsonFile(outFile, signed);
       if (opts.intoto) {
@@ -1306,9 +1306,9 @@ program
         writeJsonFile(intotoFile, signInTotoStatement(buildInTotoStatement(verdict), { signingKey: opts.signingKey }));
       }
       if (opts.upload) {
-        const apiUrl = (opts.apiUrl || process.env.AIRLOCK_CLOUD_URL || 'https://api.qbrin.cloud').replace(/\/+$/, '');
-        const token = opts.token || process.env.AIRLOCK_API_KEY || '';
-        if (!token) throw new Error('--upload needs --token or AIRLOCK_API_KEY');
+        const apiUrl = (opts.apiUrl || process.env.QAFIND_CLOUD_URL || 'https://api.qafind.si').replace(/\/+$/, '');
+        const token = opts.token || process.env.QAFIND_API_KEY || '';
+        if (!token) throw new Error('--upload needs --token or QAFIND_API_KEY');
         const response = await fetch(`${apiUrl}/v1/verified-merge/reports`, {
           method: 'POST',
           headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
@@ -1346,7 +1346,7 @@ interface VerifyIntotoCommandOptions {
 program
   .command('verify-intoto <file>')
   .description('Verify a signed in-toto/DSSE test-result attestation offline')
-  .option('--signing-key <key>', 'HMAC key (default: AIRLOCK_SIGNING_KEY)')
+  .option('--signing-key <key>', 'HMAC key (default: QAFIND_SIGNING_KEY)')
   .option('--public-key <pem>', 'Ed25519 public key PEM')
   .option('--json', 'Print the verification result as JSON')
   .action(async (file: string, opts: VerifyIntotoCommandOptions) => {

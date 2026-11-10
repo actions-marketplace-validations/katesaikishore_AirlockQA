@@ -5,7 +5,7 @@ import type { Page } from 'playwright-core';
 import type { ForkVariation } from '../types/index.js';
 
 /**
- * Input for `airlock fork`: which field to fill, what to click afterwards, the values to try and
+ * Input for `qafind fork`: which field to fill, what to click afterwards, the values to try and
  * what each variation must show to pass. Comes from CLI flags or a JSON file.
  */
 

@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for helping improve AirlockQA.
+Thanks for helping improve QAFind.
 
 ## Development
 

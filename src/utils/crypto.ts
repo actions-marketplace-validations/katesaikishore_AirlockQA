@@ -161,7 +161,7 @@ export function deterministicId(prefix: string, seed: string | number): string {
 /**
  * Redact sensitive substrings from text
  */
-export function redactSecrets(text: string, secrets: string[], mask = '[REDACTED_BY_AIRLOCK]'): string {
+export function redactSecrets(text: string, secrets: string[], mask = '[REDACTED_BY_QAFIND]'): string {
   let result = text;
   for (const secret of secrets) {
     if (secret && secret.length >= 4) {

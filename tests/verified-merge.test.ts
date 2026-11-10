@@ -7,7 +7,7 @@ import { failedSpecFiles, runPlaywright } from '../src/verified-merge/run.js';
 import { canonicalJson, verifyHmac } from '../src/utils/crypto.js';
 
 function reportFile(passing: boolean): string {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'airlock-vm-'));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'qafind-vm-'));
   const file = path.join(dir, 'results.json');
   const report = {
     stats: { expected: 0, unexpected: passing ? 0 : 1, flaky: 0, skipped: 0, duration: 12 },
@@ -66,7 +66,7 @@ describe('Verified Merge triage', () => {
 
 describe('Verified Merge Playwright runner', () => {
   test('executes the operator command and reads the JSON report from PLAYWRIGHT_JSON_OUTPUT_NAME', async () => {
-    const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'airlock-vm-cwd-'));
+    const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'qafind-vm-cwd-'));
     fs.writeFileSync(path.join(cwd, 'fake.js'), `
       const fs = require('node:fs');
       const out = process.env.PLAYWRIGHT_JSON_OUTPUT_NAME;

@@ -3,7 +3,7 @@
  * and sign the verdict so CI can attach it to the pull request.
  *
  * This module is pure apart from reading git/report files in the helper functions. Execution of the
- * customer's suite is the caller's job (CI or `airlock verify-merge --run`); triage never invents a result.
+ * customer's suite is the caller's job (CI or `qafind verify-merge --run`); triage never invents a result.
  */
 import { execFileSync } from 'node:child_process';
 import * as fs from 'node:fs';
@@ -14,7 +14,7 @@ import type { InTotoStatement } from '../compliance/intoto.js';
 import { canonicalJson, ed25519KeyId, ed25519PublicKeyPem, sha256, signEd25519, signHmac, verifyEd25519, verifyHmac } from '../utils/crypto.js';
 
 export const VERIFIED_MERGE_VERSION = 1 as const;
-export const VERIFIED_MERGE_KIND = 'airlock-verified-merge' as const;
+export const VERIFIED_MERGE_KIND = 'qafind-verified-merge' as const;
 
 export type MergeTestStatus = 'passed' | 'failed' | 'skipped' | 'timedOut' | 'interrupted';
 export type TriageStatus = 'regression' | 'flake' | 'unreproduced' | 'not_rerun';
@@ -275,7 +275,7 @@ export interface SignedVerdict {
 
 export function signVerdict(verdict: VerifiedMergeVerdict, options: { signingKey?: string; env?: Record<string, string | undefined> } = {}): SignedVerdict {
   const resolved = resolveSigningKey(options.signingKey, options.env || process.env);
-  if (resolved.isDevKey) throw new Error('Refusing to sign a Verified Merge verdict with the development key; set AIRLOCK_SIGNING_KEY');
+  if (resolved.isDevKey) throw new Error('Refusing to sign a Verified Merge verdict with the development key; set QAFIND_SIGNING_KEY');
   const bytes = canonicalJson(verdict);
   const payloadSha256 = sha256(bytes);
   if (resolved.algorithm === 'Ed25519') {
@@ -292,7 +292,7 @@ export function signVerdict(verdict: VerifiedMergeVerdict, options: { signingKey
 
 export function renderVerdictMarkdown(verdict: VerifiedMergeVerdict): string {
   const lines: string[] = [];
-  lines.push('## Airlock Verified Merge');
+  lines.push('## QAFind Verified Merge');
   lines.push('');
   lines.push(`**Verdict: ${verdict.blockMerge ? '❌ blocked — reproduced regression' : verdict.summary.flakes ? '✅ passed — flake-only failures' : '✅ passed'}**`);
   lines.push('');
@@ -347,7 +347,7 @@ export interface VerifySignedVerdictResult {
 export function verifySignedVerdict(signed: unknown, options: { signingKey?: string; publicKeyPem?: string; env?: Record<string, string | undefined> } = {}): VerifySignedVerdictResult {
   try {
     const value = signed as Partial<SignedVerdict>;
-    if (!value || value.version !== VERIFIED_MERGE_VERSION || value.kind !== VERIFIED_MERGE_KIND) return { valid: false, reason: 'not an Airlock Verified Merge verdict', blockMerge: false, summary: null, verdict: null };
+    if (!value || value.version !== VERIFIED_MERGE_VERSION || value.kind !== VERIFIED_MERGE_KIND) return { valid: false, reason: 'not an QAFind Verified Merge verdict', blockMerge: false, summary: null, verdict: null };
     if (!value.payload || !value.signature) return { valid: false, reason: 'verdict payload or signature is missing', blockMerge: false, summary: null, verdict: null };
     const bytes = canonicalJson(value.payload);
     if (sha256(bytes) !== value.payloadSha256) return { valid: false, reason: 'payload hash does not match', blockMerge: false, summary: null, verdict: null };

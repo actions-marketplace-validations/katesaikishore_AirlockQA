@@ -3,13 +3,13 @@ dist/
 public/app/
 .DS_Store
 *.log
-.airlock/
+.qafind/
 bin/cagerun-host-daemon*
 .vscode/
 artifacts/gui-qa/screenshots/
 artifacts/gui-qa/staging/
-artifacts/airlockqa-motion-preview.webm
-artifacts/gui-qa/airlockqa-gui-demo.webm
+artifacts/qafind-motion-preview.webm
+artifacts/gui-qa/qafind-gui-demo.webm
 artifacts/gui-qa/console-integrations-mobile.png
 artifacts/gui-qa/marketing-final.png
 

@@ -5,13 +5,13 @@ import * as path from 'node:path';
 import { ConfigError, loadConfig } from '../src/config/loader.js';
 
 function tempDir(): string {
-  return fs.mkdtempSync(path.join(os.tmpdir(), 'airlock-config-'));
+  return fs.mkdtempSync(path.join(os.tmpdir(), 'qafind-config-'));
 }
 
 describe('loadConfig', () => {
   it('throws a ConfigError naming the file when the JSON is invalid', () => {
     const dir = tempDir();
-    const file = path.join(dir, 'airlock.config.json');
+    const file = path.join(dir, 'qafind.config.json');
     fs.writeFileSync(file, '{ "projectName": "broken", ');
     expect(() => loadConfig(undefined, dir)).toThrow(ConfigError);
     expect(() => loadConfig(undefined, dir)).toThrow(file);
@@ -20,7 +20,7 @@ describe('loadConfig', () => {
 
   it('throws on schema errors instead of silently using defaults', () => {
     const dir = tempDir();
-    const file = path.join(dir, 'airlock.config.json');
+    const file = path.join(dir, 'qafind.config.json');
     fs.writeFileSync(file, JSON.stringify({ proxy: { port: 'not-a-number' } }));
     let error: unknown;
     try {
@@ -46,16 +46,16 @@ describe('loadConfig', () => {
     expect(config.browser?.executablePath).toBeUndefined();
   });
 
-  it('reads the browser path from AIRLOCK_CHROME_PATH only when not configured', () => {
+  it('reads the browser path from QAFIND_CHROME_PATH only when not configured', () => {
     const dir = tempDir();
-    expect(loadConfig(undefined, dir, { env: { AIRLOCK_CHROME_PATH: '/opt/chrome' } }).browser?.executablePath).toBe('/opt/chrome');
-    fs.writeFileSync(path.join(dir, 'airlock.config.json'), JSON.stringify({ browser: { executablePath: '/usr/bin/chromium' } }));
-    expect(loadConfig(undefined, dir, { env: { AIRLOCK_CHROME_PATH: '/opt/chrome' } }).browser?.executablePath).toBe('/usr/bin/chromium');
+    expect(loadConfig(undefined, dir, { env: { QAFIND_CHROME_PATH: '/opt/chrome' } }).browser?.executablePath).toBe('/opt/chrome');
+    fs.writeFileSync(path.join(dir, 'qafind.config.json'), JSON.stringify({ browser: { executablePath: '/usr/bin/chromium' } }));
+    expect(loadConfig(undefined, dir, { env: { QAFIND_CHROME_PATH: '/opt/chrome' } }).browser?.executablePath).toBe('/usr/bin/chromium');
   });
 
   it('resolves realFromEnv secrets and rejects secrets with no value source', () => {
     const dir = tempDir();
-    const file = path.join(dir, 'airlock.config.json');
+    const file = path.join(dir, 'qafind.config.json');
     fs.writeFileSync(file, JSON.stringify({
       secrets: { API: { realFromEnv: 'API_SECRET', real: 'REPLACE_ME_REAL_SECRET', phantom: 'ph_api' } },
     }));

@@ -5,7 +5,7 @@ import * as path from 'node:path';
 
 /**
  * Use a coding agent that is already installed and signed in on this machine (Claude Code, Antigravity, Codex,
- * Gemini CLI) as the model behind Airlock's AI features, so no API key is needed. Each agent runs headless, in a fresh
+ * Gemini CLI) as the model behind QAFind's AI features, so no API key is needed. Each agent runs headless, in a fresh
  * empty folder, in its read-only or plan mode: it answers the prompt and cannot edit files or run commands.
  */
 export type AgentId = 'claude' | 'agy' | 'codex' | 'gemini';
@@ -84,7 +84,7 @@ export const NO_TOOLS_PREAMBLE =
 
 /** Add the no-tools preamble and cut the prompt to MAX_PROMPT_CHARS, saying so in the text. */
 export function clampPrompt(prompt: string): string {
-  const body = prompt.length <= MAX_PROMPT_CHARS ? prompt : prompt.slice(0, MAX_PROMPT_CHARS) + '\n\n[input truncated by Airlock]';
+  const body = prompt.length <= MAX_PROMPT_CHARS ? prompt : prompt.slice(0, MAX_PROMPT_CHARS) + '\n\n[input truncated by QAFind]';
   return NO_TOOLS_PREAMBLE + body;
 }
 
@@ -186,7 +186,7 @@ export interface AskOptions {
 export async function askAgent(agent: AgentId, prompt: string, opts: AskOptions = {}): Promise<AgentAnswer> {
   const command = (opts.find ?? findAgent)(agent);
   if (!command) throw new LocalAgentError(agent, 'missing', 'not installed (not on PATH)');
-  const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'airlock-agent-'));
+  const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'qafind-agent-'));
   const lastMessageFile = path.join(cwd, 'last-message.txt');
   const started = Date.now();
   try {
@@ -221,9 +221,9 @@ export async function ask(prompt: string, opts: AskOptions = {}): Promise<AgentA
   throw new AggregateError(errors, `No local agent answered:\n${errors.map((e) => `  - ${e.message}`).join('\n')}`);
 }
 
-/** AIRLOCK_AGENT=claude|agy|codex|gemini|auto picks the agent; anything else means auto. */
+/** QAFIND_AGENT=claude|agy|codex|gemini|auto picks the agent; anything else means auto. */
 export function preferredAgent(env: NodeJS.ProcessEnv = process.env): AgentId | 'auto' {
-  const v = (env.AIRLOCK_AGENT || '').trim().toLowerCase();
+  const v = (env.QAFIND_AGENT || '').trim().toLowerCase();
   return (AGENT_IDS as readonly string[]).includes(v) ? (v as AgentId) : 'auto';
 }
 

@@ -3,7 +3,7 @@ import type { ComplianceProofBundle } from '../types/index.js';
 /** Legacy class name; generated content is run evidence, not a compliance report. */
 export class Soc2Reporter {
   static generateExecutiveSummary(bundle: ComplianceProofBundle): string {
-    return `# AirlockQA Run Evidence
+    return `# QAFind Run Evidence
 
 **Run ID:** \`${bundle.runId}\`  
 **Timestamp:** ${bundle.timestamp}  
@@ -32,7 +32,7 @@ SOC 2 and ISO 27001 controls have not been assessed by this evidence bundle. A v
       ? '✅ HASH CHAIN VALID'
       : '⚠️ HASH CHAIN INVALID';
 
-    return `## ${evidenceBadge} AirlockQA run evidence
+    return `## ${evidenceBadge} QAFind run evidence
 
 This bundle records browser-run events and a signed hash chain. It is not a SOC 2 or ISO 27001 assessment.
 

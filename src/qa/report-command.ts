@@ -78,14 +78,14 @@ async function downloadScreenshots(target: QaTarget, runId: string, artifacts: Q
 }
 
 /**
- * `airlock qa report`: download a run, its findings and its screenshots, write a Markdown report, and optionally
+ * `qafind report`: download a run, its findings and its screenshots, write a Markdown report, and optionally
  * post it to a PR or open a PR that commits the report. A PR is created only in the repository the command runs in;
  * opening a PR on someone else's repository needs their permission, which this command cannot invent.
  */
 export async function qaReportCommand(runId: string, opts: QaReportOptions): Promise<void> {
   if (!/^[A-Za-z0-9_-]{1,80}$/.test(runId)) throw new Error('invalid QA run id');
   const auth = resolveCloudAuth({ apiUrl: opts.apiUrl });
-  if (!auth) throw new Error('Not signed in. Run "airlock login" (or set AIRLOCK_API_KEY) first.');
+  if (!auth) throw new Error('Not signed in. Run "qafind login" (or set QAFIND_API_KEY) first.');
   const target: QaTarget = { apiUrl: auth.apiUrl, apiKey: auth.apiKey };
   const run = await getQaRun(target, runId);
   const artifacts = run.artifacts?.length ? run.artifacts : await listQaArtifacts(target, runId);
@@ -130,16 +130,16 @@ export async function qaReportCommand(runId: string, opts: QaReportOptions): Pro
         return !(changed === relOut.replace(/\/+$/, '') || changed.startsWith(relOut + '/') || relOut.startsWith(changed + '/'));
       });
     if (dirty.length) throw new Error('--create-pr needs a clean working tree (commit or stash other changes first)');
-    const branch = `airlock-qa/report-${runId.toLowerCase()}`;
+    const branch = `qafind/report-${runId.toLowerCase()}`;
     const defaultBranch = await gh(['repo', 'view', repo, '--json', 'defaultBranchRef', '--jq', '.defaultBranchRef.name'], root);
     await git(['switch', '-c', branch], root);
     await git(['add', '--', relOut], root);
-    await git(['commit', '-m', `qa: Airlock QA report for ${runId}`], root);
+    await git(['commit', '-m', `qa: QAFind report for ${runId}`], root);
     await git(['push', '-u', 'origin', 'HEAD'], root);
     const body = buildQaReport(reportRun, { imagePath: (a) => rawUrl(repo, branch, path.relative(root, outDir), a.name), sealVerified });
     const bodyFile = path.join(outDir, '.pr-body.md');
     fs.writeFileSync(bodyFile, body);
-    const title = opts.title || `Airlock QA report: ${runId}`;
+    const title = opts.title || `QAFind report: ${runId}`;
     const url = await gh(['pr', 'create', '--repo', repo, '--base', defaultBranch, '--head', branch, '--title', title, '--body-file', bodyFile], root);
     process.stdout.write(`PR: ${url}\n`);
   }

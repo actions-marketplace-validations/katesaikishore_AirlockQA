@@ -1,21 +1,21 @@
 /**
  * Determinism fixtures for the attach path (P0+).
  *
- * The generated `.airlock/airlock-test.ts` shim re-exports Playwright's `test` extended with these
+ * The generated `.qafind/qafind-test.ts` shim re-exports Playwright's `test` extended with these
  * auto-use fixtures. A tsconfig path alias maps `@playwright/test` to the shim for the wrapper's test
  * run, so the user's existing specs do not import or change anything: they keep `import { test } from
  * '@playwright/test'`, and this fixture still runs.
  *
  * Two determinism layers are recorded/toggled through environment variables:
- *   AIRLOCK_ATTACH_NETWORK = off (default) | record | replay
- *   AIRLOCK_ATTACH_CLOCK   = fixed (default when the shim is attached) | off
- *   AIRLOCK_ATTACH_TIME    = ISO instant for the fixed clock (default 2026-01-01T00:00:00.000Z)
- *   AIRLOCK_ATTACH_DIR     = directory for fixtures/ledgers (default .airlock)
+ *   QAFIND_ATTACH_NETWORK = off (default) | record | replay
+ *   QAFIND_ATTACH_CLOCK   = fixed (default when the shim is attached) | off
+ *   QAFIND_ATTACH_TIME    = ISO instant for the fixed clock (default 2026-01-01T00:00:00.000Z)
+ *   QAFIND_ATTACH_DIR     = directory for fixtures/ledgers (default .qafind)
  *
  * Network record/replay works at the browser-context route layer: every http(s) request/response for
- * a test is stored under `.airlock/network/<test-hash>.json` on a record run, and replayed byte-for-
+ * a test is stored under `.qafind/network/<test-hash>.json` on a record run, and replayed byte-for-
  * byte on later runs. The clock layer uses Playwright's page.clock API. A request ledger is attached
- * to each test (`airlock-request-ledger`) for triage and CI artifacts.
+ * to each test (`qafind-request-ledger`) for triage and CI artifacts.
  *
  * Limits: WebSockets and service workers are not recorded; redirects are captured as final
  * responses; cross-test ordering is not global. This is deterministic for the suite as long as the
@@ -27,21 +27,21 @@ import * as path from 'node:path';
 
 export const DEFAULT_ATTACH_TIME = '2026-01-01T00:00:00.000Z';
 
-export interface AirlockDeterminismSettings {
+export interface QAFindDeterminismSettings {
   network: 'off' | 'record' | 'replay';
   clock: 'fixed' | 'off';
   time: string;
   dir: string;
 }
 
-export function readDeterminismSettings(env: Record<string, string | undefined> = process.env): AirlockDeterminismSettings {
-  const network = env.AIRLOCK_ATTACH_NETWORK;
-  const clock = env.AIRLOCK_ATTACH_CLOCK;
+export function readDeterminismSettings(env: Record<string, string | undefined> = process.env): QAFindDeterminismSettings {
+  const network = env.QAFIND_ATTACH_NETWORK;
+  const clock = env.QAFIND_ATTACH_CLOCK;
   return {
     network: network === 'record' || network === 'replay' ? network : 'off',
     clock: clock === 'off' ? 'off' : 'fixed',
-    time: env.AIRLOCK_ATTACH_TIME && !Number.isNaN(Date.parse(env.AIRLOCK_ATTACH_TIME)) ? env.AIRLOCK_ATTACH_TIME : DEFAULT_ATTACH_TIME,
-    dir: env.AIRLOCK_ATTACH_DIR && env.AIRLOCK_ATTACH_DIR.trim() !== '' ? env.AIRLOCK_ATTACH_DIR.trim() : '.airlock',
+    time: env.QAFIND_ATTACH_TIME && !Number.isNaN(Date.parse(env.QAFIND_ATTACH_TIME)) ? env.QAFIND_ATTACH_TIME : DEFAULT_ATTACH_TIME,
+    dir: env.QAFIND_ATTACH_DIR && env.QAFIND_ATTACH_DIR.trim() !== '' ? env.QAFIND_ATTACH_DIR.trim() : '.qafind',
   };
 }
 
@@ -64,7 +64,7 @@ export interface RequestLedger {
   title: string;
   file?: string;
   titlePath?: string[];
-  mode: AirlockDeterminismSettings['network'];
+  mode: QAFindDeterminismSettings['network'];
   requests: number;
   failures: { url: string; status?: number; error?: string }[];
   missing: number;
@@ -94,7 +94,7 @@ function testKey(info: FixtureInfo): string {
   return createHash('sha256').update(source).digest('hex').slice(0, 24);
 }
 
-function fixturePath(settings: AirlockDeterminismSettings, key: string): string {
+function fixturePath(settings: QAFindDeterminismSettings, key: string): string {
   return path.join(settings.dir, 'network', `${key}.json`);
 }
 
@@ -145,8 +145,8 @@ const determinismFixture: FixtureFn = async ({ context, page }, use, info) => {
     const recorded = settings.network === 'record' ? {} : readFixture(file)?.requests;
     if (settings.network === 'replay' && !recorded) {
       throw new Error(
-        `Airlock replay fixture missing for "${ledger.title}" (${file}). ` +
-          'Record it first with AIRLOCK_ATTACH_NETWORK=record, then commit/cache .airlock/network.',
+        `QAFind replay fixture missing for "${ledger.title}" (${file}). ` +
+          'Record it first with QAFIND_ATTACH_NETWORK=record, then commit/cache .qafind/network.',
       );
     }
     const queues = new Map<string, RecordedRequest[]>(
@@ -217,7 +217,7 @@ const determinismFixture: FixtureFn = async ({ context, page }, use, info) => {
       }
       writeLedger(settings, ledger);
       try {
-        await info.attach('airlock-request-ledger', {
+        await info.attach('qafind-request-ledger', {
           body: JSON.stringify(ledger),
           contentType: 'application/json',
         });
@@ -234,8 +234,8 @@ const determinismFixture: FixtureFn = async ({ context, page }, use, info) => {
   }
 };
 
-/** Write the per-test request ledger next to the manifests for `airlock flake` evidence. */
-function writeLedger(settings: AirlockDeterminismSettings, ledger: RequestLedger): void {
+/** Write the per-test request ledger next to the manifests for `qafind flake` evidence. */
+function writeLedger(settings: QAFindDeterminismSettings, ledger: RequestLedger): void {
   try {
     const dir = path.join(settings.dir, 'ledgers');
     fs.mkdirSync(dir, { recursive: true });
@@ -249,6 +249,6 @@ function writeLedger(settings: AirlockDeterminismSettings, ledger: RequestLedger
  * Fixture map for Playwright's `test.extend`. The generated attach shim casts this to the app's
  * fixture type because the app owns the concrete Playwright version.
  */
-export const airlockDeterminismFixtures = {
-  airlockDeterminism: [determinismFixture, { auto: true }],
+export const qafindDeterminismFixtures = {
+  qafindDeterminism: [determinismFixture, { auto: true }],
 } as unknown as Record<string, [FixtureFn, { auto: boolean }]>;

@@ -1,5 +1,5 @@
 /**
- * Tests for the attach-path Playwright reporter (`src/testing/airlock-reporter.ts`).
+ * Tests for the attach-path Playwright reporter (`src/testing/qafind-reporter.ts`).
  * Fake Playwright config/test/result objects only: no browser, no test runner.
  */
 import { afterAll, describe, expect, it } from 'bun:test';
@@ -7,15 +7,15 @@ import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
 import {
-  AirlockReporter,
-  airlockTestId,
-  createAirlockReporter,
-  defaultAirlockRunId,
+  QAFindReporter,
+  qafindTestId,
+  createQAFindReporter,
+  defaultQAFindRunId,
   normalizeTestFile,
   titlesFromTitlePath,
-  toAirlockTestStatus,
-} from '../src/testing/airlock-reporter.js';
-import { isAirlockRunReport, readRunReports } from '../src/testing/airlock-report.js';
+  toQAFindTestStatus,
+} from '../src/testing/qafind-reporter.js';
+import { isQAFindRunReport, readRunReports } from '../src/testing/qafind-report.js';
 import type { FullResult, TestCase, TestResult } from '@playwright/test/reporter';
 
 const tempDirs: string[] = [];
@@ -24,7 +24,7 @@ afterAll(() => {
   for (const dir of tempDirs) fs.rmSync(dir, { recursive: true, force: true });
 });
 
-function tmpDir(prefix = 'airlock-reporter-'): string {
+function tmpDir(prefix = 'qafind-reporter-'): string {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), prefix));
   tempDirs.push(dir);
   return dir;
@@ -76,10 +76,10 @@ function fakeResult(input: FakeResultInput = {}): TestResult {
   } as unknown as TestResult;
 }
 
-describe('airlock reporter', () => {
+describe('qafind reporter', () => {
   it('writes a manifest with passed/failed/flaky/skipped/timedOut/interrupted tests', () => {
     const outputDir = tmpDir();
-    const reporter = new AirlockReporter({
+    const reporter = new QAFindReporter({
       outputDir,
       runId: 'run-attach-test-1',
       now: clockSequence(['2026-01-01T00:00:00.000Z', '2026-01-01T00:00:05.000Z']),
@@ -131,10 +131,10 @@ describe('airlock reporter', () => {
     const reports = readRunReports(outputDir);
     expect(reports).toHaveLength(1);
     const report = reports[0]!;
-    expect(isAirlockRunReport(report)).toBe(true);
+    expect(isQAFindRunReport(report)).toBe(true);
     expect(report).toMatchObject({
       version: 1,
-      tool: 'airlock-reporter',
+      tool: 'qafind-reporter',
       runId: 'run-attach-test-1',
       startedAt: '2026-01-01T00:00:00.000Z',
       finishedAt: '2026-01-01T00:00:05.000Z',
@@ -179,14 +179,14 @@ describe('airlock reporter', () => {
 
   it('generates a sortable default run id when none is injected', () => {
     const outputDir = tmpDir();
-    const reporter = new AirlockReporter({ outputDir, now: clockSequence(['2026-02-03T04:05:06.000Z']) });
+    const reporter = new QAFindReporter({ outputDir, now: clockSequence(['2026-02-03T04:05:06.000Z']) });
     reporter.onBegin(fakeConfig(['chromium'], '/repo'), {} as never);
     reporter.onEnd({ status: 'passed', startTime: new Date(), duration: 1 } as unknown as FullResult);
 
     const reports = readRunReports(outputDir);
     expect(reports).toHaveLength(1);
     expect(reports[0]!.runId).toMatch(/^run-\d{8}T\d{6}Z-[0-9a-f]{6}$/);
-    expect(defaultAirlockRunId(new Date('2026-02-03T04:05:06.000Z'))).toMatch(/^run-20260203T040506Z-[0-9a-f]{6}$/);
+    expect(defaultQAFindRunId(new Date('2026-02-03T04:05:06.000Z'))).toMatch(/^run-20260203T040506Z-[0-9a-f]{6}$/);
   });
 
   it('does not throw when the manifest cannot be written, and warns once', () => {
@@ -200,8 +200,8 @@ describe('airlock reporter', () => {
       warnings.push(args.map(String).join(' '));
     };
     try {
-      const reporter = createAirlockReporter({ outputDir, runId: 'run-unwritable' });
-      expect(reporter).toBeInstanceOf(AirlockReporter);
+      const reporter = createQAFindReporter({ outputDir, runId: 'run-unwritable' });
+      expect(reporter).toBeInstanceOf(QAFindReporter);
       expect(() => {
         reporter.onBegin(fakeConfig(['chromium'], '/repo'), {} as never);
         reporter.onTestEnd(fakeTest({ project: 'chromium', file: '/repo/a.spec.ts', titles: ['a'] }), fakeResult());
@@ -212,20 +212,20 @@ describe('airlock reporter', () => {
       console.warn = originalWarn;
     }
     expect(warnings).toHaveLength(1);
-    expect(warnings[0]).toContain('[airlock-reporter]');
+    expect(warnings[0]).toContain('[qafind-reporter]');
     expect(warnings[0]).toContain('onEnd failed');
   });
 
   it('does not replace the default reporters (printsToStdio false)', () => {
-    const reporter = new AirlockReporter();
+    const reporter = new QAFindReporter();
     expect(reporter.printsToStdio()).toBe(false);
   });
 
   it('maps statuses and normalises ids/paths/title paths', () => {
-    expect(toAirlockTestStatus('passed')).toBe('passed');
-    expect(toAirlockTestStatus('timedOut')).toBe('timedOut');
-    expect(toAirlockTestStatus('interrupted')).toBe('interrupted');
-    expect(toAirlockTestStatus('something-else')).toBe('failed');
+    expect(toQAFindTestStatus('passed')).toBe('passed');
+    expect(toQAFindTestStatus('timedOut')).toBe('timedOut');
+    expect(toQAFindTestStatus('interrupted')).toBe('interrupted');
+    expect(toQAFindTestStatus('something-else')).toBe('failed');
 
     expect(normalizeTestFile('/repo/tests/payment.spec.ts', '/repo')).toBe('tests/payment.spec.ts');
     expect(normalizeTestFile('/elsewhere/payment.spec.ts', '/repo')).toBe('/elsewhere/payment.spec.ts');
@@ -235,14 +235,14 @@ describe('airlock reporter', () => {
     expect(titlesFromTitlePath(['checkout', 'pays'], 'chromium')).toEqual(['checkout', 'pays']);
     expect(titlesFromTitlePath(['chromium'], 'chromium')).toEqual(['chromium']);
 
-    expect(airlockTestId('chromium', 'tests/a.spec.ts', ['describe', 'test'])).toBe(
+    expect(qafindTestId('chromium', 'tests/a.spec.ts', ['describe', 'test'])).toBe(
       'chromium::tests/a.spec.ts::describe › test',
     );
   });
 
   it('handles a test whose titlePath() does not start with the project', () => {
     const outputDir = tmpDir();
-    const reporter = new AirlockReporter({
+    const reporter = new QAFindReporter({
       outputDir,
       runId: 'run-no-project-prefix',
       now: clockSequence(['2026-01-01T00:00:00.000Z']),

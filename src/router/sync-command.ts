@@ -34,11 +34,11 @@ export interface LocalArtifact {
 }
 
 const DIRS: Array<{ kind: SyncKind; dir: string; recursive: boolean }> = [
-  { kind: 'trace', dir: '.airlock/traces', recursive: false },
-  { kind: 'checkpoint', dir: '.airlock/checkpoints', recursive: false },
-  { kind: 'healing', dir: '.airlock/dataset', recursive: true },
-  { kind: 'fixtures', dir: '.airlock/shadow', recursive: false },
-  { kind: 'capsule', dir: '.airlock/capsules', recursive: false },
+  { kind: 'trace', dir: '.qafind/traces', recursive: false },
+  { kind: 'checkpoint', dir: '.qafind/checkpoints', recursive: false },
+  { kind: 'healing', dir: '.qafind/dataset', recursive: true },
+  { kind: 'fixtures', dir: '.qafind/shadow', recursive: false },
+  { kind: 'capsule', dir: '.qafind/capsules', recursive: false },
 ];
 
 export function localArtifacts(cwd: string): LocalArtifact[] {
@@ -86,7 +86,7 @@ function toArtifact(kind: SyncKind, cwd: string, file: string, size: number): Lo
 
 /** AES-256-GCM with a scrypt key. The key never leaves this process; the server gets an opaque envelope. */
 export function encryptArtifact(plaintext: Buffer, passphrase: string): Buffer {
-  if (passphrase.length < 12) throw new Error('AIRLOCK_SYNC_KEY must be at least 12 characters');
+  if (passphrase.length < 12) throw new Error('QAFIND_SYNC_KEY must be at least 12 characters');
   const salt = crypto.randomBytes(16);
   const iv = crypto.randomBytes(12);
   const key = crypto.scryptSync(passphrase, salt, 32, { N: 16384, r: 8, p: 1 });
@@ -120,9 +120,9 @@ export function decryptArtifact(envelope: Buffer, passphrase: string): Buffer {
 }
 
 export function syncKeyFromEnv(env: NodeJS.ProcessEnv = process.env): string {
-  const key = env.AIRLOCK_SYNC_KEY;
+  const key = env.QAFIND_SYNC_KEY;
   if (!key || key.trim().length < 12) {
-    throw new Error('Set AIRLOCK_SYNC_KEY to a passphrase of at least 12 characters. The key stays on this machine; the server stores only ciphertext.');
+    throw new Error('Set QAFIND_SYNC_KEY to a passphrase of at least 12 characters. The key stays on this machine; the server stores only ciphertext.');
   }
   return key;
 }

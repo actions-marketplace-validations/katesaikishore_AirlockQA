@@ -7,7 +7,7 @@ export default function SettingsPanel() {
 Settings
 </h1>
 <p style={{"margin": "6px 0px 0px", "fontSize": "15.5px", "color": "rgb(90, 105, 97)"}}>
-Workspace details, people, run defaults and how evidence is signed. Everything here maps to airlock.config.json.
+Workspace details, people, run defaults and how evidence is signed. Everything here maps to qafind.config.json.
 </p>
 <div style={{"marginTop": "20px", "display": "flex", "flexWrap": "wrap", "gap": "20px", "alignItems": "flex-start"}}>
 <nav aria-label="Settings sections" style={{"flex": "1 1 200px", "maxWidth": "100%", "display": "flex", "flexFlow": "column wrap", "gap": "2px"}}>
@@ -346,7 +346,7 @@ Save every heal to the dataset
 </span>
 <span style={{"display": "block", "fontSize": "13.5px", "color": "rgb(90, 105, 97)"}}>
 <span className="sc-interp">
-Powers the healing log and airlock dataset.
+Powers the healing log and qafind dataset.
 </span>
 </span>
 <code style={{"font": "500 12.5px \"JetBrains Mono\", monospace", "color": "rgb(47, 111, 91)"}}>
@@ -392,7 +392,7 @@ Gateway port
 <div style={{"display": "flex", "flexWrap": "wrap", "alignItems": "center", "justifyContent": "space-between", "gap": "10px", "padding": "16px 20px", "borderBottom": "1px solid rgb(35, 57, 47)"}}>
 <div>
 <h2 id="st-config" style={{"margin": "0px", "font": "700 16.5px / 1.3 Manrope, system-ui, sans-serif", "color": "rgb(255, 255, 255)"}}>
-airlock.config.json
+qafind.config.json
 </h2>
 <p style={{"margin": "2px 0px 0px", "fontSize": "13px", "color": "rgb(169, 196, 182)"}}>
 Real secret values are never shown or uploaded — they stay in your runner.
@@ -557,7 +557,7 @@ Matches the schema
 </span>
 {": "}
 <span style={{"color": "rgb(233, 201, 139)"}}>
-{"\"./.airlock/compliance\""}
+{"\"./.qafind/compliance\""}
 </span>
 {", "}
 <span style={{"color": "rgb(127, 214, 174)"}}>
@@ -605,7 +605,7 @@ A private key signs; anyone with the public key can verify.
 Key ID
 </dt>
 <dd style={{"margin": "2px 0px 0px", "fontFamily": "\"JetBrains Mono\", monospace"}}>
-airlock-signer-key-id-01
+qafind-signer-key-id-01
 </dd>
 </div>
 <div>
@@ -613,7 +613,7 @@ airlock-signer-key-id-01
 Receipts folder
 </dt>
 <dd style={{"margin": "2px 0px 0px", "fontFamily": "\"JetBrains Mono\", monospace"}}>
-./.airlock/compliance
+./.qafind/compliance
 </dd>
 </div>
 <div>

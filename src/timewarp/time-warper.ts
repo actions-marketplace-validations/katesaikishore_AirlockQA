@@ -1,5 +1,5 @@
 /**
- * AirlockQA browser-page Date offset prototype.
+ * QAFind browser-page Date offset prototype.
  * It does not change browser timers, the operating-system clock, or service clocks.
  */
 
@@ -89,21 +89,21 @@ export class TimeWarper {
 
     if (page) {
       const applyDateOffset = (offsetMs: number) => {
-        const currentDate = window.Date as DateConstructor & { __AIRLOCK_REAL_DATE__?: DateConstructor };
-        const RealDate = currentDate.__AIRLOCK_REAL_DATE__ || currentDate;
+        const currentDate = window.Date as DateConstructor & { __QAFIND_REAL_DATE__?: DateConstructor };
+        const RealDate = currentDate.__QAFIND_REAL_DATE__ || currentDate;
         const VirtualDate = function (this: unknown, ...args: unknown[]) {
           if (!new.target) return new RealDate(RealDate.now() + offsetMs).toString();
           const constructorArgs = args.length === 0 ? [RealDate.now() + offsetMs] : args;
           return Reflect.construct(RealDate, constructorArgs, new.target);
-        } as unknown as DateConstructor & { __AIRLOCK_REAL_DATE__?: DateConstructor };
+        } as unknown as DateConstructor & { __QAFIND_REAL_DATE__?: DateConstructor };
 
         (VirtualDate as any).prototype = RealDate.prototype;
         Object.setPrototypeOf(VirtualDate, RealDate);
-        Object.defineProperty(VirtualDate, '__AIRLOCK_REAL_DATE__', { value: RealDate });
+        Object.defineProperty(VirtualDate, '__QAFIND_REAL_DATE__', { value: RealDate });
         Object.defineProperty(VirtualDate, 'now', { value: () => RealDate.now() + offsetMs });
         window.Date = VirtualDate;
-        (window as any).__AIRLOCK_VIRTUAL_CLOCK_OFFSET__ = offsetMs;
-        window.dispatchEvent(new CustomEvent('airlock:timewarp', { detail: { offsetMs } }));
+        (window as any).__QAFIND_VIRTUAL_CLOCK_OFFSET__ = offsetMs;
+        window.dispatchEvent(new CustomEvent('qafind:timewarp', { detail: { offsetMs } }));
       };
 
       await page.addInitScript(applyDateOffset, this.offsetMs);

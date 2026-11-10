@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test';
 import { MerkleTree } from '../src/compliance/merkle-tree.js';
-import { AirlockLedger } from '../src/compliance/ledger.js';
+import { QAFindLedger } from '../src/compliance/ledger.js';
 import { AttestationEngine } from '../src/compliance/attestation.js';
 import { sha256 } from '../src/utils/crypto.js';
 
@@ -24,8 +24,8 @@ describe('Compliance: Cryptographic Ledger & Audit Bundles', () => {
     expect(isTamperedValid).toBe(false);
   });
 
-  it('maintains tamper-evident hash chain in AirlockLedger', () => {
-    const ledger = new AirlockLedger();
+  it('maintains tamper-evident hash chain in QAFindLedger', () => {
+    const ledger = new QAFindLedger();
 
     ledger.append('ACTION_DISPATCH', { action: 'click', selector: '#checkout' });
     ledger.append('SECRET_SWAP', { phantom: 'ph_sec_1', host: 'api.stripe.com' });
@@ -39,7 +39,7 @@ describe('Compliance: Cryptographic Ledger & Audit Bundles', () => {
   });
 
   it('detects tampering immediately if an audit block is modified', () => {
-    const ledger = new AirlockLedger();
+    const ledger = new QAFindLedger();
 
     ledger.append('ACTION_DISPATCH', { action: 'click', selector: '#checkout' });
     ledger.append('EGRESS_BLOCKED', { url: 'https://webhook.site/leak' });
@@ -54,7 +54,7 @@ describe('Compliance: Cryptographic Ledger & Audit Bundles', () => {
   });
 
   it('generates and cryptographically verifies attestation bundles', () => {
-    const ledger = new AirlockLedger();
+    const ledger = new QAFindLedger();
     ledger.append('ACTION_DISPATCH', { action: 'checkout' });
 
     const signingKey = 'enterprise-audit-secret-key-32-chars!';

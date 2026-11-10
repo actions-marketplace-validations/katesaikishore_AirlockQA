@@ -1,5 +1,5 @@
 import * as path from 'node:path';
-import { AirlockLedger } from './ledger.js';
+import { QAFindLedger } from './ledger.js';
 import { MerkleTree } from './merkle-tree.js';
 import type { ComplianceProofBundle } from '../types/index.js';
 import {
@@ -19,22 +19,22 @@ import { logger } from '../utils/logger.js';
 export const BUNDLE_SPEC_VERSION = '2.0.0' as const;
 
 /** Domain-separation prefix for the bytes that get signed. */
-const SIGNING_CONTEXT = 'airlockqa-run-evidence-v2\n';
+const SIGNING_CONTEXT = 'qafind-run-evidence-v2\n';
 
 /**
  * Development-only signing key. Evidence signed with it proves nothing, because
  * the key is public. It is never used when `CI` is set.
  */
-export const DEV_SIGNING_KEY = 'AIRLOCK-INSECURE-DEV-KEY-DO-NOT-USE-FOR-EVIDENCE';
+export const DEV_SIGNING_KEY = 'QAFIND-INSECURE-DEV-KEY-DO-NOT-USE-FOR-EVIDENCE';
 
 /**
  * Placeholder values that have shipped as defaults. They are treated as
  * "no key configured".
  */
 const PLACEHOLDER_KEYS = new Set([
-  'airlock-dev-signing-key-32-chars-long!',
-  'airlock-default-signing-key',
-  'airlock-hmac-master-key-32-chars-long!',
+  'qafind-dev-signing-key-32-chars-long!',
+  'qafind-default-signing-key',
+  'qafind-hmac-master-key-32-chars-long!',
   DEV_SIGNING_KEY,
 ]);
 
@@ -50,11 +50,11 @@ export interface ResolvedSigningKey {
 /**
  * Resolve the signing key for evidence bundles.
  *
- * Order: `AIRLOCK_SIGNING_KEY` env var, then the configured key. Shipped
+ * Order: `QAFIND_SIGNING_KEY` env var, then the configured key. Shipped
  * placeholder defaults count as unset. With no key: throws when `CI` is set,
  * otherwise returns the labelled {@link DEV_SIGNING_KEY}.
  *
- * Algorithm: `AIRLOCK_SIGNING_ALGORITHM` (`Ed25519` or `HMAC-SHA256`); a PEM
+ * Algorithm: `QAFIND_SIGNING_ALGORITHM` (`Ed25519` or `HMAC-SHA256`); a PEM
  * private key implies Ed25519; otherwise HMAC-SHA256.
  */
 export function resolveSigningKey(
@@ -62,7 +62,7 @@ export function resolveSigningKey(
   env: Record<string, string | undefined> = process.env
 ): ResolvedSigningKey {
   const candidates: Array<[string | undefined, 'env' | 'config']> = [
-    [env.AIRLOCK_SIGNING_KEY, 'env'],
+    [env.QAFIND_SIGNING_KEY, 'env'],
     [configuredKey, 'config'],
   ];
   let key: string | undefined;
@@ -79,19 +79,19 @@ export function resolveSigningKey(
   if (!key) {
     if (env.CI && env.CI !== 'false' && env.CI !== '0') {
       throw new Error(
-        'No evidence signing key configured. Set AIRLOCK_SIGNING_KEY (or compliance.signingKey) ' +
+        'No evidence signing key configured. Set QAFIND_SIGNING_KEY (or compliance.signingKey) ' +
           'from your CI secrets. The built-in development key is refused when CI is set.'
       );
     }
     key = DEV_SIGNING_KEY;
   }
 
-  const requested = env.AIRLOCK_SIGNING_ALGORITHM?.trim();
+  const requested = env.QAFIND_SIGNING_ALGORITHM?.trim();
   let algorithm: SigningAlgorithm;
   if (requested) {
     if (/^ed25519$/i.test(requested)) algorithm = 'Ed25519';
     else if (/^hmac(-sha256)?$/i.test(requested)) algorithm = 'HMAC-SHA256';
-    else throw new Error(`Unsupported AIRLOCK_SIGNING_ALGORITHM "${requested}" (use Ed25519 or HMAC-SHA256)`);
+    else throw new Error(`Unsupported QAFIND_SIGNING_ALGORITHM "${requested}" (use Ed25519 or HMAC-SHA256)`);
   } else {
     algorithm = key.includes('-----BEGIN') ? 'Ed25519' : 'HMAC-SHA256';
   }
@@ -103,9 +103,9 @@ export function resolveSigningKey(
 export function warnDevSigningKey(): void {
   const bar = '!'.repeat(78);
   logger.warn(bar);
-  logger.warn('INSECURE DEV SIGNING KEY IN USE: no AIRLOCK_SIGNING_KEY / compliance.signingKey is set.');
+  logger.warn('INSECURE DEV SIGNING KEY IN USE: no QAFIND_SIGNING_KEY / compliance.signingKey is set.');
   logger.warn('Evidence bundles signed with this key are marked insecureDevKey=true and prove nothing.');
-  logger.warn('Set AIRLOCK_SIGNING_KEY to a secret (HMAC) or an Ed25519 PEM private key.');
+  logger.warn('Set QAFIND_SIGNING_KEY to a secret (HMAC) or an Ed25519 PEM private key.');
   logger.warn(bar);
 }
 
@@ -154,7 +154,7 @@ export class AttestationEngine {
   /**
    * Create and sign an execution-evidence bundle. This is not a compliance assessment.
    */
-  static generateBundle(ledger: AirlockLedger, options: AttestationOptions): ComplianceProofBundle {
+  static generateBundle(ledger: QAFindLedger, options: AttestationOptions): ComplianceProofBundle {
     const chainVerification = ledger.verifyChain();
     if (!chainVerification.valid) {
       throw new Error(`Cannot generate attestation: Ledger chain integrity check failed: ${chainVerification.reason}`);
@@ -177,7 +177,7 @@ export class AttestationEngine {
       publicKey = ed25519PublicKeyPem(options.signingKey);
       keyId = ed25519KeyId(publicKey);
     } else {
-      keyId = `hmac:${sha256(`airlock-key-id:${options.signingKey}`).substring(0, 16)}`;
+      keyId = `hmac:${sha256(`qafind-key-id:${options.signingKey}`).substring(0, 16)}`;
     }
     if (insecureDevKey) keyId = `INSECURE-DEV-KEY:${keyId}`;
 
@@ -259,7 +259,7 @@ export class AttestationEngine {
     if (!Array.isArray(bundle.ledgerBlocks)) return fail('Bundle has no ledgerBlocks');
 
     // 1. Recompute the hash chain from the embedded blocks.
-    const chain = AirlockLedger.verifyBlocks(bundle.ledgerBlocks);
+    const chain = QAFindLedger.verifyBlocks(bundle.ledgerBlocks);
     if (!chain.valid) return fail(`Ledger chain invalid: ${chain.reason}`);
 
     // 2. Recompute the Merkle root.

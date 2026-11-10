@@ -18,7 +18,7 @@ let tempRoot;
 let origin;
 
 beforeAll(async () => {
-  tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'airlock-console-live-'));
+  tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'qafind-console-live-'));
   browser = await chromium.launch({ executablePath, headless: true, args: ['--no-sandbox'] });
 });
 
@@ -44,7 +44,7 @@ afterAll(async () => {
 });
 
 // ---------------------------------------------------------------------------
-// Mock of the Airlock Cloud API (shapes from cloud/shared/contract.ts)
+// Mock of the QAFind Cloud API (shapes from cloud/shared/contract.ts)
 // ---------------------------------------------------------------------------
 
 const NOW = Date.now();
@@ -252,7 +252,7 @@ async function installMock(context, mock) {
 async function openConsole(mock, hash, config, basePath = '/console') {
   const context = await browser.newContext(config && config.demo ? {} : {});
   if (config && config.demo) {
-    await context.addInitScript(() => { window.sessionStorage.setItem('airlock-demo-session', 'preview'); });
+    await context.addInitScript(() => { window.sessionStorage.setItem('qafind-demo-session', 'preview'); });
   }
   await installMock(context, mock);
   const page = await context.newPage();
@@ -336,8 +336,8 @@ describe('Console modes', () => {
       await page.waitForSelector('.lv-onboard');
       const text = await page.locator('.lv-onboard').innerText();
       expect(text).toContain('Start a cloud run');
-      expect(text).toContain('airlock login');
-      expect(text).toContain('airlock test --cloud');
+      expect(text).toContain('qafind login');
+      expect(text).toContain('qafind test --cloud');
     });
   });
 
@@ -608,9 +608,9 @@ describe('Keys, evidence, settings', () => {
     await withConsole(mock, '#cicd', undefined, async (page) => {
       await page.waitForSelector('#create-key-form');
       const text = await page.locator('#live-integrations').innerText();
-      expect(text).toContain('AIRLOCK_API_KEY');
-      expect(text).toContain('npx airlock test --cloud');
-      expect(text).toContain('https://api.qbrin.cloud/v1/runs');
+      expect(text).toContain('QAFIND_API_KEY');
+      expect(text).toContain('npx qafind test --cloud');
+      expect(text).toContain('https://api.qafind.si/v1/runs');
       expect(text).toContain('12 / 100');
     });
   });
@@ -628,7 +628,7 @@ describe('Keys, evidence, settings', () => {
       await page.waitForSelector('#evidence-key-id');
       expect(await page.locator('#evidence-key-id').innerText()).toBe('key_test_01');
       expect(await page.locator('#evidence-public-key').innerText()).toContain('BEGIN PUBLIC KEY');
-      expect(await page.locator('#live-audit').innerText()).toContain('AIRLOCK_TRUSTED_PUBLIC_KEY=... airlock audit <bundle.json>');
+      expect(await page.locator('#live-audit').innerText()).toContain('QAFIND_TRUSTED_PUBLIC_KEY=... qafind audit <bundle.json>');
       expect(await page.locator('.lv-evidence-item').count()).toBe(2);
       expect(await page.locator('#live-audit').innerText()).not.toContain('no-evidence-suite');
 
@@ -671,7 +671,7 @@ describe('Keys, evidence, settings', () => {
       await page.waitForSelector('#live-chaos .lv-badge-preview');
       const text = await page.locator('#live-chaos').innerText();
       expect(text.toLowerCase()).toContain('preview');
-      expect(text).toContain('airlock chaos');
+      expect(text).toContain('qafind chaos');
       expect(text).not.toContain('cap_7f2a91');
     });
   });
@@ -694,7 +694,7 @@ describe('Synced local data', () => {
   it('lists encrypted local artifacts in Settings', async () => {
     const mock = createMock({
       syncArtifacts: [{
-        id: 'sync_abc123', kind: 'checkpoint', name: '.airlock/checkpoints/paid.json',
+        id: 'sync_abc123', kind: 'checkpoint', name: '.qafind/checkpoints/paid.json',
         plaintextSize: 2048, storedSize: 2200, sha256: 'a'.repeat(64), contentType: 'application/json',
         encrypted: true, createdAt: iso(-3600_000),
       }],
@@ -703,7 +703,7 @@ describe('Synced local data', () => {
       await page.waitForSelector('#synced-local-data');
       const text = await page.locator('#synced-local-data').innerText();
       expect(text).toContain('checkpoint');
-      expect(text).toContain('.airlock/checkpoints/paid.json');
+      expect(text).toContain('.qafind/checkpoints/paid.json');
       expect(text).toContain('2.0 KB');
     });
   });

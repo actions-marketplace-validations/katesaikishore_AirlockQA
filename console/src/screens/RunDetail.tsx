@@ -24,7 +24,7 @@ function EvidenceCard({ run }: { run: RunDetailData }) {
             <MetaItem label="Key id"><span className="lv-mono lv-wrap">{evidence.keyId}</span></MetaItem>
             <MetaItem label="Ledger blocks">{String(evidence.blocksCount)}</MetaItem>
           </dl>
-          <p className="lv-muted lv-small">Check it on the <a href="#evidence">Evidence page</a> or with <code>airlock audit &lt;bundle.json&gt;</code>.</p>
+          <p className="lv-muted lv-small">Check it on the <a href="#evidence">Evidence page</a> or with <code>qafind audit &lt;bundle.json&gt;</code>.</p>
         </div>
       ) : (
         <p className="lv-muted">{isActive(run.status) ? 'Evidence is signed when the run finishes.' : 'This run has no evidence bundle.'}</p>
@@ -166,7 +166,7 @@ function RunDetailScreen({ param }: { param: string }) {
       const url = URL.createObjectURL(blob);
       const anchor = document.createElement('a');
       anchor.href = url;
-      anchor.download = 'airlock-evidence-' + run.id + '.json';
+      anchor.download = 'qafind-evidence-' + run.id + '.json';
       document.body.append(anchor);
       anchor.click();
       anchor.remove();

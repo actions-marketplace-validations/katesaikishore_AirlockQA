@@ -1,8 +1,8 @@
 import { defineConfig } from '@playwright/test';
 
 /**
- * A normal Playwright config. Nothing here imports Airlock: the attach command generates a wrapper
- * config in .airlock/ that appends the Airlock reporter to this config's existing reporters.
+ * A normal Playwright config. Nothing here imports QAFind: the attach command generates a wrapper
+ * config in .qafind/ that appends the QAFind reporter to this config's existing reporters.
  */
 export default defineConfig({
   testDir: './tests',
@@ -11,7 +11,7 @@ export default defineConfig({
   reporter: [['line'], ['./reporters/demo-reporter.ts']],
   // The demo starts its local store for recording; replay runs must not depend on it.
   webServer:
-    process.env.AIRLOCK_ATTACH_NETWORK === 'replay'
+    process.env.QAFIND_ATTACH_NETWORK === 'replay'
       ? undefined
       : {
           command: 'bun ../demo-store/server.ts',
@@ -23,6 +23,6 @@ export default defineConfig({
   use: {
     trace: 'off',
     storageState: './auth/state.json',
-    launchOptions: process.env.AIRLOCK_CHROME_PATH ? { executablePath: process.env.AIRLOCK_CHROME_PATH } : undefined,
+    launchOptions: process.env.QAFIND_CHROME_PATH ? { executablePath: process.env.QAFIND_CHROME_PATH } : undefined,
   },
 });

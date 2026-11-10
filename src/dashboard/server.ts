@@ -4,7 +4,7 @@ import * as path from 'node:path';
 import { createHash, randomUUID } from 'node:crypto';
 import { TLSSocket } from 'node:tls';
 import { fileURLToPath } from 'node:url';
-import type { AirlockConfig, ComplianceProofBundle } from '../types/index.js';
+import type { QAFindConfig, ComplianceProofBundle } from '../types/index.js';
 import { readJsonFile, readJsonlFile } from '../utils/files.js';
 import { AttestationEngine } from '../compliance/attestation.js';
 import { logger } from '../utils/logger.js';
@@ -29,7 +29,7 @@ const staticContentTypes: Record<string, string> = {
   '.webm': 'video/webm',
 };
 
-const previewRecordingName = 'airlockqa-motion-preview.webm';
+const previewRecordingName = 'qafind-motion-preview.webm';
 const maxVerifyBodyBytes = 5 * 1024 * 1024;
 
 const localHostnames = new Set(['localhost', '127.0.0.1', '[::1]']);
@@ -119,13 +119,13 @@ function hasSameOrigin(req: http.IncomingMessage): boolean {
 }
 
 export function startDashboardServer(
-  config: AirlockConfig,
+  config: QAFindConfig,
   port = 4100,
   artifactDirectory = path.resolve(process.cwd(), 'artifacts'),
 ): http.Server {
-  const complianceDir = config.compliance?.outputDir || './.airlock/compliance';
-  const datasetFile = path.join(config.healer?.datasetDir || './.airlock/dataset', 'mutations.jsonl');
-  const checkpointsDir = config.forker?.checkpointsDir || './.airlock/checkpoints';
+  const complianceDir = config.compliance?.outputDir || './.qafind/compliance';
+  const datasetFile = path.join(config.healer?.datasetDir || './.qafind/dataset', 'mutations.jsonl');
+  const checkpointsDir = config.forker?.checkpointsDir || './.qafind/checkpoints';
 
   const server = http.createServer((req, res) => {
     const address = server.address();
@@ -207,7 +207,7 @@ export function startDashboardServer(
 
         void (async () => {
           const outputPath = path.join(artifactDirectory, previewRecordingName);
-          const temporaryPath = path.join(artifactDirectory, `.airlockqa-preview-${randomUUID()}.tmp`);
+          const temporaryPath = path.join(artifactDirectory, `.qafind-preview-${randomUUID()}.tmp`);
           try {
             await fs.promises.mkdir(artifactDirectory, { recursive: true });
             await fs.promises.writeFile(temporaryPath, recording, { flag: 'wx' });
@@ -293,7 +293,7 @@ export function startDashboardServer(
         if (rejected || res.writableEnded) return;
         try {
           const bundle = JSON.parse(Buffer.concat(chunks).toString('utf8')) as ComplianceProofBundle;
-          const key = config.compliance?.signingKey || 'airlock-default-signing-key';
+          const key = config.compliance?.signingKey || 'qafind-default-signing-key';
           const result = AttestationEngine.verifyBundle(bundle, key);
           res.writeHead(200, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify(result));
@@ -393,7 +393,7 @@ export function startDashboardServer(
     res.end(`<!DOCTYPE html>
 <html>
 <head>
-  <title>AirlockQA Console</title>
+  <title>QAFind Console</title>
   <style>
     body { background: #090d16; color: #f3f4f6; font-family: sans-serif; padding: 2rem; }
     h1 { color: #06b6d4; }
@@ -402,12 +402,12 @@ export function startDashboardServer(
   </style>
 </head>
 <body>
-  <h1>AirlockQA Console</h1>
+  <h1>QAFind Console</h1>
   <p>Browser testing, request policy, and signed run evidence</p>
   <div class="card">
     <h3>No Run-Evidence Report Generated Yet</h3>
     <p>Run a Playwright test to create signed browser-run evidence:</p>
-    <pre><code>npx airlock run</code></pre>
+    <pre><code>npx qafind run</code></pre>
   </div>
 </body>
 </html>`);
@@ -416,7 +416,7 @@ export function startDashboardServer(
   server.listen(port, '127.0.0.1', () => {
     const address = server.address();
     const boundPort = address && typeof address === 'object' ? address.port : port;
-    logger.success(`AirlockQA dashboard running at http://localhost:${boundPort}`);
+    logger.success(`QAFind dashboard running at http://localhost:${boundPort}`);
   });
 
   return server;

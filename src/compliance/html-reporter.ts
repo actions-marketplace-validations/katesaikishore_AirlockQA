@@ -39,7 +39,7 @@ export class HtmlReporter {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AirlockQA Run Evidence - ${e(bundle.runId)}</title>
+  <title>QAFind Run Evidence - ${e(bundle.runId)}</title>
   <style>
     :root {
       --bg: #090d16;
@@ -155,7 +155,7 @@ export class HtmlReporter {
   <div class="container">
     <header>
       <div class="logo-badge">
-        <h1 style="font-size: 1.6rem; font-weight: 800; color: #fff;">AirlockQA</h1>
+        <h1 style="font-size: 1.6rem; font-weight: 800; color: #fff;">QAFind</h1>
         <span class="badge badge-tag">Signed run evidence · not a compliance assessment</span>
       </div>
       <div style="text-align: right; font-size: 0.85rem; color: var(--text-dim);">
@@ -202,7 +202,7 @@ export class HtmlReporter {
       <div class="merkle-box" style="color: var(--amber);">${e(bundle.signature)}</div>
 
       <div style="font-size: 0.85rem; color: var(--text-dim);">
-        CLI Verification Command: <code>npx airlock audit ./latest-attestation.json</code>
+        CLI Verification Command: <code>npx qafind audit ./latest-attestation.json</code>
       </div>
     </div>
 
@@ -347,7 +347,7 @@ export class HtmlReporter {
     }
 
     <footer style="margin-top: 3rem; text-align: center; color: var(--text-dim); font-size: 0.8rem; border-top: 1px solid var(--card-border); padding-top: 1.5rem;">
-      AirlockQA &bull; Browser testing run evidence &bull; Apache-2.0
+      QAFind &bull; Browser testing run evidence &bull; Apache-2.0
     </footer>
   </div>
 </body>

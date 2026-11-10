@@ -1,5 +1,5 @@
-name: AirlockQA Attach + Flake
-description: Attach the AirlockQA reporter to an existing Playwright suite, run it, and publish a flake report.
+name: QAFind Attach + Flake
+description: Attach the QAFind reporter to an existing Playwright suite, run it, and publish a flake report.
 branding:
   icon: shield
   color: blue
@@ -9,9 +9,9 @@ inputs:
     required: false
     default: .
   reports-path:
-    description: Airlock reporter output directory
+    description: QAFind reporter output directory
     required: false
-    default: .airlock/reports
+    default: .qafind/reports
   fail-on-flake:
     description: Fail the job when flaky tests are found
     required: false
@@ -21,7 +21,7 @@ runs:
   steps:
     - name: Attach reporter
       shell: bash
-      run: npx --yes airlockqa@latest attach "${{ inputs.project-dir }}"
+      run: npx --yes qafind@latest attach "${{ inputs.project-dir }}"
     - name: Run Playwright
       shell: bash
       run: npx playwright test
@@ -32,7 +32,7 @@ runs:
         FAIL_ON_FLAKE: ${{ inputs.fail-on-flake }}
       run: |
         if [ "$FAIL_ON_FLAKE" = "true" ]; then
-          npx --yes airlockqa@latest flake "$REPORTS_PATH" --markdown --fail-on-flake
+          npx --yes qafind@latest flake "$REPORTS_PATH" --markdown --fail-on-flake
         else
-          npx --yes airlockqa@latest flake "$REPORTS_PATH" --markdown
+          npx --yes qafind@latest flake "$REPORTS_PATH" --markdown
         fi

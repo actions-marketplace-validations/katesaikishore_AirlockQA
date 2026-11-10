@@ -40,7 +40,7 @@ function SyncedLocalData() {
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = artifact.id + '.airlock-enc';
+      link.download = artifact.id + '.qafind-enc';
       link.click();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
       announce('Encrypted artifact downloaded');
@@ -71,14 +71,14 @@ function SyncedLocalData() {
     return (
       <div className="lv-empty" id="sync-empty">
         <p className="lv-muted">No local artifacts synced yet. Upload traces, checkpoints, healing logs, fixtures or capsules from your machine:</p>
-        <div className="lv-code-wrap"><pre className="lv-code"><code>AIRLOCK_SYNC_KEY='a long passphrase' airlock sync</code></pre></div>
+        <div className="lv-code-wrap"><pre className="lv-code"><code>QAFIND_SYNC_KEY='a long passphrase' qafind sync</code></pre></div>
         <p className="lv-muted lv-small">The key stays on your machine; the server stores only AES-256-GCM ciphertext.</p>
       </div>
     );
   }
   return (
     <div id="synced-local-data">
-      <p className="lv-muted lv-small">The server stores only encrypted bytes. Download an artifact and decrypt it with <code>airlock sync download &lt;id&gt; --out &lt;file&gt;</code>.</p>
+      <p className="lv-muted lv-small">The server stores only encrypted bytes. Download an artifact and decrypt it with <code>qafind sync download &lt;id&gt; --out &lt;file&gt;</code>.</p>
       <div className="lv-table-wrap">
         <table className="lv-table lv-table-stack">
           <caption className="sr-only">Synced local artifacts</caption>

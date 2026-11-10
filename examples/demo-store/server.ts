@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 const app = express();
 const PORT = 3900;
 // Demo only: accept the same value the runner substitutes for the phantom token.
-// airlock.config.json reads STRIPE_SECRET_KEY (realFromEnv) and falls back to this placeholder.
+// qafind.config.json reads STRIPE_SECRET_KEY (realFromEnv) and falls back to this placeholder.
 const realStripeSecret = () => process.env.STRIPE_SECRET_KEY || 'REPLACE_ME_STRIPE_SECRET_KEY';
 
 app.use(express.json());

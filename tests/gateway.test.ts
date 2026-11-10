@@ -4,8 +4,8 @@ import * as http from 'node:http';
 import * as net from 'node:net';
 import * as zlib from 'node:zlib';
 import { chromium, type Browser } from 'playwright-core';
-import { AirlockGateway } from '../src/proxy/gateway.js';
-import type { AirlockConfig, InterceptedRequest, InterceptedResponse } from '../src/types/index.js';
+import { QAFindGateway } from '../src/proxy/gateway.js';
+import type { QAFindConfig, InterceptedRequest, InterceptedResponse } from '../src/types/index.js';
 
 setDefaultTimeout(30_000);
 
@@ -67,7 +67,7 @@ function startUpstream(): Promise<{ server: http.Server; port: number; received:
   );
 }
 
-function makeConfig(patch: Partial<AirlockConfig> = {}): AirlockConfig {
+function makeConfig(patch: Partial<QAFindConfig> = {}): QAFindConfig {
   return {
     projectName: 'gateway-test',
     baseUrl: 'http://127.0.0.1',
@@ -94,7 +94,7 @@ const macChromePath = '/Applications/Google Chrome.app/Contents/MacOS/Google Chr
 const chromePath =
   process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH || (fs.existsSync(macChromePath) ? macChromePath : undefined);
 
-describe('AirlockGateway browser context', () => {
+describe('QAFindGateway browser context', () => {
   let browser: Browser;
   let upstream: Awaited<ReturnType<typeof startUpstream>>;
 
@@ -109,7 +109,7 @@ describe('AirlockGateway browser context', () => {
   });
 
   async function newGatewayPage(config = makeConfig()) {
-    const gateway = new AirlockGateway(config);
+    const gateway = new QAFindGateway(config);
     const requests: InterceptedRequest[] = [];
     const responses: InterceptedResponse[] = [];
     gateway.onRequest((r) => requests.push(r));
@@ -267,11 +267,11 @@ function connectRequest(proxyPort: number, target: string): Promise<{ status: nu
   });
 }
 
-describe('AirlockGateway HTTP proxy', () => {
+describe('QAFindGateway HTTP proxy', () => {
   let upstream: Awaited<ReturnType<typeof startUpstream>>;
   let echoServer: net.Server;
   let echoPort: number;
-  let gateway: AirlockGateway;
+  let gateway: QAFindGateway;
   let proxyPort: number;
   const requests: InterceptedRequest[] = [];
 
@@ -280,7 +280,7 @@ describe('AirlockGateway HTTP proxy', () => {
     echoServer = net.createServer((s) => s.pipe(s));
     await new Promise<void>((r) => echoServer.listen(0, '127.0.0.1', () => r()));
     echoPort = (echoServer.address() as net.AddressInfo).port;
-    gateway = new AirlockGateway(makeConfig(), {
+    gateway = new QAFindGateway(makeConfig(), {
       connectAllowHosts: [`127.0.0.1:${echoPort}`],
       maxBodyBytes: 1024,
     });

@@ -1,4 +1,4 @@
-# AirlockQA quality plan
+# QAFind quality plan
 
 This is the working acceptance map for the current repository. It covers the implemented runtime, local demo API, static cloud preview, and the staging site. It does not label prototype behavior as infrastructure capability.
 
@@ -12,7 +12,7 @@ bun run qa:gui
 
 `bun run qa` runs those steps in order. The GUI suite (`scripts/gui-smoke.ts`) uses Playwright and axe-core from the repository's own dependencies and a Chromium (`bunx playwright install chromium`, or Chrome on macOS). By default it serves the site in `public/` with the local dashboard, so it tests the code in the checkout and needs no network; set `BASE_URL` to test a deployment. It opens every console section found in the navigation (heading, content, no page errors, no sideways scrolling at 390 px, axe audit), and writes screenshots, a five-second Three.js WebM clip through the local loopback preview server, and a report under `artifacts/gui-qa/pr/`. It runs in CI. Pages are audited with reduced motion so axe sees the settled page; any axe violation fails the run after every page has been audited.
 
-The GUI script deliberately uses the local Demo Store for form submission. Its browser pass checks malformed email validation, sample login, cart add, invalid and valid coupons, total calculation, and that a checkout request carrying a raw phantom value is rejected. The regular Playwright integration suite also runs checkout through `AirlockRunner`, verifies its configured token swap, checks the blocked refund request, generates and verifies an attestation, and tests locator recovery.
+The GUI script deliberately uses the local Demo Store for form submission. Its browser pass checks malformed email validation, sample login, cart add, invalid and valid coupons, total calculation, and that a checkout request carrying a raw phantom value is rejected. The regular Playwright integration suite also runs checkout through `QAFindRunner`, verifies its configured token swap, checks the blocked refund request, generates and verifies an attestation, and tests locator recovery.
 
 ## Coverage map
 
@@ -32,7 +32,7 @@ The GUI script deliberately uses the local Demo Store for form submission. Its b
 
 ## Staging contract
 
-`https://staging.qbrin.cloud` is a Docker-isolated static preview on the existing Hostinger KVM 4 VPS (4 vCPU, 16 GB RAM). Hostinger disables nested virtualization on VPS plans, so this host cannot be split into additional full VMs; Docker Compose supplies the isolated staging service instead. It does not forward GUI actions to the production run service. The cloud contract currently exposes only `POST /v1/runs`; the preview has no real account authentication, run-history, analytics, usage, project, or API-key endpoints. Therefore the GUI suite verifies the sample experience and does not create cloud runs or claim live account data.
+`https://staging.qafind.si` is a Docker-isolated static preview on the existing Hostinger KVM 4 VPS (4 vCPU, 16 GB RAM). Hostinger disables nested virtualization on VPS plans, so this host cannot be split into additional full VMs; Docker Compose supplies the isolated staging service instead. It does not forward GUI actions to the production run service. The cloud contract currently exposes only `POST /v1/runs`; the preview has no real account authentication, run-history, analytics, usage, project, or API-key endpoints. Therefore the GUI suite verifies the sample experience and does not create cloud runs or claim live account data.
 
 Use a dedicated staging API credential and a disposable test project before adding live `POST /v1/runs` coverage. Never send a production API key or real customer data from the GUI suite.
 

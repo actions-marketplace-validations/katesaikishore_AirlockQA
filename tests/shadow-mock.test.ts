@@ -5,7 +5,7 @@ import { ShadowRecorder } from '../src/shadow/shadow-recorder.js';
 import { ShadowSynthesizer } from '../src/shadow/shadow-synthesizer.js';
 
 describe('Browser-context fixture replay prototype', () => {
-  const testCatalogPath = './.airlock/test-shadow/catalog.json';
+  const testCatalogPath = './.qafind/test-shadow/catalog.json';
 
   it('records outbound wire interactions and caches them', () => {
     const recorder = new ShadowRecorder(testCatalogPath);

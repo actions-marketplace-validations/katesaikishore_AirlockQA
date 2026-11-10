@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 /**
  * Seeded flaky suite for the attach/flake demo. No browser page is used, so the demo is fast and
- * deterministic; FLAKE_ROUND makes exactly one test fail per round so `airlock flake` can find it.
+ * deterministic; FLAKE_ROUND makes exactly one test fail per round so `qafind flake` can find it.
  */
 const round = process.env.FLAKE_ROUND || '1';
 

@@ -9,7 +9,7 @@ export default function HealingPanel() {
 Self-healing
 </h1>
 <p style={{"margin": "6px 0px 0px", "fontSize": "15.5px", "color": "rgb(90, 105, 97)"}}>
-When a button is renamed or moved, AirlockQA finds it again so the run can continue — then asks a person before the fix becomes part of your test.
+When a button is renamed or moved, QAFind finds it again so the run can continue — then asks a person before the fix becomes part of your test.
 </p>
 </div>
 <div style={{"display": "flex", "flexWrap": "wrap", "gap": "10px"}}>
@@ -404,7 +404,7 @@ Reject
 <aside aria-label="How matching works" style={{"flex": "1 1 300px", "minWidth": "0px", "display": "grid", "gap": "14px"}}>
 <section aria-labelledby="hl-how" style={{"padding": "18px 20px", "border": "1px solid rgb(227, 232, 226)", "borderRadius": "16px", "background": "rgb(255, 255, 255)"}}>
 <h2 id="hl-how" style={{"margin": "0px", "font": "700 16px / 1.3 Manrope, system-ui, sans-serif"}}>
-How AirlockQA finds it again
+How QAFind finds it again
 </h2>
 <p style={{"margin": "6px 0px 0px", "fontSize": "13.5px", "color": "rgb(90, 105, 97)"}}>
 Clues are tried in this order. The more precise the clue, the higher the match.
@@ -523,9 +523,9 @@ At{" "}
 Healing log
 </h2>
 <p style={{"margin": "2px 0px 0px", "fontSize": "13.5px", "color": "rgb(90, 105, 97)"}}>
-Every attempt is saved to .airlock/dataset/mutations.jsonl — the same data{" "}
+Every attempt is saved to .qafind/dataset/mutations.jsonl — the same data{" "}
 <code style={{"fontFamily": "\"JetBrains Mono\", monospace"}}>
-airlock dataset
+qafind dataset
 </code>
 {" "}shows
 </p>

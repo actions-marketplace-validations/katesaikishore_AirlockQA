@@ -80,11 +80,11 @@ function OnboardingCard() {
         <a className="lv-btn" href="#qa">Run QA</a>
       </div>
       <div className="lv-stack">
-        <CodeBlock text="airlock login" label="Copy" />
-        <CodeBlock text="airlock test --cloud" label="Copy" />
-        <CodeBlock text="airlock qa --wait" label="Copy" />
+        <CodeBlock text="qafind login" label="Copy" />
+        <CodeBlock text="qafind test --cloud" label="Copy" />
+        <CodeBlock text="qafind --wait" label="Copy" />
       </div>
-      <p className="lv-muted lv-small">Create an API key under <a className="lv-link" href="#cicd">CI/CD &amp; API</a> first, then paste it when <code>airlock login</code> asks.</p>
+      <p className="lv-muted lv-small">Create an API key under <a className="lv-link" href="#cicd">CI/CD &amp; API</a> first, then paste it when <code>qafind login</code> asks.</p>
     </section>
   );
 }

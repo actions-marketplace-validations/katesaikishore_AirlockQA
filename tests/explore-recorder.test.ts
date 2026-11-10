@@ -40,8 +40,8 @@ describe('explore interaction recorder', () => {
     await page.locator('input[name="password"]').fill('hunter2');
     await page.getByRole('button', { name: 'Log In to Sandbox' }).click();
     await page.getByText('Add to Cart').click();
-    await page.getByPlaceholder('e.g. AIRLOCK20').fill('VIP50');
-    await page.getByPlaceholder('e.g. AIRLOCK20').press('Enter');
+    await page.getByPlaceholder('e.g. QAFIND20').fill('VIP50');
+    await page.getByPlaceholder('e.g. QAFIND20').press('Enter');
     await recorder.flush(context);
 
     const steps = trace.getTrace().steps.map((s) => ({ type: s.type, css: s.target?.css, value: s.value, url: s.url }));

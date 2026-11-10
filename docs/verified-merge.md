@@ -1,14 +1,14 @@
 # Verified Merge
 
-Verified Merge is Airlock's required-check moat: triage the Playwright specs a PR affects, re-run the
+Verified Merge is QAFind's required-check moat: triage the Playwright specs a PR affects, re-run the
 failures, and report only **reproduced regressions**. A failure that passes on rerun is a flake and does
-not block the merge. The verdict is signed and can be uploaded to Airlock Cloud.
+not block the merge. The verdict is signed and can be uploaded to QAFind Cloud.
 
 ## One-command CI
 
 ```bash
-AIRLOCK_SIGNING_KEY=... AIRLOCK_API_KEY=... \
-airlock verify-merge --run --base origin/main --head HEAD \
+QAFIND_SIGNING_KEY=... QAFIND_API_KEY=... \
+qafind verify-merge --run --base origin/main --head HEAD \
   --repo owner/repo --pr "$PR_NUMBER" --upload
 ```
 
@@ -35,16 +35,16 @@ npx playwright test <affected specs> --reporter=json > first.json
 # deterministic rerun of the same specs
 npx playwright test <affected specs> --reporter=json > rerun.json
 
-airlock verify-merge \
+qafind verify-merge \
   --base origin/main --head HEAD \
   --results first.json --rerun-results rerun.json \
   --repo owner/repo --pr "$PR_NUMBER" \
-  --out .airlock/verified-merge/verdict.json \
-  --intoto .airlock/verified-merge/intoto.json \
+  --out .qafind/verified-merge/verdict.json \
+  --intoto .qafind/verified-merge/intoto.json \
   --upload
 ```
 
-Required environment for upload: `AIRLOCK_API_KEY`. Signing requires `AIRLOCK_SIGNING_KEY`
+Required environment for upload: `QAFIND_API_KEY`. Signing requires `QAFIND_SIGNING_KEY`
 (HMAC secret or Ed25519 PEM). The command exits `1` only when a **reproduced regression** is present.
 
 ## What counts
@@ -57,12 +57,12 @@ Required environment for upload: `AIRLOCK_API_KEY`. Signing requires `AIRLOCK_SI
 | unreproduced | rerun produced a different non-passing result | no |
 
 The CLI prints a PR-comment Markdown report with `--markdown`, writes a **signed in-toto/DSSE test-result
-attestation** with `--intoto`, and supports the same verification through the MCP tool `airlock_verify`.
+attestation** with `--intoto`, and supports the same verification through the MCP tool `qafind_verify`.
 
 Verify the attestation offline:
 
 ```bash
-airlock verify-intoto .airlock/verified-merge/intoto.json --json
+qafind verify-intoto .qafind/verified-merge/intoto.json --json
 ```
 
 The DSSE payload is the in-toto Statement v1; the signature is HMAC-SHA256 or Ed25519. Tampering with the
@@ -74,14 +74,14 @@ Verified Merge completion can post to Slack or any HTTPS endpoint. See [webhooks
 
 ## Required check
 
-See [branch-protection.md](branch-protection.md). The context is `Airlock Verified Merge`; the server posts a
+See [branch-protection.md](branch-protection.md). The context is `QAFind Verified Merge`; the server posts a
 native check run when the App has `checks: write`, otherwise the equivalent commit status.
 
 ## Status
 
 Implemented: affected-spec selection from the git diff, Playwright JSON ingest, deterministic triage,
 signed verdict, cloud ingest, in-toto export, MCP offline verify, and GitHub commit status + one idempotent
-PR comment from the uploaded report. The status context is `Airlock Verified Merge` and can be required
+PR comment from the uploaded report. The status context is `QAFind Verified Merge` and can be required
 in branch protection. A GitHub *check run* additionally needs the App's `checks: write` permission; the
 current App uses the commit-status API (`statuses: write`).
 

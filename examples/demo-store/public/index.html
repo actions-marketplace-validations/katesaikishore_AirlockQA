@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Acme Cloud Store - AirlockQA Target App</title>
+  <title>Acme Cloud Store - QAFind Target App</title>
   <style>
     :root {
       --bg: #0f172a;
@@ -54,7 +54,7 @@
 <body>
   <main class="container">
     <h1>🚀 Acme Cloud SaaS Store</h1>
-    <p style="color: #94a3b8; margin-bottom: 2rem;">AirlockQA Demonstration Sandbox Application</p>
+    <p style="color: #94a3b8; margin-bottom: 2rem;">QAFind Demonstration Sandbox Application</p>
 
     <!-- Section 1: Auth -->
     <div id="auth-section" class="card">
@@ -91,7 +91,7 @@
 
       <div style="margin-top: 1.5rem;">
         <label><b>Promo Coupon:</b></label><br>
-        <input type="text" name="coupon" data-testid="coupon-input" placeholder="e.g. AIRLOCK20" />
+        <input type="text" name="coupon" data-testid="coupon-input" placeholder="e.g. QAFIND20" />
         <button id="apply-btn" data-testid="apply-coupon-btn" type="button">Apply Coupon</button>
         <div id="coupon-status" class="hidden success"></div>
       </div>
@@ -146,7 +146,7 @@
     document.getElementById('apply-btn').addEventListener('click', () => {
       const code = document.querySelector('[data-testid="coupon-input"]').value.trim();
       const status = document.getElementById('coupon-status');
-      if (code === 'AIRLOCK20') {
+      if (code === 'QAFIND20') {
         discount = 10.00;
         status.textContent = '✔ 20% discount applied (-$10.00)';
         status.classList.remove('hidden');

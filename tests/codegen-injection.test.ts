@@ -19,7 +19,7 @@ function parseErrors(code: string): string[] {
 
 /**
  * Execute the generated spec against recording stubs (no real Playwright) and
- * return every string that reached a Playwright/Airlock call, plus whether any
+ * return every string that reached a Playwright/QAFind call, plus whether any
  * code touched `process`.
  */
 async function runGenerated(code: string): Promise<{ strings: string[]; touchedProcess: boolean }> {
@@ -58,7 +58,7 @@ async function runGenerated(code: string): Promise<{ strings: string[]; touchedP
     });
   let touchedProcess = false;
   const fakeProcess = new Proxy({}, { get: () => { touchedProcess = true; return () => {}; } });
-  const fn = new Function('test', 'expect', 'airlockLocator', 'AirlockRunner', 'CapsuleManager', 'process', 'page', js);
+  const fn = new Function('test', 'expect', 'qafindLocator', 'QAFindRunner', 'CapsuleManager', 'process', 'page', js);
   fn(recorder('test'), recorder(), recorder(), recorder(), recorder(), fakeProcess, recorder());
   while (pending.length) await pending.shift()!();
   return { strings, touchedProcess };

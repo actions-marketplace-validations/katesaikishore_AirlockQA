@@ -42,7 +42,7 @@ function tail(text: string, lines = 40): string {
 export async function runPlaywright(options: PlaywrightRunOptions): Promise<PlaywrightRunResult> {
   if (!options.cwd || !fs.existsSync(options.cwd)) throw new Error(`Playwright cwd not found: ${options.cwd}`);
   if (!options.specs.length) throw new Error('Verified Merge found no affected specs to run');
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'airlock-vm-run-'));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'qafind-vm-run-'));
   const reportPath = path.join(dir, 'playwright-results.json');
   const template = options.command || 'npx playwright test {specs} --reporter=json';
   const escaped = options.specs.map(shellQuote).join(' ');

@@ -3,12 +3,12 @@
 This is the P0 attach path behind the positioning in [docs/positioning.md](positioning.md): an existing
 Playwright suite keeps its specs, config and CI. Two commands make its signal triageable:
 
-- `airlock attach` writes a wrapper Playwright config that appends the Airlock reporter to the suite's
+- `qafind attach` writes a wrapper Playwright config that appends the QAFind reporter to the suite's
   existing reporters. It never edits the original config or a spec.
-- `airlock flake` aggregates the reporter manifests across runs and reports per-test instability,
+- `qafind flake` aggregates the reporter manifests across runs and reports per-test instability,
   probable cause, owner and quarantine recommendation.
 
-Nothing in this path needs an Airlock Cloud account. It is local, MIT licensed, and reads only files
+Nothing in this path needs an QAFind Cloud account. It is local, MIT licensed, and reads only files
 under the project.
 
 ## Attach in about ten minutes
@@ -16,41 +16,41 @@ under the project.
 From the root of an existing Playwright project:
 
 ```bash
-bunx airlockqa attach . --determinism   # wrapper + reporter + replay/clock shim
-AIRLOCK_ATTACH_NETWORK=record npx playwright test --config .airlock/playwright.airlock.config.ts
-AIRLOCK_ATTACH_NETWORK=replay npx playwright test --config .airlock/playwright.airlock.config.ts
-npx airlockqa flake .airlock/reports --markdown
+bunx qafind attach . --determinism   # wrapper + reporter + replay/clock shim
+QAFIND_ATTACH_NETWORK=record npx playwright test --config .qafind/playwright.qafind.config.ts
+QAFIND_ATTACH_NETWORK=replay npx playwright test --config .qafind/playwright.qafind.config.ts
+npx qafind flake .qafind/reports --markdown
 ```
 
 `attach` writes:
 
 | File | Purpose |
 | :--- | :--- |
-| `.airlock/playwright.airlock.config.ts` | Wrapper config: imports your original config, preserves its reporters, appends the Airlock reporter, and (with `--determinism`) points at the generated tsconfig alias. |
-| `.airlock/attach.json` | What was attached, where, and the reporter output directory. |
-| `.airlock/airlock-test.ts` | `--determinism`: re-exports Playwright's `test` extended with Airlock's auto-use fixtures; a tsconfig path alias maps `@playwright/test` here. |
-| `.airlock/tsconfig.airlock.json` | `--determinism`: the path alias (extends the project tsconfig when present). |
+| `.qafind/playwright.qafind.config.ts` | Wrapper config: imports your original config, preserves its reporters, appends the QAFind reporter, and (with `--determinism`) points at the generated tsconfig alias. |
+| `.qafind/attach.json` | What was attached, where, and the reporter output directory. |
+| `.qafind/qafind-test.ts` | `--determinism`: re-exports Playwright's `test` extended with QAFind's auto-use fixtures; a tsconfig path alias maps `@playwright/test` here. |
+| `.qafind/tsconfig.qafind.json` | `--determinism`: the path alias (extends the project tsconfig when present). |
 
 Your original `playwright.config.*` is read, never written. Keep it in CI by changing one command:
-`npx playwright test --config .airlock/playwright.airlock.config.ts`. Commit the two generated files if
+`npx playwright test --config .qafind/playwright.qafind.config.ts`. Commit the two generated files if
 CI should reuse the wrapper; re-run `attach --force` when the base config changes.
 
 ### What the wrapper handles
 
 Playwright resolves config-relative paths against the directory of the config file it loads. Because
-the wrapper lives in `.airlock/`, the generated config rebases `testDir`, `outputDir`, `snapshotDir`,
+the wrapper lives in `.qafind/`, the generated config rebases `testDir`, `outputDir`, `snapshotDir`,
 `tsconfig`, `globalSetup`, `globalTeardown` and project-level paths back onto the base config's
 directory. Without that rebase Playwright would find no tests.
 
 The wrapper preserves a reporter given as a string, a single `[name, options]` tuple, an array, or a
-class. The Airlock reporter entry is appended as a module specifier; Playwright 1.65 requires reporter
+class. The QAFind reporter entry is appended as a module specifier; Playwright 1.65 requires reporter
 entries to be `[name, options]` and crashes on a class instance.
 
 Relative reporter module paths, `use.storageState` and `webServer.cwd` are now rebased too:
 `storageState` and `webServer.cwd` are made absolute (Playwright resolves them against the process
 cwd), and relative reporter module paths are rebased to the base config directory. Base reporter
 options are preserved verbatim, so a relative output path inside a base reporter option is still
-relative to `.airlock/`; WebSockets and service workers are not recorded.
+relative to `.qafind/`; WebSockets and service workers are not recorded.
 
 ### Determinism without touching specs (`--determinism`)
 
@@ -58,13 +58,13 @@ relative to `.airlock/`; WebSockets and service workers are not recorded.
 `import { test } from '@playwright/test'`; the alias resolves that import to the shim for the wrapper
 run, and the fixture:
 
-- records every http(s) request/response into `.airlock/network/<test-hash>.json` with
-  `AIRLOCK_ATTACH_NETWORK=record`;
-- replays it byte-for-byte with `AIRLOCK_ATTACH_NETWORK=replay` (and fails loudly if a fixture is
+- records every http(s) request/response into `.qafind/network/<test-hash>.json` with
+  `QAFIND_ATTACH_NETWORK=record`;
+- replays it byte-for-byte with `QAFIND_ATTACH_NETWORK=replay` (and fails loudly if a fixture is
   missing, instead of silently going to the network);
-- installs Playwright's fixed clock before navigation (`AIRLOCK_ATTACH_CLOCK=fixed`, default enabled;
-  `AIRLOCK_ATTACH_TIME` chooses the instant; `off` disables it);
-- writes a request ledger to `.airlock/ledgers/<test-hash>.json` and attaches it to the test result.
+- installs Playwright's fixed clock before navigation (`QAFIND_ATTACH_CLOCK=fixed`, default enabled;
+  `QAFIND_ATTACH_TIME` chooses the instant; `off` disables it);
+- writes a request ledger to `.qafind/ledgers/<test-hash>.json` and attaches it to the test result.
 
 The demo in [`examples/attach-demo`](../examples/attach-demo) proves this end to end: the record run
 starts the local store, then the replay run **disables the web server** and still passes the page
@@ -78,8 +78,8 @@ tsconfig inheritance may need a manual look.
 
 ## The manifest
 
-The reporter writes one JSON file per run: `.airlock/reports/<runId>.json`. The format is defined in
-[`src/testing/airlock-report.ts`](../src/testing/airlock-report.ts):
+The reporter writes one JSON file per run: `.qafind/reports/<runId>.json`. The format is defined in
+[`src/testing/qafind-report.ts`](../src/testing/qafind-report.ts):
 
 - run: version, tool, runId, start/finish/duration, cwd, project names;
 - test: stable id (`project::file::title path`), title path, file, project, status
@@ -89,10 +89,10 @@ The reporter writes one JSON file per run: `.airlock/reports/<runId>.json`. The 
 No request bodies, headers, cookies, storage state or credentials are recorded by the reporter. A
 truncated manifest from a killed CI job is ignored by `flake`.
 
-## `airlock flake`
+## `qafind flake`
 
 ```bash
-airlock flake [path]                       # path defaults to .airlock/reports
+qafind flake [path]                       # path defaults to .qafind/reports
   --json                                   # machine-readable stdout
   --markdown                               # PR-comment report
   --min-runs <count>                       # default 1
@@ -107,7 +107,7 @@ deterministic (no timestamps), so a PR comment changes only when the evidence ch
 
 ### Evidence: error text + request ledger
 
-When `--determinism` is attached, flake automatically reads `.airlock/ledgers/` and marks causes as
+When `--determinism` is attached, flake automatically reads `.qafind/ledgers/` and marks causes as
 `request-ledger` evidence: a recorded transport failure confirms `network_fixture` (and can reclassify
 an ambiguous timeout), a clean ledger with real traffic contradicts a network label, and a silent
 ledger (no browser traffic) leaves the error-text confidence alone. The Markdown report adds a
@@ -160,13 +160,13 @@ three rounds; the stable failure is not quarantined:
 
 ```yaml
 - name: Attach reporter and run suite
-  run: npx playwright test --config .airlock/playwright.airlock.config.ts
+  run: npx playwright test --config .qafind/playwright.qafind.config.ts
 - name: Triage flakes
   if: always()
-  run: npx airlockqa flake .airlock/reports --markdown --owner-map .airlock/owners.json --quarantine .airlock/quarantine.json
+  run: npx qafind flake .qafind/reports --markdown --owner-map .qafind/owners.json --quarantine .qafind/quarantine.json
 - name: PR comment
   if: always()
-  run: gh pr comment "$PR" --body-file <(npx airlockqa flake .airlock/reports --markdown)
+  run: gh pr comment "$PR" --body-file <(npx qafind flake .qafind/reports --markdown)
 ```
 
 `--fail-on-flake` turns the step red when any flaky test is found; most teams should publish the report
@@ -181,7 +181,7 @@ first and only gate on it after an owner accepts the classification.
 - `tests/flake.test.ts` — 19 tests: classification priority, redaction, confidence, quarantine,
   owners, determinism, markdown.
 - `examples/attach-demo` — a real Playwright 1.65 run through the generated wrapper, three seeded
-  rounds, manifests aggregated by `airlock flake`. Demo outputs are in
+  rounds, manifests aggregated by `qafind flake`. Demo outputs are in
   [`artifacts/attach-flake-demo`](../artifacts/attach-flake-demo).
 
 With `bun` in this repository:

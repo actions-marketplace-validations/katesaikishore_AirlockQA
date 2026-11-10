@@ -1,8 +1,8 @@
 {
-  "name": "airlock-attach-demo",
+  "name": "qafind-attach-demo",
   "private": true,
   "type": "module",
-  "description": "Unmodified Playwright suite used to show airlock attach + airlock flake.",
+  "description": "Unmodified Playwright suite used to show qafind attach + qafind flake.",
   "scripts": {
     "test": "playwright test"
   },

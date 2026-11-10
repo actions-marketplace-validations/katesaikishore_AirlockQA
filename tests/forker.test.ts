@@ -6,7 +6,7 @@ import { StateForker } from '../src/forker/state-forker.js';
 import type { ForkVariation } from '../src/types/index.js';
 
 describe('State Forker: Point-in-Time State Checkpointing', () => {
-  const testCheckpointsDir = './.airlock/test-checkpoints';
+  const testCheckpointsDir = './.qafind/test-checkpoints';
   const macChromePath = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
   const chromePath = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH ||
     (fs.existsSync(macChromePath) ? macChromePath : undefined);
@@ -24,7 +24,7 @@ describe('State Forker: Point-in-Time State Checkpointing', () => {
 
       // Set sample cookie and navigate to blank
       await context.addCookies([
-        { name: 'airlock_auth', value: 'token_123', domain: 'localhost', path: '/' },
+        { name: 'qafind_auth', value: 'token_123', domain: 'localhost', path: '/' },
       ]);
       await page.setContent('<html><body><h1>Warm State Ready</h1></body></html>');
 
@@ -32,7 +32,7 @@ describe('State Forker: Point-in-Time State Checkpointing', () => {
 
       expect(snapshot.name).toBe('test_warm_state');
       expect(snapshot.stepIndex).toBe(5);
-      expect(snapshot.storageState.cookies.some((c) => c.name === 'airlock_auth')).toBe(true);
+      expect(snapshot.storageState.cookies.some((c) => c.name === 'qafind_auth')).toBe(true);
 
       const retrieved = manager.getCheckpoint('test_warm_state');
       expect(retrieved).not.toBeNull();

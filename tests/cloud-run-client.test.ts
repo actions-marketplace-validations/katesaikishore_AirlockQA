@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import type { AirlockConfig } from '../src/types/index.js';
+import type { QAFindConfig } from '../src/types/index.js';
 import {
   CloudApiError,
   createCloudRunPayload,
@@ -8,7 +8,7 @@ import {
 
 const cloudKey = 'air_live_test_key_do_not_log';
 
-function fixtureConfig(): AirlockConfig {
+function fixtureConfig(): QAFindConfig {
   return {
     baseUrl: 'https://shop.example.test',
     secrets: {
@@ -20,10 +20,10 @@ function fixtureConfig(): AirlockConfig {
         blockedPaths: ['/v1/refunds'],
       },
     },
-  } as AirlockConfig;
+  } as QAFindConfig;
 }
 
-describe('Airlock Cloud run client', () => {
+describe('QAFind Cloud run client', () => {
   it('requires an API key and never falls back to a demo credential', async () => {
     let requested = false;
     const fetcher = (async () => {
@@ -32,11 +32,11 @@ describe('Airlock Cloud run client', () => {
     }) as typeof fetch;
 
     await expect(submitCloudRun({
-      apiUrl: 'https://api.qbrin.cloud',
+      apiUrl: 'https://api.qafind.si',
       apiKey: ' ',
       payload: { suiteName: 'checkout', targetUrl: 'https://shop.example.test', phantomConfig: {} },
       fetcher,
-    })).rejects.toThrow('Cloud runs require AIRLOCK_API_KEY');
+    })).rejects.toThrow('Cloud runs require QAFIND_API_KEY');
     expect(requested).toBe(false);
   });
 
@@ -54,13 +54,13 @@ describe('Airlock Cloud run client', () => {
     }) as typeof fetch;
 
     const result = await submitCloudRun({
-      apiUrl: 'https://api.qbrin.cloud/',
+      apiUrl: 'https://api.qafind.si/',
       apiKey: cloudKey,
       payload,
       fetcher,
     });
 
-    expect(capturedUrl).toBe('https://api.qbrin.cloud/v1/runs');
+    expect(capturedUrl).toBe('https://api.qafind.si/v1/runs');
     expect(new Headers(capturedInit?.headers).get('authorization')).toBe(`Bearer ${cloudKey}`);
     const requestBody = String(capturedInit?.body);
     expect(requestBody).not.toContain(cloudKey);
@@ -82,7 +82,7 @@ describe('Airlock Cloud run client', () => {
     }) as typeof fetch;
 
     await expect(submitCloudRun({
-      apiUrl: 'http://qbrin.cloud/api',
+      apiUrl: 'http://qafind.si/api',
       apiKey: cloudKey,
       payload: { suiteName: 'checkout', targetUrl: 'https://shop.example.test', phantomConfig: {} },
       fetcher,
@@ -101,7 +101,7 @@ describe('Airlock Cloud run client', () => {
 
     try {
       await submitCloudRun({
-        apiUrl: 'https://api.qbrin.cloud',
+        apiUrl: 'https://api.qafind.si',
         apiKey: cloudKey,
         payload: { suiteName: 'checkout', targetUrl: 'https://shop.example.test', phantomConfig: {} },
         fetcher,
@@ -127,13 +127,13 @@ describe('Airlock Cloud run client', () => {
     })) as typeof fetch;
 
     await submitCloudRun({
-      apiUrl: 'https://api.qbrin.cloud',
+      apiUrl: 'https://api.qafind.si',
       apiKey: cloudKey,
       payload: { suiteName: 'checkout', targetUrl: 'https://shop.example.test', phantomConfig: {} },
       fetcher,
       warn: (message) => warnings.push(message),
     });
 
-    expect(warnings).toEqual(['Airlock Cloud quota is nearly used: 20 of 100 runs remain today.']);
+    expect(warnings).toEqual(['QAFind Cloud quota is nearly used: 20 of 100 runs remain today.']);
   });
 });

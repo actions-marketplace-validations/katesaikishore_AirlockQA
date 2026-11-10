@@ -1,9 +1,9 @@
 /**
- * AirlockQA public MCP server (stdio JSON-RPC 2.0).
+ * QAFind public MCP server (stdio JSON-RPC 2.0).
  *
  * Exposes the proof/attach surface only:
- *   airlock_evidence_verify — verify a signed run-evidence bundle
- *   airlock_flake           — analyze Airlock reporter manifests
+ *   qafind_evidence_verify — verify a signed run-evidence bundle
+ *   qafind_flake           — analyze QAFind reporter manifests
  *
  * No shell execution, no cloud credentials, no investigator/private code. Paths must stay inside the
  * current working directory (or an explicit absolute path supplied by the caller) and are read-only.
@@ -13,12 +13,12 @@ import * as path from 'node:path';
 import * as readline from 'node:readline';
 import { AttestationEngine } from '../compliance/attestation.js';
 import { analyzeFlakiness, renderFlakeMarkdown } from '../flake/index.js';
-import { readRunReports } from '../testing/airlock-report.js';
+import { readRunReports } from '../testing/qafind-report.js';
 import { verifySignedVerdict } from '../verified-merge/index.js';
 import type { ComplianceProofBundle } from '../types/index.js';
 
 export const PROTOCOL_VERSION = '2025-06-18';
-export const SERVER_NAME = 'airlockqa';
+export const SERVER_NAME = 'qafind';
 export const SERVER_VERSION = '1.1.0';
 const MAX_BUNDLE_BYTES = 25 * 1024 * 1024;
 
@@ -26,19 +26,19 @@ interface ToolDefinition { name: string; description: string; inputSchema: { typ
 
 export const TOOLS: ToolDefinition[] = [
   {
-    name: 'airlock_evidence_verify',
-    description: 'Verify a signed Airlock run-evidence bundle (Merkle root, hash chain, signature). Set AIRLOCK_SIGNING_KEY for HMAC bundles or AIRLOCK_TRUSTED_PUBLIC_KEY to pin Ed25519.',
+    name: 'qafind_evidence_verify',
+    description: 'Verify a signed QAFind run-evidence bundle (Merkle root, hash chain, signature). Set QAFIND_SIGNING_KEY for HMAC bundles or QAFIND_TRUSTED_PUBLIC_KEY to pin Ed25519.',
     inputSchema: { type: 'object', properties: { bundlePath: { type: 'string', description: 'Path to an attestation-*.json bundle.' } }, required: ['bundlePath'] },
   },
   {
-    name: 'airlock_verify',
-    description: 'Verify a signed Airlock Verified Merge verdict offline: payload hash, signature and whether a reproduced regression blocks the merge.',
-    inputSchema: { type: 'object', properties: { verdictPath: { type: 'string', description: 'Path to the signed verified-merge verdict JSON.' }, publicKeyPem: { type: 'string', description: 'Ed25519 public key PEM. HMAC verdicts use AIRLOCK_SIGNING_KEY.' } }, required: ['verdictPath'] },
+    name: 'qafind_verify',
+    description: 'Verify a signed QAFind Verified Merge verdict offline: payload hash, signature and whether a reproduced regression blocks the merge.',
+    inputSchema: { type: 'object', properties: { verdictPath: { type: 'string', description: 'Path to the signed verified-merge verdict JSON.' }, publicKeyPem: { type: 'string', description: 'Ed25519 public key PEM. HMAC verdicts use QAFIND_SIGNING_KEY.' } }, required: ['verdictPath'] },
   },
   {
-    name: 'airlock_flake',
-    description: 'Analyze Airlock reporter manifests and return flake counts, causes and Markdown. Use after `airlock attach` and a Playwright run with the Airlock reporter.',
-    inputSchema: { type: 'object', properties: { reportsPath: { type: 'string', description: 'Directory or file of Airlock run manifests. Default .airlock/reports.' }, markdown: { type: 'boolean', description: 'Include the Markdown summary.' } } },
+    name: 'qafind_flake',
+    description: 'Analyze QAFind reporter manifests and return flake counts, causes and Markdown. Use after `qafind attach` and a Playwright run with the QAFind reporter.',
+    inputSchema: { type: 'object', properties: { reportsPath: { type: 'string', description: 'Directory or file of QAFind run manifests. Default .qafind/reports.' }, markdown: { type: 'boolean', description: 'Include the Markdown summary.' } } },
   },
 ];
 
@@ -53,17 +53,17 @@ function safePath(input: string): string {
 }
 
 function callTool(name: string, args: Record<string, unknown>) {
-  if (name === 'airlock_evidence_verify') {
+  if (name === 'qafind_evidence_verify') {
     const bundlePath = safePath(String(args.bundlePath || ''));
     if (!fs.existsSync(bundlePath)) throw new Error(`bundle not found: ${bundlePath}`);
     if (fs.statSync(bundlePath).size > MAX_BUNDLE_BYTES) throw new Error('bundle is too large');
     const bundle = JSON.parse(fs.readFileSync(bundlePath, 'utf8')) as ComplianceProofBundle;
-    const trustedPublicKey = process.env.AIRLOCK_TRUSTED_PUBLIC_KEY?.trim() || undefined;
-    const key = process.env.AIRLOCK_SIGNING_KEY?.trim() || undefined;
+    const trustedPublicKey = process.env.QAFIND_TRUSTED_PUBLIC_KEY?.trim() || undefined;
+    const key = process.env.QAFIND_SIGNING_KEY?.trim() || undefined;
     const result = AttestationEngine.verifyBundle(bundle, { key, trustedPublicKey });
     return textResult({ valid: result.valid, reason: result.reason, runId: bundle.runId, merkleRoot: bundle.merkleRoot, signingAlgorithm: bundle.signingAlgorithm, insecureDevKey: bundle.insecureDevKey === true, warnings: result.warnings });
   }
-  if (name === 'airlock_verify') {
+  if (name === 'qafind_verify') {
     const verdictPath = safePath(String(args.verdictPath || ''));
     if (!fs.existsSync(verdictPath)) throw new Error(`verdict not found: ${verdictPath}`);
     const verdict = JSON.parse(fs.readFileSync(verdictPath, 'utf8'));
@@ -71,8 +71,8 @@ function callTool(name: string, args: Record<string, unknown>) {
     const result = verifySignedVerdict(verdict, { publicKeyPem });
     return textResult({ valid: result.valid, reason: result.reason, blockMerge: result.blockMerge, summary: result.summary });
   }
-  if (name === 'airlock_flake') {
-    const target = args.reportsPath ? safePath(String(args.reportsPath)) : path.resolve(process.cwd(), '.airlock/reports');
+  if (name === 'qafind_flake') {
+    const target = args.reportsPath ? safePath(String(args.reportsPath)) : path.resolve(process.cwd(), '.qafind/reports');
     if (!fs.existsSync(target)) return toolError(`reports not found: ${target}`);
     const reports = readRunReports(target);
     const analysis = analyzeFlakiness(reports);

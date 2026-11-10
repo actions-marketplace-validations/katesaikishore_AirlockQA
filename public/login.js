@@ -1,6 +1,6 @@
 import { api, ApiError } from "/api.js";
 
-const DEMO_SESSION_KEY = "airlock-demo-session";
+const DEMO_SESSION_KEY = "qafind-demo-session";
 const MIN_PASSWORD_LENGTH = 10;
 
 /** Only same-origin /console paths are accepted as a post-login destination. */
@@ -40,14 +40,14 @@ let pending = false;
 
 const COPY = {
   signin: {
-    title: "Sign in to Airlock Cloud",
+    title: "Sign in to QAFind Cloud",
     subtitle: "Use your email and password. The free plan includes 100 hosted runs a day.",
     submit: "Sign in",
     busy: "Signing in…",
-    switchText: "New to Airlock Cloud?",
+    switchText: "New to QAFind Cloud?",
     switchLabel: "Create a free account",
     autocomplete: "current-password",
-    pageTitle: "Sign in · Airlock Cloud"
+    pageTitle: "Sign in · QAFind Cloud"
   },
   signup: {
     title: "Create your free account",
@@ -57,7 +57,7 @@ const COPY = {
     switchText: "Already have an account?",
     switchLabel: "Sign in",
     autocomplete: "new-password",
-    pageTitle: "Create account · Airlock Cloud"
+    pageTitle: "Create account · QAFind Cloud"
   }
 };
 
@@ -155,7 +155,7 @@ function describeError(error) {
         return { message: "Too many attempts. " + retryHint(error), field: null };
       }
       if (error.status === 0) {
-        return { message: "Cannot reach Airlock Cloud. Check your connection and try again.", field: null };
+        return { message: "Cannot reach QAFind Cloud. Check your connection and try again.", field: null };
       }
       return { message: "Something went wrong on our side. Please try again in a moment.", field: null };
   }

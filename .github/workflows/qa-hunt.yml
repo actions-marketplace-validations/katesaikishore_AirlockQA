@@ -1,9 +1,9 @@
-# Weekly Airlock QA hunt over public repositories. It opens one pull request with the reports; it never opens a PR
+# Weekly QAFind hunt over public repositories. It opens one pull request with the reports; it never opens a PR
 # on the repositories it tests.
 #
-# Required secret: AIRLOCK_API_KEY (Airlock Cloud key). The report PR is opened in this repository with the
+# Required secret: QAFIND_API_KEY (QAFind Cloud key). The report PR is opened in this repository with the
 # workflow's own GITHUB_TOKEN.
-name: Airlock QA hunt
+name: QAFind hunt
 
 on:
   schedule:
@@ -38,7 +38,7 @@ jobs:
 
       - name: Run the hunt
         env:
-          AIRLOCK_API_KEY: ${{ secrets.AIRLOCK_API_KEY }}
+          QAFIND_API_KEY: ${{ secrets.QAFIND_API_KEY }}
           GH_TOKEN: ${{ github.token }}
         run: |
           MAX='${{ github.event.inputs.max || '3' }}'
@@ -48,7 +48,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: airlock-qa-hunt
+          name: qafind-hunt
           path: qa-hunt/
           if-no-files-found: warn
           retention-days: 30

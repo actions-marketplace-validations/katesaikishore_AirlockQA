@@ -1,6 +1,6 @@
-# Requiring Airlock Verified Merge
+# Requiring QAFind Verified Merge
 
-Verified Merge reports the context **`Airlock Verified Merge`**. Make it a required check before merging to
+Verified Merge reports the context **`QAFind Verified Merge`**. Make it a required check before merging to
 `main` or a release branch.
 
 ## Required App permissions
@@ -21,7 +21,7 @@ check run and the status use the same context name, so branch protection works e
 Settings → Branches → Branch protection rules → `main`:
 
 1. Enable **Require status checks to pass before merging**
-2. Add **`Airlock Verified Merge`**
+2. Add **`QAFind Verified Merge`**
 3. Optionally enable **Require branches to be up to date**
 
 ## GitHub rulesets API
@@ -38,7 +38,7 @@ gh api -X POST repos/OWNER/REPO/rulesets \
     { "type": "required_status_checks",
       "parameters": {
         "strict_required_status_checks_policy": false,
-        "required_status_checks": [{ "context": "Airlock Verified Merge" }]
+        "required_status_checks": [{ "context": "QAFind Verified Merge" }]
       } }
   ]
 }
@@ -64,10 +64,10 @@ jobs:
       - uses: oven-sh/setup-bun@v2
       - run: bun install --frozen-lockfile
       - run: bunx playwright install --with-deps chromium
-      - run: bun bin/airlock.ts verify-merge --run --upload
+      - run: bun bin/qafind.ts verify-merge --run --upload
         env:
-          AIRLOCK_API_KEY: ${{ secrets.AIRLOCK_API_KEY }}
-          AIRLOCK_SIGNING_KEY: ${{ secrets.AIRLOCK_SIGNING_KEY }}
+          QAFIND_API_KEY: ${{ secrets.QAFIND_API_KEY }}
+          QAFIND_SIGNING_KEY: ${{ secrets.QAFIND_SIGNING_KEY }}
           GITHUB_SHA: ${{ github.event.pull_request.head.sha }}
           GITHUB_BASE_SHA: ${{ github.event.pull_request.base.sha }}
 ```

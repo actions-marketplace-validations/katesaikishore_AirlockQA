@@ -38,12 +38,12 @@ export class CausalXRay {
       const headers = {
         ...request.headers(),
         'traceparent': traceparent,
-        'x-airlock-trace-id': this.currentTraceId,
-        'x-airlock-span-id': spanId,
+        'x-qafind-trace-id': this.currentTraceId,
+        'x-qafind-span-id': spanId,
       };
 
       try {
-        // fallback (not continue) so the AirlockGateway context route still decides.
+        // fallback (not continue) so the QAFindGateway context route still decides.
         await route.fallback({ headers });
       } catch {
         // Route already handled or closed
@@ -57,7 +57,7 @@ export class CausalXRay {
         const status = response.status();
         const url = req.url();
         const method = req.method();
-        const spanId = (req.headers()['x-airlock-span-id'] as string) || sha256(url).substring(0, 16);
+        const spanId = (req.headers()['x-qafind-span-id'] as string) || sha256(url).substring(0, 16);
 
         let bodySnippet = '';
         let backendDiag: XRayBackendDiagnostic | undefined;
@@ -205,7 +205,7 @@ export class CausalXRay {
 
     const lines: string[] = [
       `┌${divider}┐`,
-      `│ 🧬 AIRLOCK BROWSER TRACE DIAGNOSTICS                                    │`,
+      `│ 🧬 QAFIND BROWSER TRACE DIAGNOSTICS                                    │`,
       `├${divider}┤`,
       `│ 💥 Failed Step:     ${opts.stepName.padEnd(52).substring(0, 52)} │`,
       `│ 🌐 Browser response:${netStatusStr.padEnd(52).substring(0, 52)} │`,

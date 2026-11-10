@@ -1,14 +1,14 @@
 /**
- * `airlock flake` engine tests: synthetic reporter manifests only (no browser, no temp files).
+ * `qafind flake` engine tests: synthetic reporter manifests only (no browser, no temp files).
  */
 import { describe, expect, test } from 'bun:test';
 import { analyzeFlakiness, renderFlakeMarkdown } from '../src/flake/index.js';
-import type { AirlockReportTest, AirlockRunReport } from '../src/testing/airlock-report.js';
+import type { QAFindReportTest, QAFindRunReport } from '../src/testing/qafind-report.js';
 import { classifyErrorText, redactEvidenceText } from '../src/flake/index.js';
 
 let runSequence = 0;
 
-function makeTest(overrides: Partial<AirlockReportTest> = {}): AirlockReportTest {
+function makeTest(overrides: Partial<QAFindReportTest> = {}): QAFindReportTest {
   const title = overrides.title ?? 'test';
   const file = overrides.file ?? 'tests/app.spec.ts';
   const project = overrides.project ?? 'chromium';
@@ -26,11 +26,11 @@ function makeTest(overrides: Partial<AirlockReportTest> = {}): AirlockReportTest
   };
 }
 
-function makeReport(tests: AirlockReportTest[], overrides: Partial<AirlockRunReport> = {}): AirlockRunReport {
+function makeReport(tests: QAFindReportTest[], overrides: Partial<QAFindRunReport> = {}): QAFindRunReport {
   runSequence += 1;
   return {
     version: 1,
-    tool: 'airlock-reporter',
+    tool: 'qafind-reporter',
     runId: `run-${String(runSequence).padStart(3, '0')}`,
     startedAt: `2026-11-0${(runSequence % 9) + 1}T10:00:00.000Z`,
     finishedAt: `2026-11-0${(runSequence % 9) + 1}T10:01:00.000Z`,
@@ -41,8 +41,8 @@ function makeReport(tests: AirlockReportTest[], overrides: Partial<AirlockRunRep
 }
 
 /** One test entry for a report: helper for "pass in run N" fixtures. */
-const pass = (overrides: Partial<AirlockReportTest> = {}) => makeTest({ status: 'passed', ...overrides });
-const fail = (errors: string[], overrides: Partial<AirlockReportTest> = {}) =>
+const pass = (overrides: Partial<QAFindReportTest> = {}) => makeTest({ status: 'passed', ...overrides });
+const fail = (errors: string[], overrides: Partial<QAFindReportTest> = {}) =>
   makeTest({ status: 'failed', errors, ...overrides });
 
 const NETWORK_ERROR = 'page.goto: net::ERR_CONNECTION_RESET at https://staging.example.com/checkout';
@@ -345,7 +345,7 @@ describe('warnings, empty input and validation', () => {
     expect(() => analyzeFlakiness([], { minRuns: 1.5 })).toThrow('minRuns must be a positive integer');
     expect(() => analyzeFlakiness([], { flakeThreshold: -0.1 })).toThrow('flakeThreshold must be a number between 0 and 1');
     expect(() => analyzeFlakiness([], { flakeThreshold: 1.1 })).toThrow('flakeThreshold must be a number between 0 and 1');
-    expect(() => analyzeFlakiness('nope' as unknown as AirlockRunReport[])).toThrow('reports must be an array');
+    expect(() => analyzeFlakiness('nope' as unknown as QAFindRunReport[])).toThrow('reports must be an array');
   });
 });
 

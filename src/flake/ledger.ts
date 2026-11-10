@@ -1,7 +1,7 @@
 /**
- * Request-ledger evidence for `airlock flake`.
+ * Request-ledger evidence for `qafind flake`.
  *
- * The attach determinism fixture writes a ledger per test (`.airlock/ledgers/<hash>.json`) recording
+ * The attach determinism fixture writes a ledger per test (`.qafind/ledgers/<hash>.json`) recording
  * every http(s) request made through the browser context, plus failures and missing replay entries.
  * When a ledger exists, flake marks the cause as `request-ledger` evidence instead of pure error-text
  * inference: a recorded failed request confirms network_fixture, and a clean ledger downgrades a

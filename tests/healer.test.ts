@@ -19,7 +19,7 @@ describe('Self-Healing: DOM Similarity & Mutation Dataset', () => {
   });
 
   it('records mutations and computes compounding dataset statistics', () => {
-    const testDatasetDir = './.airlock/test-dataset';
+    const testDatasetDir = './.qafind/test-dataset';
     const collector = new DatasetCollector(testDatasetDir);
 
     collector.recordMutation({

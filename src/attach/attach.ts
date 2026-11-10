@@ -1,10 +1,10 @@
 /**
- * Attach path: generate a wrapper Playwright config that adds the Airlock reporter to an existing
+ * Attach path: generate a wrapper Playwright config that adds the QAFind reporter to an existing
  * suite without touching the user's config.
  *
  * `planAttach()` is pure: it detects the project's Playwright config, works out the import
  * specifier the wrapper needs, and renders the wrapper TypeScript. `writeAttachPlan()` is the only
- * function that touches the filesystem; it writes the wrapper plus `.airlock/attach.json` and
+ * function that touches the filesystem; it writes the wrapper plus `.qafind/attach.json` and
  * refuses to overwrite an existing wrapper unless `force` is set. The user's Playwright config is
  * never read beyond its existence and never modified.
  */
@@ -23,11 +23,11 @@ export const PLAYWRIGHT_CONFIG_CANDIDATES = [
   'playwright.config.cjs',
 ] as const;
 
-export const AIRLOCK_WRAPPER_RELATIVE_PATH = path.join('.airlock', 'playwright.airlock.config.ts');
-export const AIRLOCK_ATTACH_METADATA_RELATIVE_PATH = path.join('.airlock', 'attach.json');
-export const DEFAULT_ATTACH_OUTPUT_DIR = '.airlock/reports';
-export const FALLBACK_PACKAGE_NAME = 'airlockqa';
-export const REPORTER_ENTRY = 'dist/src/testing/airlock-reporter.js';
+export const QAFIND_WRAPPER_RELATIVE_PATH = path.join('.qafind', 'playwright.qafind.config.ts');
+export const QAFIND_ATTACH_METADATA_RELATIVE_PATH = path.join('.qafind', 'attach.json');
+export const DEFAULT_ATTACH_OUTPUT_DIR = '.qafind/reports';
+export const FALLBACK_PACKAGE_NAME = 'qafind';
+export const REPORTER_ENTRY = 'dist/src/testing/qafind-reporter.js';
 
 export interface AttachOptions {
   /** Root of the Playwright project (where playwright.config.* lives). */
@@ -36,7 +36,7 @@ export interface AttachOptions {
   configPath?: string;
   /** Override the reporter module specifier (absolute path for local repo tests). */
   reporterModule?: string;
-  /** Directory the reporter writes manifests to (default `.airlock/reports`). */
+  /** Directory the reporter writes manifests to (default `.qafind/reports`). */
   outputDir?: string;
   /** Also generate the tsconfig path alias + auto fixture shim for network replay and a fixed clock. */
   determinism?: boolean;
@@ -96,31 +96,31 @@ function readPackageJson(projectDir: string): PackageJsonShape | null {
   }
 }
 
-/** Package names that look like the installed Airlock package (repo checkout or consumed dependency). */
-function airlockPackageName(pkg: PackageJsonShape | null): string | undefined {
+/** Package names that look like the installed QAFind package (repo checkout or consumed dependency). */
+function qafindPackageName(pkg: PackageJsonShape | null): string | undefined {
   if (!pkg) return undefined;
   const sections = [pkg.dependencies, pkg.devDependencies, pkg.peerDependencies];
   for (const section of sections) {
     if (!section || typeof section !== 'object') continue;
-    const match = Object.keys(section).find((name) => name === FALLBACK_PACKAGE_NAME || name.endsWith('/airlockqa'));
+    const match = Object.keys(section).find((name) => name === FALLBACK_PACKAGE_NAME || name.endsWith('/qafind'));
     if (match) return match;
   }
   if (typeof pkg.name === 'string' && pkg.name.trim() !== '') {
     const name = pkg.name.trim();
-    // Running inside the Airlock repo (or a checked-out copy) is the useful "package name" case.
-    if (name === FALLBACK_PACKAGE_NAME || name.endsWith('/airlockqa')) return name;
+    // Running inside the QAFind repo (or a checked-out copy) is the useful "package name" case.
+    if (name === FALLBACK_PACKAGE_NAME || name.endsWith('/qafind')) return name;
   }
   return undefined;
 }
 
 /**
- * Default reporter module: the installed Airlock package + compiled reporter entry.
- * The task's rule is "package name from package.json, fallback airlockqa"; when the project is an
- * unrelated app (its own name is not the Airlock package) the fallback is the only usable specifier,
+ * Default reporter module: the installed QAFind package + compiled reporter entry.
+ * The task's rule is "package name from package.json, fallback qafind"; when the project is an
+ * unrelated app (its own name is not the QAFind package) the fallback is the only usable specifier,
  * so an app's own package name is never used as the module.
  */
 export function defaultReporterModule(projectDir: string): string {
-  const name = airlockPackageName(readPackageJson(projectDir)) ?? FALLBACK_PACKAGE_NAME;
+  const name = qafindPackageName(readPackageJson(projectDir)) ?? FALLBACK_PACKAGE_NAME;
   return `${name}/${REPORTER_ENTRY}`;
 }
 
@@ -169,7 +169,7 @@ function renderWrapperContent(options: {
   reporterModule: string;
   outputDir: string;
   relWrapperPath: string;
-  /** Relative path from the wrapper's directory (.airlock/) to the base config's directory. */
+  /** Relative path from the wrapper's directory (.qafind/) to the base config's directory. */
   baseDirFromWrapper: string;
   /** File name of the generated tsconfig (relative to the wrapper directory), when determinism is on. */
   determinismConfigFile?: string;
@@ -179,8 +179,8 @@ function renderWrapperContent(options: {
   // `loadReporter()` path.resolve()s the first tuple element, so a class/instance here would crash
   // the run. The reporter module is therefore referenced by specifier, not imported.
   const reporterEntry = `[${JSON.stringify(options.reporterModule)}, { outputDir: ${outputDirLiteral} }]`;
-  return `// Generated by the Airlock attach planner — safe to delete.
-// It imports your existing Playwright config unchanged and only appends the Airlock reporter.
+  return `// Generated by the QAFind attach planner — safe to delete.
+// It imports your existing Playwright config unchanged and only appends the QAFind reporter.
 //
 // Run your suite with the wrapper (from the project root):
 //   npx playwright test --config ${options.relWrapperPath}
@@ -201,13 +201,13 @@ function existingReporters(reporter: unknown): unknown[] {
 }
 
 // Playwright resolves config-relative paths against the directory of the config file it loaded.
-// This wrapper lives in .airlock/, so rebase the base config's paths onto the base config's own
+// This wrapper lives in .qafind/, so rebase the base config's paths onto the base config's own
 // directory to keep test discovery (testDir/rootDir) and helper scripts identical.
 const baseConfigDir = ${JSON.stringify(options.baseDirFromWrapper)};
 // The attach determinism shim + tsconfig path alias live next to this wrapper.
 // Use cwd, not import.meta: Playwright loads TS configs through a CJS require by default.
-const airlockConfigDir = path.resolve(process.cwd(), ${JSON.stringify(path.dirname(options.relWrapperPath))});
-const baseConfigAbsDir = path.resolve(airlockConfigDir, baseConfigDir);
+const qafindConfigDir = path.resolve(process.cwd(), ${JSON.stringify(path.dirname(options.relWrapperPath))});
+const baseConfigAbsDir = path.resolve(qafindConfigDir, baseConfigDir);
 function rebasePath(value: unknown): unknown {
   if (typeof value === 'string') return path.isAbsolute(value) ? value : path.join(baseConfigDir, value);
   if (Array.isArray(value)) return value.map(rebasePath);
@@ -276,7 +276,7 @@ export default {
   ...(base.use !== undefined ? { use: rebaseUse(base.use) } : {}),
   ...(base.webServer !== undefined ? { webServer: rebaseWebServer(base.webServer) } : {}),
   ${options.determinismConfigFile ? `// Resolve the generated tsconfig relative to this wrapper, not the process cwd.
-  tsconfig: path.join(airlockConfigDir, ${JSON.stringify(options.determinismConfigFile)}),` : ''}
+  tsconfig: path.join(qafindConfigDir, ${JSON.stringify(options.determinismConfigFile)}),` : ''}
   reporter: [
     ...rebaseReporters(base.reporter),
     ${reporterEntry},
@@ -303,20 +303,20 @@ export function planAttach(options: AttachOptions): AttachPlan {
   if (!projectStats.isDirectory()) throw new Error(`projectDir is not a directory: ${projectDir}`);
 
   const configPath = detectConfigPath(projectDir, options.configPath);
-  const airlockDir = path.join(projectDir, '.airlock');
-  const wrapperPath = path.join(projectDir, AIRLOCK_WRAPPER_RELATIVE_PATH);
+  const qafindDir = path.join(projectDir, '.qafind');
+  const wrapperPath = path.join(projectDir, QAFIND_WRAPPER_RELATIVE_PATH);
   const outputDir = typeof options.outputDir === 'string' && options.outputDir.trim() !== '' ? options.outputDir.trim() : DEFAULT_ATTACH_OUTPUT_DIR;
   const reporterModule =
     typeof options.reporterModule === 'string' && options.reporterModule.trim() !== ''
       ? options.reporterModule.trim()
       : defaultReporterModule(projectDir);
-  const baseImport = stripTsExtension(relativeImport(airlockDir, configPath));
+  const baseImport = stripTsExtension(relativeImport(qafindDir, configPath));
   const relWrapperPath = toPosix(path.relative(projectDir, wrapperPath));
   const relConfigPath = toPosix(path.relative(projectDir, configPath));
-  const baseDirFromWrapper = toPosix(path.relative(airlockDir, path.dirname(configPath))) || '.';
+  const baseDirFromWrapper = toPosix(path.relative(qafindDir, path.dirname(configPath))) || '.';
 
   const determinism = options.determinism === true;
-  const determinismConfigFile = determinism ? 'tsconfig.airlock.json' : undefined;
+  const determinismConfigFile = determinism ? 'tsconfig.qafind.json' : undefined;
   const wrapperContent = renderWrapperContent({
     baseImport,
     reporterModule,
@@ -328,15 +328,15 @@ export function planAttach(options: AttachOptions): AttachPlan {
 
   const files: { path: string; content: string }[] = [];
   if (determinism) {
-    const extra = renderDeterminismFiles(projectDir, airlockDir);
+    const extra = renderDeterminismFiles(projectDir, qafindDir);
     files.push(...extra.files);
     // The wrapper needs a deterministic shim file and tsconfig next to it.
     files.push({
-      path: path.join(airlockDir, determinismConfigFile as string),
+      path: path.join(qafindDir, determinismConfigFile as string),
       content: extra.tsconfigContent,
     });
     files.push({
-      path: path.join(airlockDir, 'airlock-test.ts'),
+      path: path.join(qafindDir, 'qafind-test.ts'),
       content: extra.shimContent,
     });
   }
@@ -353,24 +353,24 @@ export function planAttach(options: AttachOptions): AttachPlan {
     instructions: [
       `Run your suite with the generated wrapper: npx playwright test --config ${relWrapperPath}`,
       `Your original Playwright config was not modified: ${relConfigPath}`,
-      `Airlock manifests are written to ${outputDir}/<runId>.json and aggregated by \`airlock flake\`.`,
-      'Commit .airlock/playwright.airlock.config.ts and .airlock/attach.json if CI should reuse this wrap, or regenerate with the attach planner.',
-      'The wrapper preserves every reporter already configured in the base config (rebasing its relative paths), rebases use.storageState and webServer.cwd, and appends the Airlock reporter.',
+      `QAFind manifests are written to ${outputDir}/<runId>.json and aggregated by \`qafind flake\`.`,
+      'Commit .qafind/playwright.qafind.config.ts and .qafind/attach.json if CI should reuse this wrap, or regenerate with the attach planner.',
+      'The wrapper preserves every reporter already configured in the base config (rebasing its relative paths), rebases use.storageState and webServer.cwd, and appends the QAFind reporter.',
       ...(determinism
         ? [
             'Determinism is on: specs import @playwright/test as before; the generated shim injects network record/replay + a fixed clock.',
-            'Seed the network once with AIRLOCK_ATTACH_NETWORK=record, commit .airlock/network, then run CI with AIRLOCK_ATTACH_NETWORK=replay.',
-            'Set AIRLOCK_ATTACH_CLOCK=off to disable the fixed clock for one run, or AIRLOCK_ATTACH_TIME to choose the instant.',
+            'Seed the network once with QAFIND_ATTACH_NETWORK=record, commit .qafind/network, then run CI with QAFIND_ATTACH_NETWORK=replay.',
+            'Set QAFIND_ATTACH_CLOCK=off to disable the fixed clock for one run, or QAFIND_ATTACH_TIME to choose the instant.',
           ]
         : []),
     ],
   };
 }
 
-/** Resolve the app's concrete @playwright/test entry and the Airlock fixture module for the shim. */
+/** Resolve the app's concrete @playwright/test entry and the QAFind fixture module for the shim. */
 function renderDeterminismFiles(
   projectDir: string,
-  airlockDir: string,
+  qafindDir: string,
 ): { files: { path: string; content: string }[]; tsconfigContent: string; shimContent: string } {
   let playwrightEntry: string;
   try {
@@ -383,7 +383,7 @@ function renderDeterminismFiles(
     );
   }
   // CJS/ESM-neutral: Playwright may require the package from a CJS spec. Locate the fixture module
-  // relative to the CLI entry point (bin/airlock.ts or dist/bin) or the working directory.
+  // relative to the CLI entry point (bin/qafind.ts or dist/bin) or the working directory.
   const roots = [
     process.argv[1] ? path.dirname(path.dirname(path.resolve(process.argv[1]))) : '',
     process.cwd(),
@@ -394,7 +394,7 @@ function renderDeterminismFiles(
   ]).find((candidate) => fs.existsSync(candidate));
   if (!fixturesModule) {
     throw new Error(
-      'Determinism attach could not find the Airlock fixture module (src/testing/attach-fixtures.ts or dist/src/testing/attach-fixtures.js). ' +
+      'Determinism attach could not find the QAFind fixture module (src/testing/attach-fixtures.ts or dist/src/testing/attach-fixtures.js). ' +
         'Run the CLI from a repository build that includes src/testing/attach-fixtures.ts.',
     );
   }
@@ -402,13 +402,13 @@ function renderDeterminismFiles(
   // @playwright/test ships as CJS; an ESM named import fails. Use createRequire in the generated
   // shim and re-export the API surface specs use, with our extended test shadowing the base one.
   const shimLines = [
-    '// Generated by the Airlock attach planner for deterministic replay/clock — safe to delete.',
-    '// It re-exports the Playwright test API extended with Airlock auto-use determinism fixtures.',
+    '// Generated by the QAFind attach planner for deterministic replay/clock — safe to delete.',
+    '// It re-exports the Playwright test API extended with QAFind auto-use determinism fixtures.',
     '// The tsconfig path alias maps "@playwright/test" here for the wrapper run, so specs need no changes.',
     'import { createRequire } from "node:module";',
-    `import { airlockDeterminismFixtures } from ${JSON.stringify(fixturesModule)};`,
+    `import { qafindDeterminismFixtures } from ${JSON.stringify(fixturesModule)};`,
     `const pw = createRequire(process.cwd() + "/package.json")(${JSON.stringify(playwrightEntry)});`,
-    'export const test = pw.test.extend(airlockDeterminismFixtures as never);',
+    'export const test = pw.test.extend(qafindDeterminismFixtures as never);',
     'export const expect = pw.expect;',
     'export const defineConfig = pw.defineConfig;',
     'export const devices = pw.devices;',
@@ -429,7 +429,7 @@ function renderDeterminismFiles(
   let extendsValue: string | undefined;
   let existingPaths: Record<string, unknown> = {};
   if (fs.existsSync(userTsconfig)) {
-    extendsValue = toPosix(relativeImport(airlockDir, userTsconfig));
+    extendsValue = toPosix(relativeImport(qafindDir, userTsconfig));
     try {
       const parsed = JSON.parse(fs.readFileSync(userTsconfig, 'utf8')) as { compilerOptions?: { paths?: unknown } };
       if (parsed.compilerOptions && parsed.compilerOptions.paths && typeof parsed.compilerOptions.paths === 'object') {
@@ -443,7 +443,7 @@ function renderDeterminismFiles(
     ...(extendsValue ? { extends: extendsValue } : {}),
     compilerOptions: {
       baseUrl: '.',
-      paths: { ...existingPaths, '@playwright/test': ['./airlock-test'] },
+      paths: { ...existingPaths, '@playwright/test': ['./qafind-test'] },
     },
   };
   const tsconfigContent = JSON.stringify(tsconfigObject, null, 2) + '\n';
@@ -451,7 +451,7 @@ function renderDeterminismFiles(
   return { files: [], tsconfigContent, shimContent };
 }
 
-/** Fields written to `.airlock/attach.json`. */
+/** Fields written to `.qafind/attach.json`. */
 export interface AttachMetadata {
   configPath: string;
   reporterModule: string;
@@ -459,15 +459,15 @@ export interface AttachMetadata {
   createdAt: string;
 }
 
-/** Write the wrapper config and `.airlock/attach.json`. Returns the written absolute paths. */
+/** Write the wrapper config and `.qafind/attach.json`. Returns the written absolute paths. */
 export function writeAttachPlan(plan: AttachPlan, options: WriteAttachOptions = {}): string[] {
   if (!plan || typeof plan.wrapperPath !== 'string' || typeof plan.wrapperContent !== 'string') {
     throw new Error('writeAttachPlan needs a plan from planAttach()');
   }
   const projectDir = path.resolve(plan.projectDir);
-  const airlockDir = path.join(projectDir, '.airlock');
+  const qafindDir = path.join(projectDir, '.qafind');
   const wrapperPath = plan.wrapperPath;
-  const metadataPath = path.join(projectDir, AIRLOCK_ATTACH_METADATA_RELATIVE_PATH);
+  const metadataPath = path.join(projectDir, QAFIND_ATTACH_METADATA_RELATIVE_PATH);
 
   if (fs.existsSync(wrapperPath) && options.force !== true) {
     throw new Error(
@@ -476,7 +476,7 @@ export function writeAttachPlan(plan: AttachPlan, options: WriteAttachOptions = 
     );
   }
 
-  fs.mkdirSync(airlockDir, { recursive: true });
+  fs.mkdirSync(qafindDir, { recursive: true });
   fs.writeFileSync(wrapperPath, plan.wrapperContent, 'utf8');
   const written = [wrapperPath];
   for (const file of plan.files || []) {

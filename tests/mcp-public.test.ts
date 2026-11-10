@@ -15,10 +15,10 @@ test('public MCP server lists its two tools and runs flake on demo reports', asy
   rl.on('line', (line) => { try { const message = JSON.parse(line); if (message.id && pending.has(message.id)) { pending.get(message.id)!(message); pending.delete(message.id); } } catch {} });
   try {
     const init = await call('initialize', { protocolVersion: '2025-06-18', capabilities: {}, clientInfo: { name: 'test', version: '1' } });
-    expect(init.result.serverInfo.name).toBe('airlockqa');
+    expect(init.result.serverInfo.name).toBe('qafind');
     const list = await call('tools/list', {});
-    expect(list.result.tools.map((tool: any) => tool.name)).toEqual(['airlock_evidence_verify', 'airlock_verify', 'airlock_flake']);
-    const flake = await call('tools/call', { name: 'airlock_flake', arguments: { reportsPath: 'tests/fixtures/airlock-reports' } });
+    expect(list.result.tools.map((tool: any) => tool.name)).toEqual(['qafind_evidence_verify', 'qafind_verify', 'qafind_flake']);
+    const flake = await call('tools/call', { name: 'qafind_flake', arguments: { reportsPath: 'tests/fixtures/qafind-reports' } });
     expect(JSON.parse(flake.result.content[0].text).flakyTests).toBeGreaterThan(0);
   } finally {
     child.kill('SIGTERM');

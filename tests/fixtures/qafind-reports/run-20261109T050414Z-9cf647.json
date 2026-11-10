@@ -1,11 +1,11 @@
 {
   "version": 1,
-  "tool": "airlock-reporter",
-  "runId": "run-20261109T050746Z-4f408d",
-  "startedAt": "2026-11-09T05:07:46.119Z",
-  "finishedAt": "2026-11-09T05:07:50.518Z",
-  "durationMs": 4814,
-  "cwd": "/Users/katesaikishore/airlock-cloud/examples/attach-demo",
+  "tool": "qafind-reporter",
+  "runId": "run-20261109T050414Z-9cf647",
+  "startedAt": "2026-11-09T05:04:14.442Z",
+  "finishedAt": "2026-11-09T05:04:18.821Z",
+  "durationMs": 4862,
+  "cwd": "/Users/katesaikishore/qafind-cloud/examples/attach-demo",
   "tests": [
     {
       "id": "default::checks.spec.ts::checks.spec.ts › cart fixture returns totals",
@@ -18,18 +18,18 @@
       "project": "default",
       "status": "failed",
       "retries": 0,
-      "durationMs": 254,
+      "durationMs": 220,
       "errors": [
         "Error: net::ERR_CONNECTION_REFUSED request failed GET https://shop.example.test/api/cart"
       ],
       "attachments": [
         {
-          "name": "airlock-request-ledger",
+          "name": "qafind-request-ledger",
           "contentType": "application/json"
         },
         {
           "name": "error-context",
-          "path": "/Users/katesaikishore/airlock-cloud/examples/attach-demo/test-results/checks-cart-fixture-returns-totals/error-context.md",
+          "path": "/Users/katesaikishore/qafind-cloud/examples/attach-demo/test-results/checks-cart-fixture-returns-totals/error-context.md",
           "contentType": "text/markdown"
         }
       ]
@@ -45,11 +45,11 @@
       "project": "default",
       "status": "passed",
       "retries": 0,
-      "durationMs": 199,
+      "durationMs": 190,
       "errors": [],
       "attachments": [
         {
-          "name": "airlock-request-ledger",
+          "name": "qafind-request-ledger",
           "contentType": "application/json"
         }
       ]
@@ -65,11 +65,11 @@
       "project": "default",
       "status": "passed",
       "retries": 0,
-      "durationMs": 136,
+      "durationMs": 138,
       "errors": [],
       "attachments": [
         {
-          "name": "airlock-request-ledger",
+          "name": "qafind-request-ledger",
           "contentType": "application/json"
         }
       ]
@@ -85,11 +85,11 @@
       "project": "default",
       "status": "passed",
       "retries": 0,
-      "durationMs": 148,
+      "durationMs": 192,
       "errors": [],
       "attachments": [
         {
-          "name": "airlock-request-ledger",
+          "name": "qafind-request-ledger",
           "contentType": "application/json"
         }
       ]
@@ -105,18 +105,18 @@
       "project": "default",
       "status": "failed",
       "retries": 0,
-      "durationMs": 141,
+      "durationMs": 148,
       "errors": [
         "Error: expect(received).toBe(expected)\nExpected: 42\nReceived: 41"
       ],
       "attachments": [
         {
-          "name": "airlock-request-ledger",
+          "name": "qafind-request-ledger",
           "contentType": "application/json"
         },
         {
           "name": "error-context",
-          "path": "/Users/katesaikishore/airlock-cloud/examples/attach-demo/test-results/checks-known-checkout-total-mismatch/error-context.md",
+          "path": "/Users/katesaikishore/qafind-cloud/examples/attach-demo/test-results/checks-known-checkout-total-mismatch/error-context.md",
           "contentType": "text/markdown"
         }
       ]
@@ -132,11 +132,11 @@
       "project": "default",
       "status": "passed",
       "retries": 0,
-      "durationMs": 257,
+      "durationMs": 245,
       "errors": [],
       "attachments": [
         {
-          "name": "airlock-request-ledger",
+          "name": "qafind-request-ledger",
           "contentType": "application/json"
         }
       ]

@@ -36,7 +36,7 @@ export type DryRunResult =
   | { ok: true; body: CreateQaRunBody; warnings: string[] }
   | { ok: false; message: string };
 
-/** `airlock qa --dry-run`: prepare and check the request, print it, submit nothing. */
+/** `qafind --dry-run`: prepare and check the request, print it, submit nothing. */
 export async function prepareQaDryRun(opts: QaCliOptions, deps: QaCliDeps): Promise<DryRunResult> {
   try {
     const [remoteUrl, sha, branch, dirty, config] = await Promise.all([
@@ -90,7 +90,7 @@ export function realQaDeps(cwd: string = process.cwd()): QaCliDeps {
     },
     readConfig: async () => {
       try {
-        return JSON.parse(await readFile(`${cwd}/airlock.config.json`, 'utf8'));
+        return JSON.parse(await readFile(`${cwd}/qafind.config.json`, 'utf8'));
       } catch {
         return {};
       }

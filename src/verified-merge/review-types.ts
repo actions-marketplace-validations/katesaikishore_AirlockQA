@@ -50,9 +50,9 @@ export interface ReviewInput {
   /** Deterministic checks and the model both receive the bounded diff, not the whole repo. */
   patch: string;
   truncated?: boolean;
-  /** Repository-wide review instructions from .airlock-review.yml. */
+  /** Repository-wide review instructions from .qafind-review.yml. */
   instructions?: string;
-  /** Per-path instructions from .airlock-review.yml that match this diff. */
+  /** Per-path instructions from .qafind-review.yml that match this diff. */
   pathInstructions?: string[];
   /** Repo-scoped learnings from accepted/rejected findings. */
   learnings?: string[];

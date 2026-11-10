@@ -74,7 +74,7 @@ Signature · HMAC-SHA256
 Signing key
 </dt>
 <dd style={{"margin": "2px 0px 0px", "fontFamily": "\"JetBrains Mono\", monospace", "color": "rgb(255, 255, 255)"}}>
-airlock-signer-key-id-01
+qafind-signer-key-id-01
 </dd>
 </div>
 </dl>
@@ -398,7 +398,7 @@ Verify a bundle
 <p style={{"margin": "2px 0px 0px", "fontSize": "13.5px", "color": "rgb(90, 105, 97)"}}>
 Checks the signature with your key and recomputes the Merkle root — the same check as{" "}
 <code style={{"fontFamily": "\"JetBrains Mono\", monospace"}}>
-airlock audit
+qafind audit
 </code>
 .
 </p>
@@ -440,7 +440,7 @@ Verify
 Where this evidence can help an audit
 </h2>
 <p style={{"margin": "2px 0px 0px", "fontSize": "13.5px", "color": "rgb(90, 105, 97)"}}>
-AirlockQA produces evidence. It doesn’t assess or certify controls — your auditor does.
+QAFind produces evidence. It doesn’t assess or certify controls — your auditor does.
 </p>
 <ul style={{"listStyle": "none", "margin": "14px 0px 0px", "padding": "0px", "display": "grid", "gap": "8px"}}>
 <li style={{"display": "grid", "gridTemplateColumns": "70px minmax(0px, 1fr) auto", "gap": "12px", "alignItems": "center", "padding": "10px 12px", "border": "1px solid rgb(238, 242, 238)", "borderRadius": "10px"}}>
@@ -508,7 +508,7 @@ Not assessed
 All receipts
 </h2>
 <p style={{"margin": "2px 0px 0px", "fontSize": "13.5px", "color": "rgb(90, 105, 97)"}}>
-Stored in .airlock/compliance · keep them with your build records
+Stored in .qafind/compliance · keep them with your build records
 </p>
 </div>
 <div style={{"overflowX": "auto"}}>

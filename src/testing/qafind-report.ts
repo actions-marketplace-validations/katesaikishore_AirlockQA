@@ -1,18 +1,18 @@
 /**
- * Shared manifest written by the Airlock Playwright reporter and read by `airlock flake`.
+ * Shared manifest written by the QAFind Playwright reporter and read by `qafind flake`.
  *
  * This is the attach path: an existing Playwright suite keeps its specs; the reporter records
- * each test's outcome, retries and error text into `.airlock/reports/<runId>.json`, and `flake`
+ * each test's outcome, retries and error text into `.qafind/reports/<runId>.json`, and `flake`
  * aggregates many runs into a per-test verdict with an owner and a probable cause.
  */
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 
-export const AIRLOCK_REPORT_VERSION = 1 as const;
+export const QAFIND_REPORT_VERSION = 1 as const;
 
-export type AirlockTestStatus = 'passed' | 'failed' | 'skipped' | 'timedOut' | 'interrupted';
+export type QAFindTestStatus = 'passed' | 'failed' | 'skipped' | 'timedOut' | 'interrupted';
 
-export interface AirlockReportTest {
+export interface QAFindReportTest {
   /** Stable key within a run: `${project}::${file}::${titleChain}`. */
   id: string;
   title: string;
@@ -20,7 +20,7 @@ export interface AirlockReportTest {
   titlePath: string[];
   file: string;
   project: string;
-  status: AirlockTestStatus;
+  status: QAFindTestStatus;
   /** Retry attempts (0 = passed first time). */
   retries: number;
   durationMs: number;
@@ -30,9 +30,9 @@ export interface AirlockReportTest {
   attachments?: { name: string; path?: string; contentType?: string }[];
 }
 
-export interface AirlockRunReport {
-  version: typeof AIRLOCK_REPORT_VERSION;
-  tool: 'airlock-reporter';
+export interface QAFindRunReport {
+  version: typeof QAFIND_REPORT_VERSION;
+  tool: 'qafind-reporter';
   runId: string;
   startedAt: string;
   finishedAt: string;
@@ -40,21 +40,21 @@ export interface AirlockRunReport {
   cwd?: string;
   /** Reporter config captured from the playwright config, for flake grouping. */
   projects?: string[];
-  tests: AirlockReportTest[];
+  tests: QAFindReportTest[];
 }
 
-export function isAirlockRunReport(value: unknown): value is AirlockRunReport {
+export function isQAFindRunReport(value: unknown): value is QAFindRunReport {
   if (!value || typeof value !== 'object') return false;
   const record = value as Record<string, unknown>;
   return (
-    record.version === AIRLOCK_REPORT_VERSION &&
-    record.tool === 'airlock-reporter' &&
+    record.version === QAFIND_REPORT_VERSION &&
+    record.tool === 'qafind-reporter' &&
     typeof record.runId === 'string' &&
     Array.isArray(record.tests)
   );
 }
 
-export function writeRunReport(dir: string, report: AirlockRunReport): string {
+export function writeRunReport(dir: string, report: QAFindRunReport): string {
   fs.mkdirSync(dir, { recursive: true });
   const file = path.join(dir, `${report.runId}.json`);
   fs.writeFileSync(file, JSON.stringify(report, null, 2) + '\n');
@@ -62,17 +62,17 @@ export function writeRunReport(dir: string, report: AirlockRunReport): string {
 }
 
 /** Read every report file in a directory (newest first), skipping malformed files. */
-export function readRunReports(dirOrFiles: string | string[]): AirlockRunReport[] {
+export function readRunReports(dirOrFiles: string | string[]): QAFindRunReport[] {
   const files = Array.isArray(dirOrFiles)
     ? dirOrFiles
     : fs.existsSync(dirOrFiles) && fs.statSync(dirOrFiles).isDirectory()
       ? fs.readdirSync(dirOrFiles).filter((name) => name.endsWith('.json')).map((name) => path.join(dirOrFiles, name))
       : [dirOrFiles];
-  const reports: AirlockRunReport[] = [];
+  const reports: QAFindRunReport[] = [];
   for (const file of files) {
     try {
       const parsed = JSON.parse(fs.readFileSync(file, 'utf8')) as unknown;
-      if (isAirlockRunReport(parsed)) reports.push(parsed);
+      if (isQAFindRunReport(parsed)) reports.push(parsed);
     } catch {
       // A truncated report from a killed CI job is not evidence; skip it.
     }

@@ -38,7 +38,7 @@ async function resolveMode(): Promise<Boot> {
 function BootError({ message }: { message: string }) {
   return (
     <div className="boot-error" role="alert">
-      <h1>Airlock Cloud is not reachable</h1>
+      <h1>QAFind Cloud is not reachable</h1>
       <p>{message || 'Check your connection and try again.'}</p>
       <button type="button" onClick={() => window.location.reload()}>Try again</button>
     </div>

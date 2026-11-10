@@ -23,7 +23,7 @@
  * defence-in-depth for the signing path, not a replacement for it.
  */
 import type { ComplianceProofBundle, LedgerBlock } from '../types/index.js';
-import { AirlockLedger } from './ledger.js';
+import { QAFindLedger } from './ledger.js';
 import { MerkleTree } from './merkle-tree.js';
 import { canonicalJson, sha256 } from '../utils/crypto.js';
 
@@ -177,7 +177,7 @@ export function checkChainIntegrity(bundle: ComplianceProofBundle): CertificateC
     return check('P1', 'Hash-chain integrity', 'FAIL', 'Bundle contains no ledger blocks');
   }
 
-  const chain = AirlockLedger.verifyBlocks(blocks);
+  const chain = QAFindLedger.verifyBlocks(blocks);
   if (!chain.valid) {
     return check('P1', 'Hash-chain integrity', 'FAIL', chain.reason ?? 'Ledger hash chain is invalid', {
       tamperedIndex: chain.tamperedIndex ?? null,

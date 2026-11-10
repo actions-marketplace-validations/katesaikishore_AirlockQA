@@ -153,8 +153,8 @@ export default function Runs({ param }: { param: string }) {
             <a className="lv-btn" href="#qa">QA screen</a>
           </div>
           <p className="lv-muted">Start a cloud run with the button above, or from your terminal:</p>
-          <CodeBlock text="airlock login" label="Copy" />
-          <CodeBlock text="airlock test --cloud" label="Copy" />
+          <CodeBlock text="qafind login" label="Copy" />
+          <CodeBlock text="qafind test --cloud" label="Copy" />
         </div>
       ) : (
         <div className="lv-empty" id="run-empty-state">
@@ -187,7 +187,7 @@ export default function Runs({ param }: { param: string }) {
       <PageHeader
         title="Runs"
         subtitle={tab === 'cloud'
-          ? 'Hosted workflow runs on Airlock Cloud. QA runs are on the QA tab.'
+          ? 'Hosted workflow runs on QAFind Cloud. QA runs are on the QA tab.'
           : 'QA runs: a public repository at a commit, built and tested in the cloud sandbox.'}
         actions={tab === 'cloud'
           ? <button type="button" className="lv-btn lv-btn-primary" id="start-run-toggle" ref={toggleRef} aria-expanded={formOpen} aria-controls="start-run-panel" onClick={() => setForm(!formOpen)}>Start cloud run</button>

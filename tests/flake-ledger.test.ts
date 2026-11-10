@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'bun:test';
 import { analyzeFlakiness, renderFlakeMarkdown } from '../src/flake/index.js';
 import { applyLedgerEvidence, readFlakeLedgers, type FlakeLedger } from '../src/flake/ledger.js';
-import { AIRLOCK_REPORT_VERSION, type AirlockReportTest, type AirlockRunReport } from '../src/testing/airlock-report.js';
+import { QAFIND_REPORT_VERSION, type QAFindReportTest, type QAFindRunReport } from '../src/testing/qafind-report.js';
 
-function report(runId: string, tests: AirlockReportTest[]): AirlockRunReport {
+function report(runId: string, tests: QAFindReportTest[]): QAFindRunReport {
   return {
-    version: AIRLOCK_REPORT_VERSION,
-    tool: 'airlock-reporter',
+    version: QAFIND_REPORT_VERSION,
+    tool: 'qafind-reporter',
     runId,
     startedAt: `2026-01-01T00:0${runId.slice(-1)}:00.000Z`,
     finishedAt: `2026-01-01T00:0${runId.slice(-1)}:01.000Z`,
@@ -15,7 +15,7 @@ function report(runId: string, tests: AirlockReportTest[]): AirlockRunReport {
   };
 }
 
-function test(id: string, status: 'passed' | 'failed', errors: string[] = []): AirlockReportTest {
+function test(id: string, status: 'passed' | 'failed', errors: string[] = []): QAFindReportTest {
   return {
     id,
     title: 'cart works',
@@ -94,7 +94,7 @@ describe('flake request-ledger evidence', () => {
   });
 
   it('reads ledger files from disk and ignores malformed entries', () => {
-    const dir = `/tmp/airlock-flake-ledger-${Date.now()}`;
+    const dir = `/tmp/qafind-flake-ledger-${Date.now()}`;
     const fs = require('node:fs') as typeof import('node:fs');
     fs.mkdirSync(dir, { recursive: true });
     fs.writeFileSync(`${dir}/one.json`, JSON.stringify(ledger()));

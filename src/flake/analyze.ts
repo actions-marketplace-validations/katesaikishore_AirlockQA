@@ -1,7 +1,7 @@
 /**
- * `airlock flake` analysis engine.
+ * `qafind flake` analysis engine.
  *
- * Input: the reporter manifests (`AirlockRunReport`) written by the Playwright reporter across
+ * Input: the reporter manifests (`QAFindRunReport`) written by the Playwright reporter across
  * many runs. Output: one deterministic verdict per test id — no reruns, no guessing, no invented
  * numbers. The only non-input value is `generatedAt`, the moment this analysis was computed.
  *
@@ -12,7 +12,7 @@
  * - flakeCount = failed runs + runs that needed retries to pass; flakeRate = flakeCount / runs.
  * - Quarantine = flaky, runs >= minRuns and flakeRate >= flakeThreshold.
  */
-import type { AirlockReportTest, AirlockRunReport } from '../testing/airlock-report.js';
+import type { QAFindReportTest, QAFindRunReport } from '../testing/qafind-report.js';
 import { classifyErrors } from './classify.js';
 import {
   FLAKE_CLASSIFICATIONS,
@@ -26,19 +26,19 @@ import {
 
 interface Group {
   id: string;
-  entries: AirlockReportTest[];
+  entries: QAFindReportTest[];
 }
 
-function isFailedStatus(status: AirlockReportTest['status']): boolean {
+function isFailedStatus(status: QAFindReportTest['status']): boolean {
   return status === 'failed' || status === 'timedOut' || status === 'interrupted';
 }
 
-function normaliseRetries(test: AirlockReportTest): number {
+function normaliseRetries(test: QAFindReportTest): number {
   const value = Number(test.retries);
   return Number.isFinite(value) && value > 0 ? Math.floor(value) : 0;
 }
 
-function titlePathOf(test: AirlockReportTest): string[] {
+function titlePathOf(test: QAFindReportTest): string[] {
   if (Array.isArray(test.titlePath) && test.titlePath.length > 0) return test.titlePath.map((part) => String(part));
   return test.title ? [String(test.title)] : [];
 }
@@ -107,17 +107,17 @@ function sortTests(tests: FlakeTestSummary[]): FlakeTestSummary[] {
  * newest first); a duplicate `runId` is ignored after the first appearance so one CI run cannot
  * be counted twice, and a warning says so.
  */
-export function analyzeFlakiness(reports: AirlockRunReport[], options: FlakeOptions = {}): FlakeAnalysis {
-  if (!Array.isArray(reports)) throw new Error('reports must be an array of AirlockRunReport');
+export function analyzeFlakiness(reports: QAFindRunReport[], options: FlakeOptions = {}): FlakeAnalysis {
+  if (!Array.isArray(reports)) throw new Error('reports must be an array of QAFindRunReport');
   const { minRuns, flakeThreshold, ownerMap } = validateOptions(options);
   const generatedAt = new Date().toISOString();
   const warnings: string[] = [];
 
   const seenRunIds = new Set<string>();
-  const analyzed: AirlockRunReport[] = [];
+  const analyzed: QAFindRunReport[] = [];
   for (const report of reports) {
     if (!report || typeof report !== 'object' || Array.isArray(report)) {
-      warnings.push('Ignoring a report that is not an AirlockRunReport object.');
+      warnings.push('Ignoring a report that is not an QAFindRunReport object.');
       continue;
     }
     const runId = typeof report.runId === 'string' ? report.runId : '';

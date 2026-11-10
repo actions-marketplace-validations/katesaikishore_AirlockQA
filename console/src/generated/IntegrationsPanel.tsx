@@ -9,13 +9,13 @@ export default function IntegrationsPanel() {
 Connect your pipeline
 </h1>
 <p style={{"margin": "6px 0px 0px", "fontSize": "15.5px", "color": "rgb(90, 105, 97)"}}>
-Run AirlockQA on every push and pull request, and get the result — with its signed receipt — right on the pull request.
+Run QAFind on every push and pull request, and get the result — with its signed receipt — right on the pull request.
 </p>
 </div>
 <span style={{"display": "inline-flex", "alignItems": "center", "gap": "8px", "height": "34px", "padding": "0px 12px", "border": "1px solid rgb(207, 227, 215)", "borderRadius": "999px", "background": "rgb(242, 248, 244)", "color": "rgb(31, 107, 79)", "fontSize": "13.5px", "fontWeight": "600"}}>
 <span data-anim="1" style={{"width": "8px", "height": "8px", "borderRadius": "50%", "background": "rgb(35, 132, 90)", "animation": "2s ease-in-out 0s infinite normal none running c-pulse"}}>
 </span>
-Cloud API reachable · api.qbrin.cloud
+Cloud API reachable · api.qafind.si
 </span>
 </div>
 <section aria-labelledby="ci-where" style={{"marginTop": "20px"}}>
@@ -88,7 +88,7 @@ Enterprise
 </span>
 <span style={{"marginLeft": "auto", "font": "600 12.5px \"JetBrains Mono\", monospace", "color": "rgb(47, 111, 91)"}}>
 <span className="sc-interp">
-AIRLOCK_CLOUD_URL
+QAFIND_CLOUD_URL
 </span>
 </span>
 </span>
@@ -124,7 +124,7 @@ bun
 <span className="sc-interp">
 <div data-cli-panel="bun">
 <span id="bun-install-command">
-{"bun add --dev airlockqa"}
+{"bun add --dev qafind"}
 </span>
 </div>
 </span>
@@ -134,7 +134,7 @@ bun
 </span>
 {" "}
 <span className="sc-interp">
-{"bunx airlock test --cloud"}
+{"bunx qafind test --cloud"}
 </span>
 </pre>
 </section>
@@ -157,7 +157,7 @@ Secret name
 </span>
 <code style={{"font": "700 14px \"JetBrains Mono\", monospace"}}>
 <span className="sc-interp">
-AIRLOCK_API_KEY
+QAFIND_API_KEY
 </span>
 </code>
 </span>
@@ -187,7 +187,7 @@ Real app secrets stay in your runner; only stand-in values travel to the cloud.
 {" "}· Add the workflow
 </h2>
 <p style={{"margin": "2px 0px 0px", "font": "500 12.5px \"JetBrains Mono\", monospace", "color": "rgb(169, 196, 182)"}}>
-.github/workflows/airlockqa.yml
+.github/workflows/qafind.yml
 </p>
 </div>
 <button type="button" className="c-btn" style={{"height": "34px", "padding": "0px 12px", "border": "1px solid rgb(47, 75, 63)", "borderRadius": "9px", "background": "transparent", "color": "rgb(231, 242, 236)", "font": "600 13.5px \"DM Sans\", system-ui, sans-serif", "cursor": "pointer"}}>
@@ -200,7 +200,7 @@ Copy
 <span style={{"color": "rgb(127, 214, 174)"}}>
 {"name"}
 </span>
-{": AirlockQA\n"}
+{": QAFind\n"}
 <span style={{"color": "rgb(127, 214, 174)"}}>
 {"on"}
 </span>
@@ -241,7 +241,7 @@ Copy
 </span>
 {": "}
 <span className="sc-interp">
-{"bunx airlock test --cloud"}
+{"bunx qafind test --cloud"}
 </span>
 {"\n        "}
 <span style={{"color": "rgb(127, 214, 174)"}}>
@@ -249,12 +249,12 @@ Copy
 </span>
 {":\n          "}
 <span style={{"color": "rgb(127, 214, 174)"}}>
-{"AIRLOCK_API_KEY"}
+{"QAFIND_API_KEY"}
 </span>
 {": "}
 <span style={{"color": "rgb(233, 201, 139)"}}>
 <span className="sc-interp">
-{"${{ secrets.AIRLOCK_API_KEY }}"}
+{"${{ secrets.QAFIND_API_KEY }}"}
 </span>
 {"\n"}
 </span>
@@ -262,7 +262,7 @@ Copy
 <span style={{"color": "rgb(127, 214, 174)"}}>
 {"run"}
 </span>
-{": bunx airlock audit"}
+{": bunx qafind audit"}
 </pre>
 </section>
 <section aria-labelledby="ci-pr" style={{"padding": "20px", "border": "1px solid rgb(227, 232, 226)", "borderRadius": "16px", "background": "rgb(255, 255, 255)"}}>
@@ -280,7 +280,7 @@ Copy
 <path d="M16 48V31.5C16 22.94 22.94 16 31.5 16h1C41.06 16 48 22.94 48 31.5V48" fill="none" stroke="#F7FBF8" strokeWidth="5" strokeLinecap="round">
 </path>
 </svg>
-airlockqa bot{" "}
+qafind bot{" "}
 <span style={{"fontWeight": "400", "color": "rgb(90, 105, 97)"}}>
 commented on #131
 </span>
@@ -585,7 +585,7 @@ From commit to verified attestation
 </button>
 </div>
 <div className="flow-stage" style={{"position": "relative", "height": "260px", "borderRadius": "12px", "background": "rgb(21, 33, 28)", "overflow": "hidden"}}>
-<canvas id="flow-canvas" aria-label="Three.js animation: CI runner to Airlock Cloud API, POST /v1/runs, to browser runner, then run response" style={{"width": "100%", "height": "100%", "display": "block"}}>
+<canvas id="flow-canvas" aria-label="Three.js animation: CI runner to QAFind Cloud API, POST /v1/runs, to browser runner, then run response" style={{"width": "100%", "height": "100%", "display": "block"}}>
 </canvas>
 <div className="flow-label flow-label-ci" style={{"position": "absolute", "left": "16px", "top": "16px", "color": "#fff", "fontSize": "12px"}}>
 <span style={{"color": "#7CC4A2"}}>
@@ -597,7 +597,7 @@ From commit to verified attestation
 <span style={{"color": "#7CC4A2"}}>
 ⇄
 </span>
-{" "}Airlock Cloud API
+{" "}QAFind Cloud API
 </div>
 <div className="flow-label flow-label-vm" style={{"position": "absolute", "right": "35%", "top": "16px", "color": "#fff", "fontSize": "12px"}}>
 <span style={{"color": "#7CC4A2"}}>

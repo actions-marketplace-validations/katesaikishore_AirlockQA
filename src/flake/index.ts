@@ -1,8 +1,8 @@
 /**
- * `airlock flake` engine (P0): deterministic flake detection, classification and quarantine from
- * the reporter manifests in src/testing/airlock-report.ts.
+ * `qafind flake` engine (P0): deterministic flake detection, classification and quarantine from
+ * the reporter manifests in src/testing/qafind-report.ts.
  *
- * This module has no CLI wiring, no network and no signing. `airlock flake` (or the reporter's PR
+ * This module has no CLI wiring, no network and no signing. `qafind flake` (or the reporter's PR
  * comment) decides how to print JSON/Markdown and how to exit CI.
  */
 export * from './types.js';

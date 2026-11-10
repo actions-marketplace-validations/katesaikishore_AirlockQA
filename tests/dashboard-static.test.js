@@ -20,7 +20,7 @@ async function withDashboard(complianceDir, check, artifactDirectory) {
 
 describe('Dashboard static server', () => {
   it('serves the dashboard and public assets with their content types', async () => {
-    const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'airlock-dashboard-'));
+    const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'qafind-dashboard-'));
     try {
       await withDashboard(path.join(tempRoot, 'compliance'), async (origin) => {
         const page = await fetch(origin + '/');
@@ -30,7 +30,7 @@ describe('Dashboard static server', () => {
 
         const login = await fetch(origin + '/login');
         expect(login.status).toBe(200);
-        expect(await login.text()).toContain('Sign in to Airlock Cloud');
+        expect(await login.text()).toContain('Sign in to QAFind Cloud');
 
         const consolePage = await fetch(origin + '/console');
         expect(consolePage.status).toBe(200);
@@ -68,7 +68,7 @@ describe('Dashboard static server', () => {
   });
 
   it('keeps the marketing page at the root and serves an existing compliance report separately', async () => {
-    const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'airlock-dashboard-report-'));
+    const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'qafind-dashboard-report-'));
     const complianceDir = path.join(tempRoot, 'compliance');
     fs.mkdirSync(complianceDir);
     fs.writeFileSync(path.join(complianceDir, 'compliance-report.html'), '<!doctype html><title>Compliance report</title>');
@@ -89,7 +89,7 @@ describe('Dashboard static server', () => {
   });
 
   it('loads the pinned Three.js module without a blocked inline import map', async () => {
-    const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'airlock-dashboard-three-'));
+    const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'qafind-dashboard-three-'));
     try {
       await withDashboard(path.join(tempRoot, 'compliance'), async (origin) => {
         const consolePage = await fetch(origin + '/console');
@@ -106,10 +106,10 @@ describe('Dashboard static server', () => {
   });
 
   it('accepts same-origin WebM recordings and saves only to the configured fixed path', async () => {
-    const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'airlock-dashboard-recording-'));
+    const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'qafind-dashboard-recording-'));
     const complianceDir = path.join(tempRoot, 'compliance');
     const artifactDir = path.join(tempRoot, 'artifacts');
-    const recordingPath = path.join(artifactDir, 'airlockqa-motion-preview.webm');
+    const recordingPath = path.join(artifactDir, 'qafind-motion-preview.webm');
     const webm = Buffer.from([0x1a, 0x45, 0xdf, 0xa3, 0x00, 0x01, 0x02]);
     try {
       await withDashboard(complianceDir, async (origin) => {

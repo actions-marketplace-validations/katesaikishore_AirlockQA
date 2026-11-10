@@ -50,7 +50,7 @@ function QaRunList({ openForm }: { openForm: boolean }) {
     table = (
       <div className="lv-empty" id="qa-empty-state">
         <p className="lv-muted">No QA runs yet. Start one with the button above, or from your terminal:</p>
-        <CodeBlock text="airlock qa --dry-run" label="Copy" />
+        <CodeBlock text="qafind --dry-run" label="Copy" />
       </div>
     );
   } else {
@@ -94,7 +94,7 @@ function QaRunList({ openForm }: { openForm: boolean }) {
     <main className="lv-main" id="live-qa">
       <PageHeader
         title="QA"
-        subtitle="Cloud QA runs: a public repository at a commit, built and tested on Airlock Cloud. The list refreshes while a run is queued or running."
+        subtitle="Cloud QA runs: a public repository at a commit, built and tested on QAFind Cloud. The list refreshes while a run is queued or running."
         actions={
           <button type="button" className="lv-btn lv-btn-primary" id="qa-run-toggle" ref={toggleRef} aria-expanded={formOpen} aria-controls="qa-form-panel" onClick={() => setFormOpen(!formOpen)}>
             Start QA run

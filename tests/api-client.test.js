@@ -17,7 +17,7 @@ function fakeFetch(handler) {
   return { impl, calls };
 }
 
-describe('Airlock Cloud browser API client', () => {
+describe('QAFind Cloud browser API client', () => {
   it('sends requests to the same-origin /api base with the CSRF header and credentials', async () => {
     const { impl, calls } = fakeFetch(() => jsonResponse(200, { ok: true }));
     const api = createApi({ fetch: impl });
@@ -25,7 +25,7 @@ describe('Airlock Cloud browser API client', () => {
     expect(calls[0].url).toBe('/api/health');
     expect(calls[0].init.method).toBe('GET');
     expect(calls[0].init.credentials).toBe('same-origin');
-    expect(calls[0].init.headers['X-Airlock-Csrf']).toBe('1');
+    expect(calls[0].init.headers['X-QAFind-Csrf']).toBe('1');
     expect(calls[0].init.headers.Accept).toBe('application/json');
     expect(calls[0].init.body).toBeUndefined();
     expect(calls[0].init.headers['Content-Type']).toBeUndefined();
@@ -125,7 +125,7 @@ describe('Airlock Cloud browser API client', () => {
     expect(error).toBeInstanceOf(ApiError);
     expect(error.status).toBe(0);
     expect(error.code).toBe('INTERNAL');
-    expect(error.message).toContain('Cannot reach Airlock Cloud');
+    expect(error.message).toContain('Cannot reach QAFind Cloud');
     // me() must not hide an outage as "signed out".
     expect(await api.me().catch((e) => e)).toBeInstanceOf(ApiError);
   });

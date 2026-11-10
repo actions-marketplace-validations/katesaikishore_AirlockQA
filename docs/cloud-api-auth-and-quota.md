@@ -1,10 +1,10 @@
-# Airlock Cloud: client and service boundary
+# QAFind Cloud: client and service boundary
 
-Airlock Cloud is a hosted service at [qbrin.cloud](https://qbrin.cloud) with its API at `https://api.qbrin.cloud`. This page states what this repository contains and what it does not. The public API is described in [cloud-api.md](cloud-api.md).
+QAFind Cloud is a hosted service at [qafind.si](https://qafind.si) with its API at `https://api.qafind.si`. This page states what this repository contains and what it does not. The public API is described in [cloud-api.md](cloud-api.md).
 
 ## In this repository
 
-- **The CLI client:** `airlock login`, `logout`, `whoami`, `usage`, `runs` and `test --cloud`.
+- **The CLI client:** `qafind login`, `logout`, `whoami`, `usage`, `runs` and `test --cloud`.
 - **The web pages** in `public/`: the marketing page, sign-in and create-account, and the console. The console calls the API from the browser and also has a labelled sample mode.
 - **The public API contract** in `cloud/shared/`: request and response schemas, plan limits, error codes and the URL guard for hosted targets.
 
@@ -15,11 +15,11 @@ The service itself (API server, run worker, container and network configuration,
 ## What the client guarantees
 
 - **Transport:** the API key is sent only in an `Authorization: Bearer` header, over HTTPS (HTTP is allowed only for `localhost`).
-- **Key storage:** `airlock login` writes the key to `~/.config/airlock/credentials.json` (or `AIRLOCK_CONFIG_DIR`) with owner-only permissions, and refuses a symbolic link there. Environment variables take precedence in CI.
-- **Endpoint binding:** a saved key is never sent to an endpoint other than the one it was saved for; `AIRLOCK_CLOUD_URL` or `--api-url` pointing elsewhere is refused until you log in again for that endpoint.
+- **Key storage:** `qafind login` writes the key to `~/.config/qafind/credentials.json` (or `QAFIND_CONFIG_DIR`) with owner-only permissions, and refuses a symbolic link there. Environment variables take precedence in CI.
+- **Endpoint binding:** a saved key is never sent to an endpoint other than the one it was saved for; `QAFIND_CLOUD_URL` or `--api-url` pointing elsewhere is refused until you log in again for that endpoint.
 - **No real credentials:** the request carries phantom placeholders and request-policy rules only. Workflows that use `${env:NAME}` are refused locally.
 - **Local pre-checks:** hosted targets are checked before anything is sent, so a `localhost` URL fails with an explanation instead of a server error.
-- **Evidence:** a hosted run's signed bundle is downloaded and verified against the service key pinned at login (trust on first use), or against `AIRLOCK_TRUSTED_PUBLIC_KEY` when set.
+- **Evidence:** a hosted run's signed bundle is downloaded and verified against the service key pinned at login (trust on first use), or against `QAFIND_TRUSTED_PUBLIC_KEY` when set.
 - **Output safety:** control characters in text that comes from the service are replaced before printing.
 
 ## What the service enforces (free plan)
@@ -35,4 +35,4 @@ The service itself (API server, run worker, container and network configuration,
 
 ## CI
 
-Store the key as a repository or environment secret named `AIRLOCK_API_KEY` and expose it only to the step that runs `airlock test --cloud`. Do not give it to workflows triggered by untrusted fork pull requests.
+Store the key as a repository or environment secret named `QAFIND_API_KEY` and expose it only to the step that runs `qafind test --cloud`. Do not give it to workflows triggered by untrusted fork pull requests.

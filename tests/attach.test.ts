@@ -7,8 +7,8 @@ import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
 import {
-  AIRLOCK_ATTACH_METADATA_RELATIVE_PATH,
-  AIRLOCK_WRAPPER_RELATIVE_PATH,
+  QAFIND_ATTACH_METADATA_RELATIVE_PATH,
+  QAFIND_WRAPPER_RELATIVE_PATH,
   DEFAULT_ATTACH_OUTPUT_DIR,
   detectConfigPath,
   planAttach,
@@ -21,8 +21,8 @@ afterAll(() => {
   for (const dir of tempDirs) fs.rmSync(dir, { recursive: true, force: true });
 });
 
-function makeProject(files: Record<string, string | object>, packageJson: object | null = { name: 'airlockqa', version: '1.0.0' }): string {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'airlock-attach-'));
+function makeProject(files: Record<string, string | object>, packageJson: object | null = { name: 'qafind', version: '1.0.0' }): string {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'qafind-attach-'));
   tempDirs.push(dir);
   if (packageJson) files = { ...files, 'package.json': JSON.stringify(packageJson, null, 2) };
   for (const [name, content] of Object.entries(files)) {
@@ -53,34 +53,34 @@ describe('attach plan', () => {
 
     expect(plan.projectDir).toBe(path.resolve(projectDir));
     expect(plan.configPath).toBe(path.join(projectDir, 'playwright.config.ts'));
-    expect(plan.wrapperPath).toBe(path.join(projectDir, AIRLOCK_WRAPPER_RELATIVE_PATH));
-    expect(plan.wrapperPath.endsWith(path.join('.airlock', 'playwright.airlock.config.ts'))).toBe(true);
-    expect(plan.reporterModule).toBe('airlockqa/dist/src/testing/airlock-reporter.js');
+    expect(plan.wrapperPath).toBe(path.join(projectDir, QAFIND_WRAPPER_RELATIVE_PATH));
+    expect(plan.wrapperPath.endsWith(path.join('.qafind', 'playwright.qafind.config.ts'))).toBe(true);
+    expect(plan.reporterModule).toBe('qafind/dist/src/testing/qafind-reporter.js');
     expect(plan.outputDir).toBe(DEFAULT_ATTACH_OUTPUT_DIR);
-    expect(plan.outputDir).toBe('.airlock/reports');
+    expect(plan.outputDir).toBe('.qafind/reports');
     expect(fs.existsSync(plan.wrapperPath)).toBe(false); // planning never writes
     expect(fs.readFileSync(plan.configPath, 'utf8')).toBe(CONFIG);
 
     expect(plan.wrapperContent).toContain('import baseConfig from "../playwright.config";');
     // Playwright only accepts a reporter by module specifier, not as an imported class.
     expect(plan.wrapperContent).toContain(
-      '["airlockqa/dist/src/testing/airlock-reporter.js", { outputDir: ".airlock/reports" }]',
+      '["qafind/dist/src/testing/qafind-reporter.js", { outputDir: ".qafind/reports" }]',
     );
-    expect(plan.wrapperContent).not.toContain('import AirlockReporter from');
-    expect(plan.wrapperContent).toContain('npx playwright test --config .airlock/playwright.airlock.config.ts');
+    expect(plan.wrapperContent).not.toContain('import QAFindReporter from');
+    expect(plan.wrapperContent).toContain('npx playwright test --config .qafind/playwright.qafind.config.ts');
     expect(plan.wrapperContent).toContain('...base,');
     expect(plan.wrapperContent).toContain('rebaseReporters(base.reporter)');
     expect(plan.wrapperContent).toContain('rebaseUse(base.use)');
     expect(plan.wrapperContent).toContain('rebaseWebServer(base.webServer)');
     expect(plan.wrapperContent).toContain('function rebaseModule(');
     // Playwright resolves config-relative paths against the wrapper's own directory; the wrapper
-    // rebases the base config's paths so test discovery still works from .airlock/.
+    // rebases the base config's paths so test discovery still works from .qafind/.
     expect(plan.wrapperContent).toContain('const baseConfigDir = "..";');
     expect(plan.wrapperContent).toContain("testDir: rebasePath(base.testDir ?? '.'),");
     expect(plan.wrapperContent).toContain('const base = baseConfig as Record<string, unknown>;');
 
     expect(plan.instructions.length).toBeGreaterThanOrEqual(4);
-    expect(plan.instructions.join('\n')).toContain('npx playwright test --config .airlock/playwright.airlock.config.ts');
+    expect(plan.instructions.join('\n')).toContain('npx playwright test --config .qafind/playwright.qafind.config.ts');
     expect(plan.instructions.join('\n')).toContain('original Playwright config was not modified');
   });
 
@@ -129,27 +129,27 @@ describe('attach plan', () => {
     expect(() => detectConfigPath(projectDir)).toThrow(/No Playwright config found/i);
   });
 
-  it('derives the reporter module from the package name, with the airlockqa fallback', () => {
-    const repoLike = makeProject({ 'playwright.config.ts': CONFIG }, { name: 'airlockqa' });
-    expect(planAttach({ projectDir: repoLike }).reporterModule).toBe('airlockqa/dist/src/testing/airlock-reporter.js');
+  it('derives the reporter module from the package name, with the qafind fallback', () => {
+    const repoLike = makeProject({ 'playwright.config.ts': CONFIG }, { name: 'qafind' });
+    expect(planAttach({ projectDir: repoLike }).reporterModule).toBe('qafind/dist/src/testing/qafind-reporter.js');
 
     const consumerWithDependency = makeProject(
       { 'playwright.config.ts': CONFIG },
-      { name: 'acme-storefront', devDependencies: { airlockqa: '^1.0.0' } },
+      { name: 'acme-storefront', devDependencies: { qafind: '^1.0.0' } },
     );
-    expect(planAttach({ projectDir: consumerWithDependency }).reporterModule).toBe('airlockqa/dist/src/testing/airlock-reporter.js');
+    expect(planAttach({ projectDir: consumerWithDependency }).reporterModule).toBe('qafind/dist/src/testing/qafind-reporter.js');
 
     const unrelatedApp = makeProject({ 'playwright.config.ts': CONFIG }, { name: 'acme-storefront' });
-    expect(planAttach({ projectDir: unrelatedApp }).reporterModule).toBe('airlockqa/dist/src/testing/airlock-reporter.js');
+    expect(planAttach({ projectDir: unrelatedApp }).reporterModule).toBe('qafind/dist/src/testing/qafind-reporter.js');
 
     const noPackageJson = makeProject({ 'playwright.config.ts': CONFIG }, null);
-    expect(planAttach({ projectDir: noPackageJson }).reporterModule).toBe('airlockqa/dist/src/testing/airlock-reporter.js');
+    expect(planAttach({ projectDir: noPackageJson }).reporterModule).toBe('qafind/dist/src/testing/qafind-reporter.js');
 
-    const absoluteModule = path.join(repoLike, 'dist', 'src', 'testing', 'airlock-reporter.js');
-    const plan = planAttach({ projectDir: repoLike, reporterModule: absoluteModule, outputDir: 'reports/airlock' });
+    const absoluteModule = path.join(repoLike, 'dist', 'src', 'testing', 'qafind-reporter.js');
+    const plan = planAttach({ projectDir: repoLike, reporterModule: absoluteModule, outputDir: 'reports/qafind' });
     expect(plan.reporterModule).toBe(absoluteModule);
-    expect(plan.outputDir).toBe('reports/airlock');
-    expect(plan.wrapperContent).toContain(`[${JSON.stringify(absoluteModule)}, { outputDir: "reports/airlock" }]`);
+    expect(plan.outputDir).toBe('reports/qafind');
+    expect(plan.wrapperContent).toContain(`[${JSON.stringify(absoluteModule)}, { outputDir: "reports/qafind" }]`);
   });
 
   it('preserves existing reporters of every shape in the generated wrapper', () => {
@@ -185,30 +185,30 @@ describe('attach plan', () => {
     );
     const plan = planAttach({ projectDir, determinism: true });
     expect(plan.determinism).toBe(true);
-    expect(plan.wrapperContent).toContain('airlockConfigDir');
-    expect(plan.wrapperContent).toContain('tsconfig.airlock.json');
-    expect(plan.files.map((file) => path.basename(file.path))).toEqual(['tsconfig.airlock.json', 'airlock-test.ts']);
-    const tsconfig = plan.files.find((file) => file.path.endsWith('tsconfig.airlock.json'));
-    const shim = plan.files.find((file) => file.path.endsWith('airlock-test.ts'));
+    expect(plan.wrapperContent).toContain('qafindConfigDir');
+    expect(plan.wrapperContent).toContain('tsconfig.qafind.json');
+    expect(plan.files.map((file) => path.basename(file.path))).toEqual(['tsconfig.qafind.json', 'qafind-test.ts']);
+    const tsconfig = plan.files.find((file) => file.path.endsWith('tsconfig.qafind.json'));
+    const shim = plan.files.find((file) => file.path.endsWith('qafind-test.ts'));
     expect(tsconfig?.content).toContain('"@playwright/test"');
-    expect(tsconfig?.content).toContain('./airlock-test');
+    expect(tsconfig?.content).toContain('./qafind-test');
     expect(tsconfig?.content).toContain('"extends": "../tsconfig.json"');
-    expect(shim?.content).toContain('airlockDeterminismFixtures');
+    expect(shim?.content).toContain('qafindDeterminismFixtures');
     expect(shim?.content).toContain('pw.test.extend');
     const written = writeAttachPlan(plan);
-    expect(written.some((file) => file.endsWith('tsconfig.airlock.json'))).toBe(true);
-    expect(written.some((file) => file.endsWith('airlock-test.ts'))).toBe(true);
-    expect(fs.existsSync(path.join(projectDir, '.airlock', 'airlock-test.ts'))).toBe(true);
+    expect(written.some((file) => file.endsWith('tsconfig.qafind.json'))).toBe(true);
+    expect(written.some((file) => file.endsWith('qafind-test.ts'))).toBe(true);
+    expect(fs.existsSync(path.join(projectDir, '.qafind', 'qafind-test.ts'))).toBe(true);
   });
 
-  it('writes the wrapper and .airlock/attach.json, then refuses to overwrite without force', () => {
+  it('writes the wrapper and .qafind/attach.json, then refuses to overwrite without force', () => {
     const projectDir = makeProject({ 'playwright.config.ts': CONFIG });
     const plan = planAttach({ projectDir });
     const createdAt = new Date('2026-03-04T05:06:07.000Z');
     const written = writeAttachPlan(plan, { now: () => createdAt });
 
-    const wrapperPath = path.join(projectDir, AIRLOCK_WRAPPER_RELATIVE_PATH);
-    const metadataPath = path.join(projectDir, AIRLOCK_ATTACH_METADATA_RELATIVE_PATH);
+    const wrapperPath = path.join(projectDir, QAFIND_WRAPPER_RELATIVE_PATH);
+    const metadataPath = path.join(projectDir, QAFIND_ATTACH_METADATA_RELATIVE_PATH);
     expect(written).toEqual([wrapperPath, metadataPath]);
     expect(fs.readFileSync(wrapperPath, 'utf8')).toBe(plan.wrapperContent);
     expect(fs.readFileSync(path.join(projectDir, 'playwright.config.ts'), 'utf8')).toBe(CONFIG);
@@ -227,19 +227,19 @@ describe('attach plan', () => {
 
     // Replanning is fine; writing again is refused and leaves the existing wrapper untouched.
     const replanned = planAttach({ projectDir });
-    expect(() => writeAttachPlan(replanned)).toThrow(/Refusing to overwrite \.airlock\/playwright\.airlock\.config\.ts/i);
+    expect(() => writeAttachPlan(replanned)).toThrow(/Refusing to overwrite \.qafind\/playwright\.qafind\.config\.ts/i);
     expect(fs.readFileSync(wrapperPath, 'utf8')).toBe(plan.wrapperContent);
 
     // force replaces it, using the new plan's content.
-    const replaced = planAttach({ projectDir, outputDir: 'reports/airlock' });
+    const replaced = planAttach({ projectDir, outputDir: 'reports/qafind' });
     expect(() => writeAttachPlan(replaced, { force: true })).not.toThrow();
     expect(fs.readFileSync(wrapperPath, 'utf8')).toBe(replaced.wrapperContent);
-    expect(fs.readFileSync(wrapperPath, 'utf8')).toContain('outputDir: "reports/airlock"');
+    expect(fs.readFileSync(wrapperPath, 'utf8')).toContain('outputDir: "reports/qafind"');
     expect(fs.readFileSync(path.join(projectDir, 'playwright.config.ts'), 'utf8')).toBe(CONFIG);
   });
 
   it('reports a missing project directory clearly', () => {
-    expect(() => planAttach({ projectDir: path.join(os.tmpdir(), 'airlock-attach-does-not-exist') })).toThrow(
+    expect(() => planAttach({ projectDir: path.join(os.tmpdir(), 'qafind-attach-does-not-exist') })).toThrow(
       /Project directory not found/i,
     );
     expect(() => planAttach({ projectDir: '' })).toThrow(/needs projectDir/i);

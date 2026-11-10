@@ -1,4 +1,4 @@
-import type { AirlockConfig } from '../types/index.js';
+import type { QAFindConfig } from '../types/index.js';
 import type { CloudRunRequest, CloudRunResponse } from '../types/cloud-client.js';
 import { logger } from '../utils/logger.js';
 import { safeText } from '../utils/safe-text.js';
@@ -102,12 +102,12 @@ export class CloudApiError extends Error {
       const isQuota = code.includes('quota') || quota.limit !== undefined || quota.used !== undefined;
 
       return isQuota
-        ? `Airlock Cloud daily quota reached${parts.length ? ` (${parts.join('; ')})` : ''}.${resetText} Ask your workspace administrator about a higher limit.`
-        : `Airlock Cloud is rate-limiting this request (HTTP 429).${resetText} Retry after the indicated reset time.`;
+        ? `QAFind Cloud daily quota reached${parts.length ? ` (${parts.join('; ')})` : ''}.${resetText} Ask your workspace administrator about a higher limit.`
+        : `QAFind Cloud is rate-limiting this request (HTTP 429).${resetText} Retry after the indicated reset time.`;
     }
 
     if (status === 401 || status === 403) {
-      return `Airlock Cloud rejected the API key (HTTP ${status}). Check that the key is valid and active (run "airlock login" to save a new one) and that it belongs to this deployment.`;
+      return `QAFind Cloud rejected the API key (HTTP ${status}). Check that the key is valid and active (run "qafind login" to save a new one) and that it belongs to this deployment.`;
     }
 
     const record = asRecord(body);
@@ -119,16 +119,16 @@ export class CloudApiError extends Error {
             .map((issue) => `${String(issue.path ?? '')}: ${String(issue.message ?? '')}`.replace(/^: /, ''))
         : [];
       const detail = issues.length ? ` (${issues.slice(0, 5).join('; ')})` : '';
-      return `Airlock Cloud rejected the request (HTTP ${status}): ${safeText(record.message, 300)}${detail ? safeText(detail, 400) : ''}`;
+      return `QAFind Cloud rejected the request (HTTP ${status}): ${safeText(record.message, 300)}${detail ? safeText(detail, 400) : ''}`;
     }
 
-    return `Airlock Cloud request failed (HTTP ${status}).`;
+    return `QAFind Cloud request failed (HTTP ${status}).`;
   }
 }
 
 /** Build the public request shape without ever forwarding configured real credentials. */
 export function createCloudRunPayload(
-  config: AirlockConfig,
+  config: QAFindConfig,
   targetUrl: string,
   suiteName?: string,
   workflow?: CloudRunRequest['workflow']
@@ -158,7 +158,7 @@ export function normalizeApiUrl(apiUrl: string): string {
   try {
     parsed = new URL(apiUrl);
   } catch {
-    throw new Error('Invalid Airlock Cloud API URL. Set AIRLOCK_CLOUD_URL to a valid HTTPS base URL.');
+    throw new Error('Invalid QAFind Cloud API URL. Set QAFIND_CLOUD_URL to a valid HTTPS base URL.');
   }
 
   const isLocalHost = parsed.hostname === 'localhost'
@@ -167,10 +167,10 @@ export function normalizeApiUrl(apiUrl: string): string {
     || parsed.hostname === '::1';
 
   if (parsed.protocol !== 'https:' && !(parsed.protocol === 'http:' && isLocalHost)) {
-    throw new Error('AIRLOCK_API_KEY will only be sent over HTTPS (HTTP is allowed for localhost testing).');
+    throw new Error('QAFIND_API_KEY will only be sent over HTTPS (HTTP is allowed for localhost testing).');
   }
   if (parsed.username || parsed.password || parsed.search || parsed.hash) {
-    throw new Error('AIRLOCK_CLOUD_URL must not include credentials, a query string, or a fragment.');
+    throw new Error('QAFIND_CLOUD_URL must not include credentials, a query string, or a fragment.');
   }
 
   return parsed.toString().replace(/\/+$/, '');
@@ -181,7 +181,7 @@ function warnIfNearLimit(headers: Headers, warn: (message: string) => void): voi
   const remaining = numeric(headers.get('X-RateLimit-Remaining') ?? headers.get('RateLimit-Remaining'));
   if (limit === undefined || remaining === undefined || limit <= 0 || remaining < 0) return;
   if (remaining <= limit * 0.2) {
-    warn(`Airlock Cloud quota is nearly used: ${remaining} of ${limit} runs remain today.`);
+    warn(`QAFind Cloud quota is nearly used: ${remaining} of ${limit} runs remain today.`);
   }
 }
 
@@ -189,7 +189,7 @@ function warnIfNearLimit(headers: Headers, warn: (message: string) => void): voi
 export async function submitCloudRun(options: CloudRunSubmitOptions): Promise<CloudRunResponse> {
   const apiKey = options.apiKey.trim();
   if (!apiKey) {
-    throw new Error('Cloud runs require AIRLOCK_API_KEY. Create a key in your Airlock Cloud workspace and store it in your CI secrets.');
+    throw new Error('Cloud runs require QAFIND_API_KEY. Create a key in your QAFind Cloud workspace and store it in your CI secrets.');
   }
 
   const apiUrl = normalizeApiUrl(options.apiUrl);
@@ -214,7 +214,7 @@ export async function submitCloudRun(options: CloudRunSubmitOptions): Promise<Cl
   if (!response.ok) throw new CloudApiError(response.status, responseBody, response.headers);
   const responseRecord = asRecord(responseBody);
   if (!responseRecord) {
-    throw new Error('Airlock Cloud returned an invalid response. Expected a JSON run result.');
+    throw new Error('QAFind Cloud returned an invalid response. Expected a JSON run result.');
   }
 
   warnIfNearLimit(response.headers, options.warn || ((message) => logger.warn(message)));
@@ -227,7 +227,7 @@ export async function submitCloudRun(options: CloudRunSubmitOptions): Promise<Cl
   const allowedStatuses = new Set(['ACCEPTED', 'QUEUED', 'RUNNING', 'SUCCESS', 'FAILED', 'POLICY_VIOLATION']);
 
   if (!runId || !status || !allowedStatuses.has(status)) {
-    throw new Error('Airlock Cloud returned an invalid run response. Expected a run ID and supported status.');
+    throw new Error('QAFind Cloud returned an invalid run response. Expected a run ID and supported status.');
   }
 
   return { ...responseRecord, runId, status } as CloudRunResponse;

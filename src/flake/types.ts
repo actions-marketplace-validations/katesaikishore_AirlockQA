@@ -1,7 +1,7 @@
 /**
- * Shared types for `airlock flake`: deterministic aggregation of `AirlockRunReport` manifests.
+ * Shared types for `qafind flake`: deterministic aggregation of `QAFindRunReport` manifests.
  *
- * The engine is pure: it reads reporter manifests (src/testing/airlock-report.ts) and returns a
+ * The engine is pure: it reads reporter manifests (src/testing/qafind-report.ts) and returns a
  * verdict per test. No CLI, no network, no signing, no timestamps invented from outside the input.
  */
 

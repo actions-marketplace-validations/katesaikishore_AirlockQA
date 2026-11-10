@@ -2,9 +2,9 @@ import { api } from "./api.js";
 import { createSampleRun, sampleAnalytics, sampleMetrics, sampleRuns } from "./dashboard-data.js";
 
 // ---------------------------------------------------------------------------
-// Mode: LIVE (signed in to Airlock Cloud), SAMPLE (demo session) or redirect to /login.
+// Mode: LIVE (signed in to QAFind Cloud), SAMPLE (demo session) or redirect to /login.
 // ---------------------------------------------------------------------------
-const DEMO_SESSION_KEY = "airlock-demo-session";
+const DEMO_SESSION_KEY = "qafind-demo-session";
 
 function hasDemoSession() {
   try {
@@ -41,7 +41,7 @@ if (boot.mode === "error") {
   panel.className = "boot-error";
   panel.setAttribute("role", "alert");
   const title = document.createElement("h1");
-  title.textContent = "Airlock Cloud is not reachable";
+  title.textContent = "QAFind Cloud is not reachable";
   const detail = document.createElement("p");
   detail.textContent = boot.message || "Check your connection and try again.";
   const retry = document.createElement("button");
@@ -555,7 +555,7 @@ if (statusFilter) {
   });
 }
 
-// Four-stage CI -> Airlock run API -> browser runner -> run response path.
+// Four-stage CI -> QAFind run API -> browser runner -> run response path.
 async function initNetworkIllustration() {
   if (!canvas || !flowCard) return;
   try {
@@ -899,7 +899,7 @@ function renderProof(run) {
 
 function exportSampleEvidence() {
   const evidence = {
-    type: "airlockqa-sample-evidence",
+    type: "qafind-sample-evidence",
     generatedAt: new Date().toISOString(),
     previewData: true,
     note: "Illustrative sample records only. This file is not a signed attestation.",
@@ -921,7 +921,7 @@ function exportSampleEvidence() {
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = "airlockqa-sample-evidence.json";
+  link.download = "qafind-sample-evidence.json";
   document.body.append(link);
   link.click();
   link.remove();
@@ -986,10 +986,10 @@ function setCliMode(mode) {
   });
   const label = byId("cli-label");
   if (label && !label.dataset.preserveLabel) {
-    label.textContent = selectedMode.toUpperCase() + (byId("view-integrations") ? " · AIRLOCK CLOUD" : " · LOCAL RUNNER");
+    label.textContent = selectedMode.toUpperCase() + (byId("view-integrations") ? " · QAFIND CLOUD" : " · LOCAL RUNNER");
   }
   const cloudLabel = byId("cloud-cli-label");
-  if (cloudLabel) cloudLabel.textContent = selectedMode.toUpperCase() + " · AIRLOCK CLOUD";
+  if (cloudLabel) cloudLabel.textContent = selectedMode.toUpperCase() + " · QAFIND CLOUD";
 }
 modeButtons.forEach(function (button) { button.addEventListener("click", function () { setCliMode(button.dataset.cliMode); }); });
 if (modeButtons.length) {

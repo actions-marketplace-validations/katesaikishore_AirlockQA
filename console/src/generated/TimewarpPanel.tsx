@@ -118,7 +118,7 @@ Reset to real time
 <span style={{"color": "rgb(127, 214, 174)"}}>
 $
 </span>
-{" "}npx airlock warp "
+{" "}npx qafind warp "
 <span className="sc-interp">
 +14 days
 </span>

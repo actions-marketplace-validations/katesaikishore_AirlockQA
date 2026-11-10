@@ -3,7 +3,7 @@ import * as crypto from 'node:crypto';
 import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
-import { AirlockLedger } from '../src/compliance/ledger.js';
+import { QAFindLedger } from '../src/compliance/ledger.js';
 import { AttestationEngine } from '../src/compliance/attestation.js';
 import { runCli } from './cli-helpers.js';
 
@@ -15,7 +15,7 @@ const privatePem = privateKey.export({ type: 'pkcs8', format: 'pem' }).toString(
 const publicPem = publicKey.export({ type: 'spki', format: 'pem' }).toString();
 
 function signedBundle(runId: string): Record<string, unknown> {
-  const ledger = new AirlockLedger();
+  const ledger = new QAFindLedger();
   ledger.append('ACTION_DISPATCH', { action: 'goto', target: 'https://example.com' });
   ledger.append('PROXY_INTERCEPT', { url: 'https://example.com/', method: 'GET', verdict: 'ALLOWED' });
   return AttestationEngine.generateBundle(ledger, {
@@ -127,14 +127,14 @@ function runDetail(id: string, status: string, suite: string) {
   };
 }
 
-describe('airlock cloud commands', () => {
+describe('qafind cloud commands', () => {
   let server: ReturnType<typeof startStub>;
   const state: StubState = { posts: [], polls: new Map(), tamper: false };
   let configDir: string;
   let workDir: string;
   let apiUrl: string;
 
-  const env = () => ({ AIRLOCK_CONFIG_DIR: configDir, AIRLOCK_CLOUD_URL: apiUrl, AIRLOCK_API_KEY: undefined, AIRLOCK_TRUSTED_PUBLIC_KEY: undefined, AIRLOCK_CLOUD_POLL_MS: '150' });
+  const env = () => ({ QAFIND_CONFIG_DIR: configDir, QAFIND_CLOUD_URL: apiUrl, QAFIND_API_KEY: undefined, QAFIND_TRUSTED_PUBLIC_KEY: undefined, QAFIND_CLOUD_POLL_MS: '150' });
   const cli = (args: string[], extra: Record<string, string | undefined> = {}) =>
     runCli(args, { cwd: workDir, env: { ...env(), ...extra } });
 
@@ -148,8 +148,8 @@ describe('airlock cloud commands', () => {
     state.posts = [];
     state.polls.clear();
     state.tamper = false;
-    configDir = fs.mkdtempSync(path.join(os.tmpdir(), 'airlock-cli-cloud-'));
-    workDir = fs.mkdtempSync(path.join(os.tmpdir(), 'airlock-cli-work-'));
+    configDir = fs.mkdtempSync(path.join(os.tmpdir(), 'qafind-cli-cloud-'));
+    workDir = fs.mkdtempSync(path.join(os.tmpdir(), 'qafind-cli-work-'));
   });
 
   async function login() {
@@ -176,7 +176,7 @@ describe('airlock cloud commands', () => {
   it('login rejects a malformed key and a key the service refuses, saving nothing', async () => {
     const malformed = await cli(['login', '--key', 'not-a-key']);
     expect(malformed.code).toBe(1);
-    expect(malformed.output).toContain('does not look like an Airlock API key');
+    expect(malformed.output).toContain('does not look like an QAFind API key');
 
     const refused = await cli(['login', '--key', REVOKED_KEY]);
     expect(refused.code).toBe(1);
@@ -201,7 +201,7 @@ describe('airlock cloud commands', () => {
   it('commands without a key explain how to sign in', async () => {
     const result = await cli(['usage']);
     expect(result.code).toBe(1);
-    expect(result.output).toContain('airlock login');
+    expect(result.output).toContain('qafind login');
   });
 
   it('runs lists runs and shows one with its steps', async () => {
@@ -223,7 +223,7 @@ describe('airlock cloud commands', () => {
     expect(result.output).toContain('Evidence verified');
     expect(result.output).toContain('key pinned by login');
     expect(result.code).toBe(0);
-    expect(fs.existsSync(path.join(workDir, '.airlock', 'compliance', 'cloud-run_demo.json'))).toBe(true);
+    expect(fs.existsSync(path.join(workDir, '.qafind', 'compliance', 'cloud-run_demo.json'))).toBe(true);
     expect(state.posts).toHaveLength(1);
     expect(state.posts[0].targetUrl).toBe('https://example.com');
     expect(JSON.stringify(state.posts[0])).not.toContain('"real"');
@@ -249,7 +249,7 @@ describe('airlock cloud commands', () => {
     await login();
     const result = await cli(['test', '--cloud', '--no-wait', '--url', 'https://example.com', '--suite', 'later']);
     expect(result.code).toBe(0);
-    expect(result.output).toContain('airlock runs run_later');
+    expect(result.output).toContain('qafind runs run_later');
     expect(state.polls.size).toBe(0);
   });
 
@@ -290,8 +290,8 @@ describe('airlock cloud commands', () => {
     expect(sent.steps).toHaveLength(2);
   });
 
-  it('uses AIRLOCK_API_KEY from the environment without a saved login', async () => {
-    const result = await cli(['usage'], { AIRLOCK_API_KEY: GOOD_KEY });
+  it('uses QAFIND_API_KEY from the environment without a saved login', async () => {
+    const result = await cli(['usage'], { QAFIND_API_KEY: GOOD_KEY });
     expect(result.code).toBe(0);
     expect(result.output).toContain('88 left');
     expect(fs.existsSync(path.join(configDir, 'credentials.json'))).toBe(false);
@@ -314,7 +314,7 @@ describe('airlock cloud commands', () => {
 
   it('refuses to send a saved key to a different endpoint', async () => {
     await login();
-    const result = await cli(['usage'], { AIRLOCK_CLOUD_URL: 'http://127.0.0.1:1' });
+    const result = await cli(['usage'], { QAFIND_CLOUD_URL: 'http://127.0.0.1:1' });
     expect(result.code).toBe(1);
     expect(result.output).toContain('will not be sent to');
   });

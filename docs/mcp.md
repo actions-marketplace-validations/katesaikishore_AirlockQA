@@ -3,25 +3,25 @@
 Run the public MCP server over stdio:
 
 ```bash
-bun bin/airlock.ts mcp
+bun bin/qafind.ts mcp
 ```
 
 Tools:
 
 | Tool | Purpose |
 |---|---|
-| `airlock_evidence_verify` | Verify a signed run-evidence bundle (Merkle root, hash chain, signature). Use `AIRLOCK_SIGNING_KEY` for HMAC or `AIRLOCK_TRUSTED_PUBLIC_KEY` for Ed25519. |
-| `airlock_verify` | Verify a signed Verified Merge verdict offline. |
-| `airlock_flake` | Read Airlock reporter manifests and return flake counts, causes and optional Markdown. |
+| `qafind_evidence_verify` | Verify a signed run-evidence bundle (Merkle root, hash chain, signature). Use `QAFIND_SIGNING_KEY` for HMAC or `QAFIND_TRUSTED_PUBLIC_KEY` for Ed25519. |
+| `qafind_verify` | Verify a signed Verified Merge verdict offline. |
+| `qafind_flake` | Read QAFind reporter manifests and return flake counts, causes and optional Markdown. |
 
 Example MCP client config:
 
 ```json
 {
   "mcpServers": {
-    "airlockqa": {
+    "qafind": {
       "command": "npx",
-      "args": ["--yes", "airlockqa@latest", "mcp"]
+      "args": ["--yes", "qafind@latest", "mcp"]
     }
   }
 }

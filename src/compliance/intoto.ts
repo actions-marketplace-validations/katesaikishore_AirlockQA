@@ -3,7 +3,7 @@
  *
  * A Verified Merge verdict is signed so the JSON cannot be edited. This module wraps the same evidence
  * in a standard in-toto Statement and DSSE envelope, so customers and auditors can verify it with
- * generic in-toto tooling or `airlock verify-intoto` without trusting the Airlock service.
+ * generic in-toto tooling or `qafind verify-intoto` without trusting the QAFind service.
  */
 import { resolveSigningKey, type SigningAlgorithm } from './attestation.js';
 import { canonicalJson, ed25519KeyId, ed25519PublicKeyPem, sha256, signEd25519, signHmac, verifyEd25519, verifyHmac } from '../utils/crypto.js';
@@ -49,7 +49,7 @@ function keyId(algorithm: SigningAlgorithm, key: string): string {
 export function signInTotoStatement(statement: InTotoStatement, options: SigningOptions = {}): DsseEnvelope {
   if (!statement || statement._type !== INTOTO_STATEMENT_TYPE) throw new Error('Not an in-toto Statement v1');
   const resolved = resolveSigningKey(options.signingKey, options.env || process.env);
-  if (resolved.isDevKey) throw new Error('Refusing to sign in-toto evidence with the development key; set AIRLOCK_SIGNING_KEY');
+  if (resolved.isDevKey) throw new Error('Refusing to sign in-toto evidence with the development key; set QAFIND_SIGNING_KEY');
   const payload = Buffer.from(canonicalJson(statement), 'utf8').toString('base64');
   const sig = resolved.algorithm === 'Ed25519'
     ? signEd25519(payload, resolved.key)

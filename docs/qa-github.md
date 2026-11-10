@@ -1,6 +1,6 @@
 # QA on GitHub pull requests
 
-Airlock QA can run on a pull request, save the failure screenshots, and put the verdict and findings in the PR. This is
+QAFind can run on a pull request, save the failure screenshots, and put the verdict and findings in the PR. This is
 the open-source half of the CodeRabbit-style motion: the workflow is copy-paste, the hosted run does the work, and the
 report is the marketing.
 
@@ -9,33 +9,33 @@ report is the marketing.
 1. The cloud builds and starts the repository at the requested commit in an isolated sandbox.
 2. `smoke` checks that the app answers on its health path.
 3. The requested suites run: the repository's `unit` / `e2e` scripts, its a11y/security/load scripts when named, and
-   Airlock's own browser checker (`explore`).
+   QAFind's own browser checker (`explore`).
 4. A failed checker finding or a failed script becomes a finding. `strict` makes a failed or unrun suite fail the gate.
-5. Failure screenshots are stored with the run. `airlock qa report` downloads them and writes `report.md`.
+5. Failure screenshots are stored with the run. `qafind report` downloads them and writes `report.md`.
 
 ## Run it by hand
 
 ```bash
 # From the repository you want to test (public GitHub remote, commit pushed).
-airlock qa --suites smoke,unit,e2e,explore --gate strict --wait
+qafind --suites smoke,unit,e2e,explore --gate strict --wait
 
 # Write the report and screenshots locally.
-airlock qa report <runId> --out qa-reports/<runId>
+qafind report <runId> --out qa-reports/<runId>
 
 # Open a pull request that commits the report (in a repository you own).
-airlock qa report <runId> --create-pr
+qafind report <runId> --create-pr
 ```
 
-`airlock qa --create-pr` is deliberately limited to the repository the command runs in. It cannot open a pull request
+`qafind --create-pr` is deliberately limited to the repository the command runs in. It cannot open a pull request
 on someone else's repository without permission; use the workflow there instead.
 
 ## Add the workflow
 
-Copy [`templates/github-actions/airlock-qa.yml`](../templates/github-actions/airlock-qa.yml) to
-`.github/workflows/airlock-qa.yml` and add the repository secret `AIRLOCK_API_KEY` (create a key in the console under
+Copy [`templates/github-actions/qafind.yml`](../templates/github-actions/qafind.yml) to
+`.github/workflows/qafind.yml` and add the repository secret `QAFIND_API_KEY` (create a key in the console under
 CI/CD & API). The workflow:
 
-- checks out the PR head commit and the AirlockQA CLI,
+- checks out the PR head commit and the QAFind CLI,
 - runs `smoke,explore` (add `unit,e2e` when the repository has those scripts),
 - uploads `qa-report/` as a workflow artifact (the screenshots live here),
 - comments the Markdown report on the pull request.
@@ -44,7 +44,7 @@ CI/CD & API). The workflow:
 
 - **Public repositories only.** The QA service clones a public `https://github.com/owner/repo`; private repositories are
   not supported yet.
-- **Fork pull requests do not receive secrets.** The workflow needs `AIRLOCK_API_KEY`; a PR from a fork does not get it.
+- **Fork pull requests do not receive secrets.** The workflow needs `QAFIND_API_KEY`; a PR from a fork does not get it.
   Run the workflow on a branch in the repository, or use a GitHub App installation (next).
 - **The head commit must exist on GitHub.** For a same-repository PR the head SHA is on GitHub; for a fork it may not
   be reachable from the base repository. The service refuses a commit it cannot fetch.
@@ -65,4 +65,4 @@ The workflow is the low-friction demo; the App is the product. The App should:
 - use an installation token instead of a user's key,
 - support private repositories and a per-installation quota.
 
-Until that exists, the workflow and `airlock qa report` are the supported path.
+Until that exists, the workflow and `qafind report` are the supported path.

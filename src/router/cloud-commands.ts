@@ -35,7 +35,7 @@ const out = (line = '') => console.log(line);
 function requireAuth(options: { apiKey?: string; apiUrl?: string } = {}): CloudAuth {
   const auth = resolveCloudAuth(options);
   if (!auth) {
-    throw new Error('No Airlock Cloud key found. Run "airlock login", or set AIRLOCK_API_KEY. Create a key in the console under CI/CD & API.');
+    throw new Error('No QAFind Cloud key found. Run "qafind login", or set QAFIND_API_KEY. Create a key in the console under CI/CD & API.');
   }
   return auth;
 }
@@ -90,11 +90,11 @@ async function readSecret(question: string): Promise<string> {
 // ---------------------------------------------------------------------------
 
 export async function loginCommand(options: { key?: string; apiUrl?: string } = {}): Promise<void> {
-  const apiUrl = options.apiUrl?.trim() || process.env.AIRLOCK_CLOUD_URL?.trim() || DEFAULT_CLOUD_URL;
-  let key = options.key?.trim() || process.env.AIRLOCK_API_KEY?.trim();
-  if (!key) key = await readSecret('Airlock API key (input is hidden): ');
+  const apiUrl = options.apiUrl?.trim() || process.env.QAFIND_CLOUD_URL?.trim() || DEFAULT_CLOUD_URL;
+  let key = options.key?.trim() || process.env.QAFIND_API_KEY?.trim();
+  if (!key) key = await readSecret('QAFind API key (input is hidden): ');
   if (!key || !looksLikeApiKey(key)) {
-    throw new Error('That does not look like an Airlock API key (they start with "air_live_"). Create one in the console under CI/CD & API.');
+    throw new Error('That does not look like an QAFind API key (they start with "air_live_"). Create one in the console under CI/CD & API.');
   }
 
   const target: ApiTarget = { apiUrl, apiKey: key };
@@ -123,18 +123,18 @@ export async function loginCommand(options: { key?: string; apiUrl?: string } = 
 export function logoutCommand(): void {
   const removed = clearCredentials();
   if (removed) {
-    logger.success('Removed the saved Airlock Cloud key from this machine.');
+    logger.success('Removed the saved QAFind Cloud key from this machine.');
     out('The key itself stays valid until you revoke it in the console under CI/CD & API.');
   } else {
     logger.info(`No saved key at ${credentialsPath()}.`);
   }
-  if (process.env.AIRLOCK_API_KEY) logger.warn('AIRLOCK_API_KEY is still set in your environment.');
+  if (process.env.QAFIND_API_KEY) logger.warn('QAFIND_API_KEY is still set in your environment.');
 }
 
 export async function whoamiCommand(options: { apiUrl?: string } = {}): Promise<void> {
   const auth = requireAuth(options);
   const usage = await getUsage(targetOf(auth));
-  const source = { option: 'a command option', env: 'AIRLOCK_API_KEY', stored: credentialsPath() }[auth.keySource];
+  const source = { option: 'a command option', env: 'QAFIND_API_KEY', stored: credentialsPath() }[auth.keySource];
   out(`API         ${auth.apiUrl}`);
   out(`Key         ${keyPrefix(auth.apiKey)} (from ${source})`);
   out(`Plan        ${usage.plan}`);
@@ -195,7 +195,7 @@ export async function runsCommand(
   const limit = Math.min(100, Math.max(1, Number(options.limit) || 20));
   const { runs } = await listRuns(target, { limit, status: options.status?.toUpperCase() });
   if (options.json) return out(JSON.stringify(runs, null, 2));
-  if (runs.length === 0) return out('No runs yet. Start one with "airlock test --cloud".');
+  if (runs.length === 0) return out('No runs yet. Start one with "qafind test --cloud".');
   out(`${pad('RUN', 20)}${pad('STATUS', 18)}${pad('SUITE', 22)}${pad('STEPS', 8)}${pad('TIME', 10)}CREATED`);
   for (const run of runs as RunSummary[]) {
     out(
@@ -205,7 +205,7 @@ export async function runsCommand(
 }
 
 // ---------------------------------------------------------------------------
-// hosted run (airlock test --cloud)
+// hosted run (qafind test --cloud)
 // ---------------------------------------------------------------------------
 
 export interface HostedRunOptions {
@@ -223,13 +223,13 @@ export interface EvidenceCheck {
   valid: boolean;
   reason?: string;
   keyId?: string;
-  pinnedBy: 'AIRLOCK_TRUSTED_PUBLIC_KEY' | 'login' | 'service';
+  pinnedBy: 'QAFIND_TRUSTED_PUBLIC_KEY' | 'login' | 'service';
   warnings: string[];
 }
 
 /**
- * Verify a hosted run's evidence. The signing key is taken, in order, from AIRLOCK_TRUSTED_PUBLIC_KEY, from the key
- * pinned at `airlock login`, and only as a last resort from the service itself (which proves consistency, not origin).
+ * Verify a hosted run's evidence. The signing key is taken, in order, from QAFIND_TRUSTED_PUBLIC_KEY, from the key
+ * pinned at `qafind login`, and only as a last resort from the service itself (which proves consistency, not origin).
  */
 export async function verifyRunEvidence(
   auth: CloudAuth,
@@ -239,16 +239,16 @@ export async function verifyRunEvidence(
   const warnings: string[] = [];
   let pinnedBy: EvidenceCheck['pinnedBy'];
   let publicKeyPem: string;
-  if (process.env.AIRLOCK_TRUSTED_PUBLIC_KEY?.trim()) {
-    publicKeyPem = process.env.AIRLOCK_TRUSTED_PUBLIC_KEY.trim();
-    pinnedBy = 'AIRLOCK_TRUSTED_PUBLIC_KEY';
+  if (process.env.QAFIND_TRUSTED_PUBLIC_KEY?.trim()) {
+    publicKeyPem = process.env.QAFIND_TRUSTED_PUBLIC_KEY.trim();
+    pinnedBy = 'QAFIND_TRUSTED_PUBLIC_KEY';
   } else if (auth.stored?.evidencePublicKey && auth.keySource === 'stored') {
     publicKeyPem = auth.stored.evidencePublicKey;
     pinnedBy = 'login';
   } else {
     publicKeyPem = (await fetchKey()).publicKeyPem;
     pinnedBy = 'service';
-    warnings.push('The signing key came from the service itself. Run "airlock login" or set AIRLOCK_TRUSTED_PUBLIC_KEY to pin it.');
+    warnings.push('The signing key came from the service itself. Run "qafind login" or set QAFIND_TRUSTED_PUBLIC_KEY to pin it.');
   }
   const result = AttestationEngine.verifyBundle(bundle, { trustedPublicKey: publicKeyPem });
   return { valid: result.valid, reason: result.reason, keyId: bundle.publicKeyOrKeyId, pinnedBy, warnings: [...warnings, ...(result.warnings ?? [])] };
@@ -258,13 +258,13 @@ export async function verifyRunEvidence(
 export function assertHostedTarget(targetUrl: string): void {
   // Only for development and test deployments of the service (which may allow private targets). The service
   // always enforces its own rules regardless of this check.
-  if (process.env.AIRLOCK_CLOUD_SKIP_TARGET_CHECK === '1') return;
+  if (process.env.QAFIND_CLOUD_SKIP_TARGET_CHECK === '1') return;
   try {
     checkUrlSyntax(targetUrl);
   } catch (error) {
     if (error instanceof TargetBlockedError) {
       throw new Error(
-        `${error.message}: ${targetUrl}. Hosted runs can only reach public addresses, so a local or private URL cannot be tested in the cloud. Use "airlock test --local", or run against a public staging URL.`
+        `${error.message}: ${targetUrl}. Hosted runs can only reach public addresses, so a local or private URL cannot be tested in the cloud. Use "qafind test --local", or run against a public staging URL.`
       );
     }
     throw error;
@@ -286,7 +286,7 @@ export async function runHostedTest(options: HostedRunOptions): Promise<RunDetai
     logger.info('No workflow found in the config or --workflow file: running a smoke check (open the URL and expect a visible page).');
   } else if (JSON.stringify(workflow).includes('${env:')) {
     throw new Error(
-      'This workflow uses ${env:NAME} references. Hosted runs never receive your environment, so the values cannot be filled in. Remove the references, or run the workflow locally with "airlock run".'
+      'This workflow uses ${env:NAME} references. Hosted runs never receive your environment, so the values cannot be filled in. Remove the references, or run the workflow locally with "qafind run".'
     );
   }
 
@@ -299,13 +299,13 @@ export async function runHostedTest(options: HostedRunOptions): Promise<RunDetai
   if (quota) out(`  ${quota.used} of ${quota.limit} runs used today.`);
 
   if (options.wait === false) {
-    out(`  Check progress with: airlock runs ${accepted.runId}`);
+    out(`  Check progress with: qafind runs ${accepted.runId}`);
     return { runId: accepted.runId, status: accepted.status };
   }
 
   const run = await waitForRun(target, accepted.runId, {
     timeoutMs: (options.timeoutSeconds ?? 600) * 1000,
-    intervalMs: Number(process.env.AIRLOCK_CLOUD_POLL_MS) || undefined,
+    intervalMs: Number(process.env.QAFIND_CLOUD_POLL_MS) || undefined,
     onUpdate: (update) => out(`  ${update.status.toLowerCase()}`),
   });
   out();
@@ -314,7 +314,7 @@ export async function runHostedTest(options: HostedRunOptions): Promise<RunDetai
   if (run.hasEvidence) {
     try {
       const bundle = await getRunEvidence(target, run.runId);
-      const dir = path.resolve(process.cwd(), config.compliance?.outputDir || './.airlock/compliance');
+      const dir = path.resolve(process.cwd(), config.compliance?.outputDir || './.qafind/compliance');
       ensureDir(dir);
       const file = path.join(dir, `cloud-${safeFileName(run.runId)}.json`);
       writeJsonFile(file, bundle);
