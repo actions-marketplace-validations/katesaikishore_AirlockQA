@@ -37,7 +37,7 @@ describe('Compiler: trace-to-Playwright spec generator', () => {
           dataTestId: 'coupon-input',
           attributes: { name: 'coupon' },
         },
-        value: 'AIRLOCK20',
+        value: 'QAFIND20',
         timestamp: new Date().toISOString(),
       },
       {
@@ -72,11 +72,11 @@ describe('Compiler: trace-to-Playwright spec generator', () => {
     // Verify key elements in emitted code
     expect(code).toContain('test.describe("Checkout Flow"');
     expect(code).toContain('page.goto("http://localhost:3900"');
-    expect(code).toContain('airlockLocator(page, { testId: "login-btn"');
+    expect(code).toContain('qafindLocator(page, { testId: "login-btn"');
     expect(code).toContain("await el_2.click()");
-    expect(code).toContain('airlockLocator(page, { testId: "coupon-input"');
-    expect(code).toContain('await el_3.fill("AIRLOCK20")');
-    expect(code).toContain('await airlock.checkpoint("post_auth_and_coupon", page)');
+    expect(code).toContain('qafindLocator(page, { testId: "coupon-input"');
+    expect(code).toContain('await el_3.fill("QAFIND20")');
+    expect(code).toContain('await qafind.checkpoint("post_auth_and_coupon", page)');
     expect(code).toContain("await expect(el_5).toBeVisible({ timeout: 4000 })");
     expect(code).toContain('Generated Playwright output compiled from an exploration trace.');
   });

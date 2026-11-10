@@ -29,7 +29,7 @@ describe('CLI option parsing', () => {
   });
 
   it('builds fork variations from a JSON file, with per-variation expectations', () => {
-    const file = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'airlock-fork-')), 'variations.json');
+    const file = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'qafind-fork-')), 'variations.json');
     fs.writeFileSync(file, JSON.stringify({
       inputSelector: '[name=coupon]',
       actionSelector: 'button.apply',
@@ -64,7 +64,7 @@ describe('CLI option parsing', () => {
   });
 
   it('compile accepts --output as an alias for --out', async () => {
-    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'airlock-compile-'));
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'qafind-compile-'));
     const tracePath = path.join(dir, 'trace.json');
     fs.writeFileSync(tracePath, JSON.stringify({
       id: 'trace_1', suiteName: 'alias-check', targetUrl: 'http://127.0.0.1:3900', startTime: new Date().toISOString(),

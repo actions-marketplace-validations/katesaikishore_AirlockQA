@@ -5,7 +5,7 @@ import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
 import { isAllowedHost, startDashboardServer } from '../src/dashboard/server.js';
-import type { AirlockConfig } from '../src/types/index.js';
+import type { QAFindConfig } from '../src/types/index.js';
 
 function request(port: number, options: { host?: string; path?: string; method?: string; body?: Buffer | string; headers?: Record<string, string> }) {
   return new Promise<{ status: number; headers: http.IncomingHttpHeaders; body: string }>((resolve, reject) => {
@@ -28,11 +28,11 @@ function request(port: number, options: { host?: string; path?: string; method?:
 }
 
 async function withServer(check: (port: number) => Promise<void>) {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'airlock-dash-host-'));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'qafind-dash-host-'));
   const complianceDir = path.join(dir, 'compliance');
   fs.mkdirSync(complianceDir);
   fs.writeFileSync(path.join(complianceDir, 'compliance-report.html'), '<!doctype html><title>Report</title>');
-  const config = { compliance: { outputDir: complianceDir }, forker: { checkpointsDir: path.join(dir, 'cp') } } as unknown as AirlockConfig;
+  const config = { compliance: { outputDir: complianceDir }, forker: { checkpointsDir: path.join(dir, 'cp') } } as unknown as QAFindConfig;
   const server = startDashboardServer(config, 0, path.join(dir, 'artifacts'));
   await once(server, 'listening');
   const address = server.address();

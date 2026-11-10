@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#f7f8f6">
-  <title>Sign in · Airlock Cloud</title>
-  <meta name="description" content="Sign in or create a free Airlock Cloud account.">
+  <title>Sign in · QAFind Cloud</title>
+  <meta name="description" content="Sign in or create a free QAFind Cloud account.">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
@@ -40,7 +40,7 @@
 <body>
 <div class="si" style="min-height: 100vh; display: flex; flex-direction: column; background: rgb(247, 248, 245); color: rgb(21, 33, 28); font-family: 'DM Sans', system-ui, -apple-system, sans-serif; font-size: 16px; line-height: 1.6;">
   <header style="width: 100%; max-width: 1280px; margin: 0px auto; padding: 18px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;">
-    <a href="/" aria-label="AirlockQA home" style="display: inline-flex; align-items: center; gap: 10px; color: rgb(21, 33, 28); text-decoration: none;">
+    <a href="/" aria-label="QAFind home" style="display: inline-flex; align-items: center; gap: 10px; color: rgb(21, 33, 28); text-decoration: none;">
       <svg width="32" height="32" viewBox="0 0 64 64" aria-hidden="true">
         <rect x="2" y="2" width="60" height="60" rx="18" fill="#2F6F5B"></rect>
         <path d="M16 48V31.5C16 22.94 22.94 16 31.5 16h1C41.06 16 48 22.94 48 31.5V48" fill="none" stroke="#F7FBF8" stroke-width="4.5" stroke-linecap="round"></path>
@@ -49,7 +49,7 @@
         <path d="M19.5 49.5h25" fill="none" stroke="#F7FBF8" stroke-width="4.5" stroke-linecap="round"></path>
         <circle cx="44.5" cy="20.5" r="2.2" fill="#B8E4CE"></circle>
       </svg>
-      <span style="font: 800 19px / 1 Manrope, system-ui, sans-serif; letter-spacing: -0.5px;">Airlock<span style="color: rgb(47, 111, 91);">QA</span></span>
+      <span style="font: 800 19px / 1 Manrope, system-ui, sans-serif; letter-spacing: -0.5px;">QAFind<span style="color: rgb(47, 111, 91);">QA</span></span>
     </a>
     <a href="/" style="display: inline-flex; align-items: center; gap: 6px; font-size: 15px; font-weight: 600; color: rgb(70, 84, 76); text-decoration: none;">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 18l-6-6 6-6"></path></svg>
@@ -61,7 +61,7 @@
     <!-- Story section with animated safety door -->
     <section aria-labelledby="si-story" style="position: relative; padding: clamp(28px, 4vw, 48px); border-radius: 28px; background: rgb(21, 33, 28); color: rgb(231, 242, 236); overflow: hidden; animation: 0.7s ease 0s 1 normal both running si-rise;">
       <div style="display: inline-flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: rgb(127, 214, 174);">
-        <span style="width: 20px; height: 2px; background: rgb(127, 214, 174);"></span>AirlockQA console
+        <span style="width: 20px; height: 2px; background: rgb(127, 214, 174);"></span>QAFind console
       </div>
       <h1 id="si-story" style="margin: 16px 0px 0px; font: 800 clamp(32px, 3.4vw, 44px) / 1.08 Manrope, system-ui, sans-serif; letter-spacing: -0.03em; color: rgb(255, 255, 255); text-wrap: balance;">Your tests, behind a safety door.</h1>
       <p style="margin: 16px 0px 0px; max-width: 460px; font-size: 17px; line-height: 1.65; color: rgb(201, 216, 207);">Sign in to see every run, what the safety door allowed or stopped, and the signed run evidence each run left behind.</p>
@@ -100,7 +100,7 @@
     <section aria-labelledby="si-title" style="width: 100%; max-width: 480px; justify-self: center; animation: 0.7s ease 0.08s 1 normal both running si-rise;">
       <div style="padding: clamp(24px, 4vw, 40px); border: 1px solid rgb(227, 232, 226); border-radius: 24px; background: rgb(255, 255, 255); box-shadow: rgba(21, 33, 28, 0.08) 0px 24px 60px;">
         <span style="display: inline-block; font-size: 11.5px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: rgb(47, 111, 91);">Workspace access</span>
-        <h2 id="si-title" tabindex="-1" style="margin: 8px 0px 0px; font: 800 28px / 1.2 Manrope, system-ui, sans-serif; letter-spacing: -0.02em; color: rgb(21, 33, 28);">Sign in to Airlock Cloud</h2>
+        <h2 id="si-title" tabindex="-1" style="margin: 8px 0px 0px; font: 800 28px / 1.2 Manrope, system-ui, sans-serif; letter-spacing: -0.02em; color: rgb(21, 33, 28);">Sign in to QAFind Cloud</h2>
         <p id="si-sub" style="margin: 8px 0px 0px; font-size: 15.5px; color: rgb(70, 84, 76);">Use your email and password. The free plan includes 100 hosted runs a day.</p>
 
         <div role="group" aria-label="Account action" style="margin-top: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; border-radius: 12px; background: #EEF3EF;">
@@ -128,10 +128,10 @@
           <button class="si-btn si-btn-pri" id="auth-submit" type="submit" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; height: 52px; border: 0px; border-radius: 14px; background: rgb(47, 111, 91); color: rgb(255, 255, 255); font: 700 16px 'DM Sans', system-ui, sans-serif; box-shadow: 0 4px 14px rgba(47, 111, 91, 0.3);">Sign in</button>
         </form>
 
-        <p id="signup-note" hidden style="margin: 16px 0 0; padding: 12px 14px; border: 1px solid rgb(227, 232, 226); border-radius: 12px; background: rgb(251, 252, 250); font-size: 13.5px; color: rgb(70, 84, 76);">Email addresses are not verified yet and Airlock Cloud sends no emails, so there is no email password reset. Keep your password somewhere safe.</p>
+        <p id="signup-note" hidden style="margin: 16px 0 0; padding: 12px 14px; border: 1px solid rgb(227, 232, 226); border-radius: 12px; background: rgb(251, 252, 250); font-size: 13.5px; color: rgb(70, 84, 76);">Email addresses are not verified yet and QAFind Cloud sends no emails, so there is no email password reset. Keep your password somewhere safe.</p>
 
         <p style="margin: 18px 0 0; font-size: 14.5px; color: rgb(70, 84, 76);">
-          <span id="switch-text">New to Airlock Cloud?</span>
+          <span id="switch-text">New to QAFind Cloud?</span>
           <button type="button" id="switch-mode" class="si-link" style="padding: 0; border: 0; background: none; color: #245A49; font: 700 14.5px 'DM Sans', system-ui, sans-serif; text-decoration: underline; cursor: pointer;">Create a free account</button>
         </p>
       </div>
@@ -151,7 +151,7 @@
 
   <footer style="border-top: 1px solid rgb(227, 232, 226);">
     <div style="max-width: 1280px; margin: 0px auto; padding: 18px 24px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; font-size: 13.5px; color: rgb(90, 105, 97);">
-      <span>© 2026 AirlockQA · MIT License</span>
+      <span>© 2026 QAFind · MIT License</span>
       <span>Running tests locally never needs an account.</span>
     </div>
   </footer>

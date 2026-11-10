@@ -7,7 +7,7 @@ export default function RecorderPanel() {
 Record a test
 </h1>
 <p style={{"margin": "6px 0px 0px", "fontSize": "15.5px", "color": "rgb(90, 105, 97)"}}>
-Click through your app like a customer would. AirlockQA writes down each step and turns it into a Playwright test.
+Click through your app like a customer would. QAFind writes down each step and turns it into a Playwright test.
 </p>
 <ol aria-label="Progress" style={{"listStyle": "none", "margin": "20px 0px 0px", "padding": "0px", "display": "flex", "flexWrap": "wrap", "alignItems": "center", "gap": "10px"}}>
 <li style={{"display": "inline-flex", "alignItems": "center", "gap": "10px", "height": "40px", "padding": "0px 14px 0px 6px", "borderRadius": "999px", "border": "1px solid rgb(227, 232, 226)", "background": "rgb(255, 255, 255)", "fontSize": "14px", "fontWeight": "600", "color": "rgb(21, 33, 28)"}}>
@@ -82,7 +82,7 @@ Run behind the safety door while recording
 <p style={{"margin": "14px 0px 0px", "display": "flex", "flexWrap": "wrap", "alignItems": "center", "gap": "8px", "fontSize": "13.5px", "color": "rgb(90, 105, 97)"}}>
 Prefer the terminal?
 <code style={{"padding": "4px 8px", "borderRadius": "6px", "background": "rgb(241, 244, 240)", "font": "500 13px \"JetBrains Mono\", monospace", "color": "rgb(21, 33, 28)"}}>
-npx airlock explore http://localhost:3000 --name checkout-flow
+npx qafind explore http://localhost:3000 --name checkout-flow
 </code>
 </p>
 </div>
@@ -355,13 +355,13 @@ Fallback locators on
 <span style={{"color": "rgb(127, 214, 174)"}}>
 {"import"}
 </span>
-{" { AirlockRunner, airlockLocator } "}
+{" { QAFindRunner, qafindLocator } "}
 <span style={{"color": "rgb(127, 214, 174)"}}>
 {"from"}
 </span>
 {" "}
 <span style={{"color": "rgb(233, 201, 139)"}}>
-{"'airlockqa'"}
+{"'qafind'"}
 </span>
 {";\n\ntest.describe("}
 <span style={{"color": "rgb(233, 201, 139)"}}>
@@ -373,21 +373,21 @@ Fallback locators on
 <span style={{"color": "rgb(127, 214, 174)"}}>
 {"let"}
 </span>
-{" airlock: AirlockRunner;\n\n  test.beforeEach("}
+{" qafind: QAFindRunner;\n\n  test.beforeEach("}
 <span style={{"color": "rgb(127, 214, 174)"}}>
 {"async"}
 </span>
 {" ({ page, context }) ="}
 {">"}
-{" {\n    airlock = "}
+{" {\n    qafind = "}
 <span style={{"color": "rgb(127, 214, 174)"}}>
 {"new"}
 </span>
-{" AirlockRunner();\n    "}
+{" QAFindRunner();\n    "}
 <span style={{"color": "rgb(127, 214, 174)"}}>
 {"await"}
 </span>
-{" airlock.initialize(context, page);\n  });\n\n  test("}
+{" qafind.initialize(context, page);\n  });\n\n  test("}
 <span style={{"color": "rgb(233, 201, 139)"}}>
 {"'checkout-flow'"}
 </span>
@@ -421,7 +421,7 @@ Fallback locators on
 <span style={{"color": "rgb(127, 214, 174)"}}>
 {"await"}
 </span>
-{" airlockLocator(page, { testId: "}
+{" qafindLocator(page, { testId: "}
 <span style={{"color": "rgb(233, 201, 139)"}}>
 {"'login-btn'"}
 </span>
@@ -437,7 +437,7 @@ Fallback locators on
 <span style={{"color": "rgb(127, 214, 174)"}}>
 {"await"}
 </span>
-{" airlock.checkpoint("}
+{" qafind.checkpoint("}
 <span style={{"color": "rgb(233, 201, 139)"}}>
 {"'post_auth'"}
 </span>
@@ -453,7 +453,7 @@ Fallback locators on
 <span style={{"color": "rgb(127, 214, 174)"}}>
 {"await"}
 </span>
-{" airlockLocator(page, { css: "}
+{" qafindLocator(page, { css: "}
 <span style={{"color": "rgb(233, 201, 139)"}}>
 {"'[data-testid=\"add-to-cart\"]'"}
 </span>
@@ -461,7 +461,7 @@ Fallback locators on
 <span style={{"color": "rgb(127, 214, 174)"}}>
 {"await"}
 </span>
-{" airlock.checkpoint("}
+{" qafind.checkpoint("}
 <span style={{"color": "rgb(233, 201, 139)"}}>
 {"'cart_filled'"}
 </span>
@@ -473,7 +473,7 @@ Fallback locators on
 <span style={{"color": "rgb(127, 214, 174)"}}>
 {"await"}
 </span>
-{" airlockLocator(page, { testId: "}
+{" qafindLocator(page, { testId: "}
 <span style={{"color": "rgb(233, 201, 139)"}}>
 {"'coupon-input'"}
 </span>
@@ -489,7 +489,7 @@ Fallback locators on
 <span style={{"color": "rgb(127, 214, 174)"}}>
 {"await"}
 </span>
-{" airlockLocator(page, { testId: "}
+{" qafindLocator(page, { testId: "}
 <span style={{"color": "rgb(233, 201, 139)"}}>
 {"'apply-coupon-btn'"}
 </span>
@@ -505,7 +505,7 @@ Fallback locators on
 <span style={{"color": "rgb(127, 214, 174)"}}>
 {"await"}
 </span>
-{" airlockLocator(page, { testId: "}
+{" qafindLocator(page, { testId: "}
 <span style={{"color": "rgb(233, 201, 139)"}}>
 {"'cart-total'"}
 </span>
@@ -534,7 +534,7 @@ Save to tests/checkout.spec.ts
 <span style={{"fontSize": "13px", "color": "rgb(169, 196, 182)"}}>
 or{" "}
 <code style={{"fontFamily": "\"JetBrains Mono\", monospace", "color": "rgb(215, 231, 221)"}}>
-npx airlock compile trace.json -o tests/checkout.spec.ts
+npx qafind compile trace.json -o tests/checkout.spec.ts
 </code>
 </span>
 </div>
@@ -546,7 +546,7 @@ npx airlock compile trace.json -o tests/checkout.spec.ts
 Recordings
 </h2>
 <p style={{"margin": "2px 0px 0px", "fontSize": "13.5px", "color": "rgb(90, 105, 97)"}}>
-Saved in .airlock/traces — commit them alongside your tests
+Saved in .qafind/traces — commit them alongside your tests
 </p>
 </div>
 <div style={{"overflowX": "auto"}}>

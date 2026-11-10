@@ -1,8 +1,8 @@
-# AirlockQA: Complete User & Operator Guide
+# QAFind: Complete User & Operator Guide
 
 > **Zero-Trust, Self-Healing, Time-Traveling Browser Test Automation & Compliance Ledger**
 
-This guide provides end-to-end instructions for installing, configuring, running, and deploying **AirlockQA** across local machines, CI/CD runners, and cloud endpoints.
+This guide provides end-to-end instructions for installing, configuring, running, and deploying **QAFind** across local machines, CI/CD runners, and cloud endpoints.
 
 ---
 
@@ -10,20 +10,20 @@ This guide provides end-to-end instructions for installing, configuring, running
 
 1. [Architectural Model](#1-architectural-model)
 2. [Prerequisites & Installation](#2-prerequisites--installation)
-3. [Configuration Reference (`airlock.config.json`)](#3-configuration-reference-airlockconfigjson)
+3. [Configuration Reference (`qafind.config.json`)](#3-configuration-reference-qafindconfigjson)
 4. [Core CLI Commands](#4-core-cli-commands)
-   - [`airlock init`](#airlock-init)
-   - [`airlock explore [url]`](#airlock-explore-url)
-   - [`airlock compile <tracePath>`](#airlock-compile-tracepath)
-   - [`airlock test [--local | --cloud]`](#airlock-test---local----cloud)
-   - [`airlock run`](#airlock-run)
-   - [`airlock fork <checkpointName>`](#airlock-fork-checkpointname)
-   - [`airlock warp <duration>`](#airlock-warp-duration)
-   - [`airlock chaos [url]`](#airlock-chaos-url)
-   - [`airlock teleport <capsulePath>`](#airlock-teleport-capsulepath)
-   - [`airlock audit [bundlePath]`](#airlock-audit-bundlepath)
-   - [`airlock dataset`](#airlock-dataset)
-   - [`airlock serve [-p <port>]`](#airlock-serve--p-port)
+   - [`qafind init`](#qafind-init)
+   - [`qafind explore [url]`](#qafind-explore-url)
+   - [`qafind compile <tracePath>`](#qafind-compile-tracepath)
+   - [`qafind test [--local | --cloud]`](#qafind-test---local----cloud)
+   - [`qafind run`](#qafind-run)
+   - [`qafind fork <checkpointName>`](#qafind-fork-checkpointname)
+   - [`qafind warp <duration>`](#qafind-warp-duration)
+   - [`qafind chaos [url]`](#qafind-chaos-url)
+   - [`qafind teleport <capsulePath>`](#qafind-teleport-capsulepath)
+   - [`qafind audit [bundlePath]`](#qafind-audit-bundlepath)
+   - [`qafind dataset`](#qafind-dataset)
+   - [`qafind serve [-p <port>]`](#qafind-serve--p-port)
 5. [CI/CD Workflow Integration](#5-cicd-workflow-integration)
 6. [Web Console & Staging GUI QA](#6-web-console--staging-gui-qa)
 7. [Cloud Quotas & Security Model](#7-cloud-quotas--security-model)
@@ -32,17 +32,17 @@ This guide provides end-to-end instructions for installing, configuring, running
 
 ## 1. Architectural Model
 
-AirlockQA distinguishes between **Local Execution** and the optional hosted service, **Airlock Cloud**:
+QAFind distinguishes between **Local Execution** and the optional hosted service, **QAFind Cloud**:
 
 | Mode | Where Tests Run | Credentials Needed | Quota & Compute |
 | :--- | :--- | :--- | :--- |
 | **Open-Source Local** | User laptop or CI runner | None (`--local`) | Free, unbounded local execution |
-| **Airlock Cloud** | Isolated headless browser on the hosted service | API key from the console (`airlock login`) | Free plan: 100 runs per workspace per day, one at a time |
-| **Another deployment** | A deployment of the service that you operate | Its key and `AIRLOCK_CLOUD_URL` | Set by its operator |
+| **QAFind Cloud** | Isolated headless browser on the hosted service | API key from the console (`qafind login`) | Free plan: 100 runs per workspace per day, one at a time |
+| **Another deployment** | A deployment of the service that you operate | Its key and `QAFIND_CLOUD_URL` | Set by its operator |
 
 ```
                        ┌─────────────────────────┐
-                       │     AirlockQA CLI       │
+                       │     QAFind CLI       │
                        └────────────┬────────────┘
                                     │
            ┌────────────────────────┴────────────────────────┐
@@ -72,8 +72,8 @@ AirlockQA distinguishes between **Local Execution** and the optional hosted serv
 Clone the repository and install packages:
 
 ```bash
-git clone https://github.com/katesaikishore/AirlockQA.git
-cd AirlockQA
+git clone https://github.com/katesaikishore/QAFind.git
+cd QAFind
 bun install
 ```
 
@@ -82,7 +82,7 @@ Install the Playwright browser binary (skip this if `browser.executablePath` poi
 bunx playwright install chromium
 ```
 
-`airlock test --local` and `airlock run <specPath>` run specs with Playwright Test, so install `@playwright/test` as well:
+`qafind test --local` and `qafind run <specPath>` run specs with Playwright Test, so install `@playwright/test` as well:
 ```bash
 bun add -d @playwright/test
 ```
@@ -99,9 +99,9 @@ bun test
 
 ---
 
-## 3. Configuration Reference (`airlock.config.json`)
+## 3. Configuration Reference (`qafind.config.json`)
 
-Running `bun run cli init` (or `npx airlock init`) generates a default configuration file:
+Running `bun run cli init` (or `npx qafind init`) generates a default configuration file:
 
 ```json
 {
@@ -148,21 +148,21 @@ Running `bun run cli init` (or `npx airlock init`) generates a default configura
   "healer": {
     "autoHeal": true,
     "confidenceThreshold": 0.8,
-    "datasetDir": "./.airlock/dataset",
+    "datasetDir": "./.qafind/dataset",
     "saveMutations": true
   },
   "forker": {
-    "checkpointsDir": "./.airlock/checkpoints",
+    "checkpointsDir": "./.qafind/checkpoints",
     "maxParallelForks": 5
   },
   "compliance": {
-    "outputDir": "./.airlock/compliance",
+    "outputDir": "./.qafind/compliance",
     "generateHtmlReport": true
   }
 }
 ```
 
-`compliance.signingKey` has no default and is intentionally left out of the sample: keep it out of committed files and supply it from a local, untracked config. Each secret's real value is read from the environment variable named by `realFromEnv`; the literal `real` value is only a fallback placeholder. Set `browser.executablePath` or `AIRLOCK_CHROME_PATH` to use a specific Chrome build. Set `AIRLOCK_CHECKPOINT_KEY` to encrypt saved browser-state checkpoints (they contain cookies and storage).
+`compliance.signingKey` has no default and is intentionally left out of the sample: keep it out of committed files and supply it from a local, untracked config. Each secret's real value is read from the environment variable named by `realFromEnv`; the literal `real` value is only a fallback placeholder. Set `browser.executablePath` or `QAFIND_CHROME_PATH` to use a specific Chrome build. Set `QAFIND_CHECKPOINT_KEY` to encrypt saved browser-state checkpoints (they contain cookies and storage).
 
 ### Request policy rules
 1. **Phantom placeholders in the browser**: the browser only sees `phantom` values. The real value lives in the runner process and is substituted by the gateway after policy allows the request. Real values are sent upstream by the runner's own HTTP client (`context.request.fetch`), never by the browser. If that forwarding fails, the browser request is aborted and reported; it is not retried through the browser.
@@ -177,10 +177,10 @@ What it does not do: substitution and sanitizing are exact string matches in tex
 
 ## 4. Core CLI Commands
 
-Use `bun run cli <command>` or `npx airlock <command>`:
+Use `bun run cli <command>` or `npx qafind <command>`:
 
-### `airlock init`
-Initializes a new `airlock.config.json` with sample policies and directory scaffolding (`.airlock/checkpoints`, `.airlock/compliance`, `.airlock/traces`).
+### `qafind init`
+Initializes a new `qafind.config.json` with sample policies and directory scaffolding (`.qafind/checkpoints`, `.qafind/compliance`, `.qafind/traces`).
 
 ```bash
 bun run cli init
@@ -188,10 +188,10 @@ bun run cli init
 
 ---
 
-### `airlock explore [url]`
+### `qafind explore [url]`
 Opens a visible Chromium window at `url` (default: `baseUrl`) and records what you do in it: clicks, typing (one `fill` per field with its final value), special key presses (Enter, Tab, Escape, arrows, shortcuts) and `<select>` changes. Each step stores a selector that matches exactly the element you used, plus an element fingerprint (tag, role, test id, text, attributes, position). URLs you open directly are recorded as `goto` steps. Text typed into password fields is saved as `<redacted-password>`.
 
-Close the browser window, or press Ctrl+C in the terminal, to stop. The trace is then written to `.airlock/traces/<name>-trace.json`.
+Close the browser window, or press Ctrl+C in the terminal, to stop. The trace is then written to `.qafind/traces/<name>-trace.json`.
 
 ```bash
 bun run cli explore http://localhost:3000 --name checkout-flow
@@ -206,41 +206,41 @@ bun run cli explore http://localhost:3000 --out ./traces/checkout.json
 
 ---
 
-### `airlock compile <tracePath>`
+### `qafind compile <tracePath>`
 Compiles a recorded trace into a Playwright TypeScript spec with multi-attribute fallback locators. Writes to `compiler.outputDir/<suite>.spec.ts` unless `--out` (or `--output`) is given. Exits with code 1 when the trace is missing or invalid.
 
 ```bash
-bun run cli compile .airlock/traces/checkout-flow-trace.json --out ./tests/checkout.spec.ts
+bun run cli compile .qafind/traces/checkout-flow-trace.json --out ./tests/checkout.spec.ts
 ```
 
 ---
 
-### `airlock test [specPath] [--local | --cloud]`
-Routes test execution to Playwright Test on your machine or to the remote Airlock Cloud API.
+### `qafind test [specPath] [--local | --cloud]`
+Routes test execution to Playwright Test on your machine or to the remote QAFind Cloud API.
 
 #### 1. Local run
 Runs the spec file or directory with Playwright Test (default: `compiler.outputDir`). `--url` sets Playwright's `baseURL`, so `page.goto('/')` opens your app. The command exits with Playwright's exit code, so it is non-zero when any test fails.
 
-`@playwright/test` must be installed next to `airlockqa` (it is a peer dependency):
+`@playwright/test` must be installed next to `qafind` (it is a peer dependency):
 ```bash
 bun add -d @playwright/test
 bun run cli test --local ./tests/checkout.spec.ts --url http://localhost:3000
 ```
 
-To get the Airlock gateway (phantom credential swap, request policy) and a signed evidence bundle in every test, import `test` from the Airlock fixture instead of `@playwright/test`:
+To get the QAFind gateway (phantom credential swap, request policy) and a signed evidence bundle in every test, import `test` from the QAFind fixture instead of `@playwright/test`:
 
 ```ts
-import { test, expect } from 'airlockqa/dist/src/testing/airlock-test.js';
+import { test, expect } from 'qafind/dist/src/testing/qafind-test.js';
 
-test('checkout', async ({ page, airlock }) => {
+test('checkout', async ({ page, qafind }) => {
   await page.goto('/');
-  airlock.step('CLICK', 'checkout');            // optional: record a step in the ledger
+  qafind.step('CLICK', 'checkout');            // optional: record a step in the ledger
   await page.getByTestId('checkout-btn').click();
   await expect(page.getByTestId('status')).toContainText('Paid');
 });
 ```
 
-The fixture is automatic, so the gateway is attached even when a test does not use `airlock`. After each test the bundle is attached to the Playwright result as `airlock-evidence`. Playwright output goes to `.airlock/playwright/` (JSON results in `results.json`).
+The fixture is automatic, so the gateway is attached even when a test does not use `qafind`. After each test the bundle is attached to the Playwright result as `qafind-evidence`. Playwright output goes to `.qafind/playwright/` (JSON results in `results.json`).
 
 #### 2. Cloud Run (hosted workflow):
 ```bash
@@ -250,23 +250,23 @@ bun run cli runs             # recent hosted runs; `runs <id>` shows one with it
 bun run cli usage            # today's run count and limits
 ```
 
-Hosted runs execute the **declarative workflow** (from `--workflow <file>` or the config's `workflow`; with neither, a smoke check that opens the URL). Spec files are not uploaded. The target must be a public address, and workflows may not use `${env:NAME}`. `test --cloud` waits for the result (`--no-wait` to return at once, `--timeout <seconds>`), downloads the evidence to `.airlock/compliance/cloud-<runId>.json` and verifies it against the signing key pinned by `airlock login`.
+Hosted runs execute the **declarative workflow** (from `--workflow <file>` or the config's `workflow`; with neither, a smoke check that opens the URL). Spec files are not uploaded. The target must be a public address, and workflows may not use `${env:NAME}`. `test --cloud` waits for the result (`--no-wait` to return at once, `--timeout <seconds>`), downloads the evidence to `.qafind/compliance/cloud-<runId>.json` and verifies it against the signing key pinned by `qafind login`.
 
-The suite name sent to the API is `--suite <name>`, else the spec file name (`checkout`), else `projectName` from the config. A run reported as `FAILED`, `POLICY_VIOLATION` or `CANCELLED` sets exit code 1. In CI, set `AIRLOCK_API_KEY` from a secret instead of running `login`.
+The suite name sent to the API is `--suite <name>`, else the spec file name (`checkout`), else `projectName` from the config. A run reported as `FAILED`, `POLICY_VIOLATION` or `CANCELLED` sets exit code 1. In CI, set `QAFIND_API_KEY` from a secret instead of running `login`.
 
 *Note: The CLI transmits your key only as `Authorization: Bearer <key>` over HTTPS (HTTP only for localhost), never to an endpoint other than the one it was saved for. Real application secrets are never part of the cloud request.*
 
 #### 3. Another endpoint:
 ```bash
-export AIRLOCK_CLOUD_URL="https://airlock.example.org"   # a deployment of the service that you operate
-export AIRLOCK_API_KEY="air_live_key_issued_by_that_deployment"
+export QAFIND_CLOUD_URL="https://qafind.example.org"   # a deployment of the service that you operate
+export QAFIND_API_KEY="air_live_key_issued_by_that_deployment"
 bun run cli test --cloud
 ```
 
 ---
 
-### `airlock run [specPath]`
-Runs the `workflow` defined in `airlock.config.json` (or in a file passed with `--workflow`) in one browser with the Airlock gateway attached, then writes a signed evidence bundle. With a `specPath` it runs that spec with Playwright Test instead, like `test --local`.
+### `qafind run [specPath]`
+Runs the `workflow` defined in `qafind.config.json` (or in a file passed with `--workflow`) in one browser with the QAFind gateway attached, then writes a signed evidence bundle. With a `specPath` it runs that spec with Playwright Test instead, like `test --local`.
 
 Execution stops at the first failing step and the command exits with code 1.
 
@@ -297,7 +297,7 @@ Execution stops at the first failing step and the command exits with code 1.
 | `waitFor` | `selector`, `state` (`visible` by default) | the state is not reached |
 | `expectVisible` | `selector` | the element is not visible |
 | `expectText` | `selector`, `text` | the element's text does not contain `text` |
-| `checkpoint` | `name` | the checkpoint cannot be saved (used later by `airlock fork`) |
+| `checkpoint` | `name` | the checkpoint cannot be saved (used later by `qafind fork`) |
 | `restoreCheckpoint` | `name` | the checkpoint does not exist in this run |
 | `warp` | `duration` (for example `+14 days`) | the page clock cannot be offset |
 | `fixture` | `url` (same-origin), `method`, `status`, `headers`, `body` | the route cannot be registered |
@@ -310,7 +310,7 @@ Execution stops at the first failing step and the command exits with code 1.
 
 The step timeout is `compiler.defaultTimeoutMs`.
 
-The evidence bundle uses spec 2.0.0 with the ledger embedded; see [`airlock audit`](#airlock-audit-bundlepath) for signing keys.
+The evidence bundle uses spec 2.0.0 with the ledger embedded; see [`qafind audit`](#qafind-audit-bundlepath) for signing keys.
 
 ```bash
 QA_EMAIL=qa@example.com QA_PASSWORD=... bun run cli run --url http://localhost:3000
@@ -319,13 +319,13 @@ bun run cli run --workflow ./workflows/refund-guard.json
 
 ---
 
-### `airlock fork <checkpointName>`
+### `qafind fork <checkpointName>`
 Restores a saved checkpoint (for example `cart_ready` from a `run` workflow) into parallel browser contexts and tries one input value per context, without repeating login or navigation. Each variation fills `--input`, clicks `--action` and then checks the expectation. Every action and expectation counts as a check; the command exits with code 1 if any variation fails.
 
 ```bash
 bun run cli fork cart_ready \
   --input '[data-testid="coupon-input"]' --action '[data-testid="apply-coupon-btn"]' \
-  --values 'AIRLOCK20,VIP50,EXPIRED2020' --expect-selector '#coupon-status' --expect-text '✔'
+  --values 'QAFIND20,VIP50,EXPIRED2020' --expect-selector '#coupon-status' --expect-text '✔'
 ```
 
 Or describe the variations in a JSON file (flags override file values):
@@ -350,7 +350,7 @@ bun run cli fork cart_ready --variations ./coupon-variations.json --workers 2
 
 ---
 
-### `airlock warp <duration>`
+### `qafind warp <duration>`
 Fast-forwards the virtual browser clock across Date offsets without waiting real time. Ideal for testing 14-day trials, subscription renewals, or expiration countdowns.
 
 ```bash
@@ -360,7 +360,7 @@ bun run cli warp "+1 hour"
 
 ---
 
-### `airlock chaos [url]`
+### `qafind chaos [url]`
 Clicks `--action` once (after optional setup steps), observes the matching mutation request and reports whether it carried an idempotency key (`Idempotency-Key` or `X-Idempotency-Key`). It does not replay requests or inject faults. The command exits with code 1 if the click fails, no matching request is seen, or the request has no idempotency key.
 
 ```bash
@@ -372,32 +372,32 @@ The JSON file can set `url`, `actionSelector`, `endpointPattern` (a regular expr
 
 ---
 
-### `airlock teleport <capsulePath>`
+### `qafind teleport <capsulePath>`
 Reads a browser-state capsule and generates a Playwright reproduction spec in `compiler.outputDir` (or `--out` / `--output`). Exits with code 1 when the capsule is missing or invalid.
 
 ```bash
-bun run cli teleport .airlock/traces/crash-capsule.json --out ./tests/repro-bug.spec.ts
+bun run cli teleport .qafind/traces/crash-capsule.json --out ./tests/repro-bug.spec.ts
 ```
 
 ---
 
-### `airlock qa [--suites <list>] [--gate strict|default] [--continue-on-failure] [--dry-run] [--wait]`
-Runs QA on the **pushed** commit of the repository you are in, in Airlock Cloud.
+### `qafind [--suites <list>] [--gate strict|default] [--continue-on-failure] [--dry-run] [--wait]`
+Runs QA on the **pushed** commit of the repository you are in, in QAFind Cloud.
 
 - `--dry-run` prints the exact request that would be sent and sends nothing. It checks that the remote is a public `https://github.com/<owner>/<repo>` URL, that the commit is on GitHub, and that every script name is a plain npm script name (never a shell command).
-- Without `--dry-run`, the request is submitted with your saved key (`airlock login`) or `AIRLOCK_API_KEY`.
+- Without `--dry-run`, the request is submitted with your saved key (`qafind login`) or `QAFIND_API_KEY`.
 - `--wait` waits for the run to finish. The exit code is `0` only if the run succeeded and the gate passed.
-- `--suites` takes any of `unit`, `integration`, `e2e`, `smoke`, `a11y`, `security`, `load`, `explore`. `smoke` (the build, start and health check) always runs first. `integration` and `e2e` run only after a green `unit` suite. The `a11y`, `security` and `load` suites run only when the request names a script for them (for example `scripts["test:security"]`); otherwise they are reported as `NOT_RUN` with a reason, never as a pass. `explore` runs Airlock's own checker (below) unless you name a `test:explore` script.
+- `--suites` takes any of `unit`, `integration`, `e2e`, `smoke`, `a11y`, `security`, `load`, `explore`. `smoke` (the build, start and health check) always runs first. `integration` and `e2e` run only after a green `unit` suite. The `a11y`, `security` and `load` suites run only when the request names a script for them (for example `scripts["test:security"]`); otherwise they are reported as `NOT_RUN` with a reason, never as a pass. `explore` runs QAFind's own checker (below) unless you name a `test:explore` script.
 - `--continue-on-failure` keeps the extra suites running after a failing test suite (a unit or e2e failure, for example). Build, start and smoke failures still stop the run, because the app cannot be tested without them. Without the flag, the first failing suite stops the extra suites, which are reported as `NOT_RUN`.
 - Only one QA run may be queued or running on the shared staging host at a time. Each account has a separate daily QA quota (5 by default).
 
 ```bash
-airlock qa --dry-run
-airlock qa --wait --gate strict
-airlock qa --wait --suites unit,e2e,a11y,security --continue-on-failure
+qafind --dry-run
+qafind --wait --gate strict
+qafind --wait --suites unit,e2e,a11y,security --continue-on-failure
 ```
 
-The `qa` block in `airlock.config.json` tells the cloud how to build, start and test your app. Every value in `scripts` is the **name** of an npm script in your `package.json`, never a shell command:
+The `qa` block in `qafind.config.json` tells the cloud how to build, start and test your app. Every value in `scripts` is the **name** of an npm script in your `package.json`, never a shell command:
 
 ```json
 {
@@ -426,7 +426,7 @@ The `qa` block in `airlock.config.json` tells the cloud how to build, start and 
 | `scripts.test` | `test` | The `unit` suite. |
 | `scripts["test:integration"]`, `scripts["test:e2e"]` | as named | Used by the `integration` and `e2e` suites. `e2e` runs against the started app (`BASE_URL` is set). |
 | `scripts["test:a11y"]`, `["test:security"]`, `["test:load"]` | none | **Required** for those suites. Without one, the suite is reported `NOT_RUN` with the reason. |
-| `scripts["test:explore"]` | none | Optional. When set, your script runs instead of Airlock's checker. |
+| `scripts["test:explore"]` | none | Optional. When set, your script runs instead of QAFind's checker. |
 
 Before any script runs, the cloud installs dependencies with the package manager your lockfile names: `pnpm install --frozen-lockfile` for `pnpm-lock.yaml`, `yarn install --frozen-lockfile` for `yarn.lock` (both through corepack, at the version in your `packageManager` field), otherwise `npm ci` (falling back to `npm install`). devDependencies are installed. Then it runs your `build` script when there is one, and starts the app with `NODE_ENV=production`.
 
@@ -437,9 +437,9 @@ Before any script runs, the cloud installs dependencies with the package manager
 - When a run fails, its reasons include the sandbox's own last error lines, and the phase says whether the build failed (`BUILD_FAILED`) or the app did not come up (`DEPLOY_UNHEALTHY`).
 - The `install` and `build` script names are accepted but not used yet: the install and build commands are fixed as above.
 
-#### The `explore` suite: Airlock's own checker
+#### The `explore` suite: QAFind's own checker
 
-Without a `test:explore` script, `explore` runs Airlock's checker against your app while it runs on the staging slot. The checker runs in its own container, not inside your app's, so what it reports is **first-party**: seen by Airlock, not reported by your tests.
+Without a `test:explore` script, `explore` runs QAFind's checker against your app while it runs on the staging slot. The checker runs in its own container, not inside your app's, so what it reports is **first-party**: seen by QAFind, not reported by your tests.
 
 - It visits up to 30 pages of your app (same site only), then clicks up to 25 buttons. It skips any control whose name sounds destructive: delete, remove, pay, buy, checkout, send, publish, transfer, refund, cancel, sign out, reset and similar.
 - **It cannot change your data.** Every request other than GET, HEAD or OPTIONS, and every request to another site, is blocked in its browser. A form it submits, or a button the skip list misses, is stopped before it reaches your server. Errors your page throws because of that blocking are ignored.
@@ -449,18 +449,18 @@ Without a `test:explore` script, `explore` runs Airlock's checker against your a
 
 #### Findings
 
-Each run lists its findings with a severity (S1 to S4) and who saw them: **Airlock checker** (first-party) or **your tests** (self-reported, read from your test output by fixed rules). A failing test that no rule names becomes a `failing_test` finding, named by file and test title, so it is tracked from run to run as new, still open or fixed. When both sources report the same bug, the first-party one is kept. Findings do not change a gate by themselves: self-reported findings are already covered by the suite that failed, and first-party S1/S2 findings fail the `explore` suite, which fails a `strict` gate (the default gate only warns).
+Each run lists its findings with a severity (S1 to S4) and who saw them: **QAFind checker** (first-party) or **your tests** (self-reported, read from your test output by fixed rules). A failing test that no rule names becomes a `failing_test` finding, named by file and test title, so it is tracked from run to run as new, still open or fixed. When both sources report the same bug, the first-party one is kept. Findings do not change a gate by themselves: self-reported findings are already covered by the suite that failed, and first-party S1/S2 findings fail the `explore` suite, which fails a `strict` gate (the default gate only warns).
 
-`airlock qa --dry-run` prints the exact request, so you can check what will be sent before you use a run of your daily quota.
+`qafind --dry-run` prints the exact request, so you can check what will be sent before you use a run of your daily quota.
 
 Gates: `default` fails only when the build or the health check (smoke) fails; other failing or unrun suites are reported as warnings. `strict` also fails on any suite that failed, did not run or was flaky, and on any first-party S1 or S2 finding. Heuristic leads never fail a gate unless someone promotes them.
 
-### `airlock ai doctor | ask | explain` (AI help with no API key)
+### `qafind ai doctor | ask | explain` (AI help with no API key)
 
-Airlock's AI help uses a coding agent that is already installed and signed in on your machine, so you never paste a
-model API key into Airlock. Supported agents, tried in this order with `auto`:
+QAFind's AI help uses a coding agent that is already installed and signed in on your machine, so you never paste a
+model API key into QAFind. Supported agents, tried in this order with `auto`:
 
-| Agent | Command Airlock runs |
+| Agent | Command QAFind runs |
 |---|---|
 | Claude Code | `claude -p --output-format json --permission-mode plan` |
 | Antigravity | `agy -p ... --output-format json --mode plan --sandbox` (installed at `~/.gemini/bin/agy`) |
@@ -469,27 +469,27 @@ model API key into Airlock. Supported agents, tried in this order with `auto`:
 
 Each agent runs in a new, empty temporary folder, in its read-only or plan mode, and is told to answer from the
 prompt alone. It cannot edit your files or run commands. Whatever the agent's own account and data policy is applies
-to the text Airlock sends it.
+to the text QAFind sends it.
 
 ```bash
-airlock ai doctor --probe          # which agents are installed, and whether each one answers
-airlock ai ask "why would next start ignore PORT?"
-airlock ai explain latest          # why the most recent failed cloud QA run failed, and the smallest fix
-airlock ai explain run_qa_123 --agent agy
-airlock ai explain latest --show-prompt   # see exactly what would be sent, send nothing
+qafind ai doctor --probe          # which agents are installed, and whether each one answers
+qafind ai ask "why would next start ignore PORT?"
+qafind ai explain latest          # why the most recent failed cloud QA run failed, and the smallest fix
+qafind ai explain run_qa_123 --agent agy
+qafind ai explain latest --show-prompt   # see exactly what would be sent, send nothing
 ```
 
-- `--agent auto|claude|agy|codex|gemini` (or `AIRLOCK_AGENT`) picks the agent. With `auto`, an agent that is missing,
+- `--agent auto|claude|agy|codex|gemini` (or `QAFIND_AGENT`) picks the agent. With `auto`, an agent that is missing,
   signed out or misconfigured is skipped and the next one is tried; if none answers, every reason is printed.
 - `doctor` says how to fix each signed-out agent (for example run `claude` once and sign in).
 - `explain` sends the run's status, phase, suites, gate reasons and findings. Output from your repository's commands
-  is marked as data, and the answer is labelled as an AI suggestion that Airlock has not verified.
+  is marked as data, and the answer is labelled as an AI suggestion that QAFind has not verified.
 
-### `airlock audit [bundlePath]`
+### `qafind audit [bundlePath]`
 Verifies a signed run-evidence bundle (spec **2.0.0**). It recomputes the ledger hash chain and the Merkle root from the blocks embedded in the bundle, then checks a signature that covers **every field** of the bundle (everything except `signature` itself). It exits with code `1` on any failure.
 
 ```bash
-AIRLOCK_SIGNING_KEY=... bun run cli audit .airlock/compliance/latest-attestation.json
+QAFIND_SIGNING_KEY=... bun run cli audit .qafind/compliance/latest-attestation.json
 ```
 
 The output shows only what the bundle records: block count, dispatched-step count, durations, request-policy counts, and the SOC 2 mapping, which is always `NOT_ASSESSED`. Fields the runner does not measure (passed/failed steps, AI token cost, real secrets exposed to the sandbox) are printed as `not measured`. A valid bundle is signed run evidence, not a compliance assessment.
@@ -498,28 +498,28 @@ The output shows only what the bundle records: block count, dispatched-step coun
 
 | Setting | Effect |
 | --- | --- |
-| `AIRLOCK_SIGNING_KEY` env var | Signing key (takes precedence over `compliance.signingKey`). |
+| `QAFIND_SIGNING_KEY` env var | Signing key (takes precedence over `compliance.signingKey`). |
 | `compliance.signingKey` | Signing key from config. Shipped placeholder values count as unset. |
-| `AIRLOCK_SIGNING_ALGORITHM` | `HMAC-SHA256` (default) or `Ed25519`. A PEM private key selects Ed25519 automatically. |
-| `AIRLOCK_TRUSTED_PUBLIC_KEY` | Ed25519 SPKI PEM public key that `audit` requires the bundle to be signed with. |
+| `QAFIND_SIGNING_ALGORITHM` | `HMAC-SHA256` (default) or `Ed25519`. A PEM private key selects Ed25519 automatically. |
+| `QAFIND_TRUSTED_PUBLIC_KEY` | Ed25519 SPKI PEM public key that `audit` requires the bundle to be signed with. |
 
 - With no key and `CI` set, `run` and `audit` fail.
 - With no key locally, a clearly labelled development key is used, a loud warning is printed, and the bundle records `insecureDevKey: true`. Such a bundle proves nothing, because the dev key is public.
 - **HMAC-SHA256**: the verifier needs the same secret.
-- **Ed25519**: the bundle carries the public key (`publicKey`) and its id (`publicKeyOrKeyId: ed25519:<fingerprint>`). Use a PKCS#8 PEM private key, or any secret from which a key is derived. Pin the signer with `AIRLOCK_TRUSTED_PUBLIC_KEY` or the signing key; otherwise `audit` warns that the key is not pinned.
+- **Ed25519**: the bundle carries the public key (`publicKey`) and its id (`publicKeyOrKeyId: ed25519:<fingerprint>`). Use a PKCS#8 PEM private key, or any secret from which a key is derived. Pin the signer with `QAFIND_TRUSTED_PUBLIC_KEY` or the signing key; otherwise `audit` warns that the key is not pinned.
 
-Generate an Ed25519 key with `openssl genpkey -algorithm ed25519 -out airlock-signing.pem`.
+Generate an Ed25519 key with `openssl genpkey -algorithm ed25519 -out qafind-signing.pem`.
 
 #### Bundle format (spec 2.0.0)
 
 - `ledgerBlocks`: the full ledger. Each block hash is SHA-256 over the canonical JSON of the block (keys sorted at every depth), so nested payload fields are covered.
 - `merkleRoot`: Merkle root over the block hashes, with domain separation (leaves `SHA-256(0x00 || leaf)`, inner nodes `SHA-256(0x01 || left || right)`). An unpaired node is promoted rather than duplicated.
-- `signature`: HMAC-SHA256 (hex) or Ed25519 (base64) over `"airlockqa-run-evidence-v2\n" + canonicalJson(bundle without signature)`.
+- `signature`: HMAC-SHA256 (hex) or Ed25519 (base64) over `"qafind-run-evidence-v2\n" + canonicalJson(bundle without signature)`.
 - v1 bundles (`specVersion: 1.0.0`) signed only the Merkle root and are rejected with a clear error. Re-run to produce a v2 bundle.
 
 ---
 
-### `airlock dataset`
+### `qafind dataset`
 Inspects the local self-healing locator dataset, showing heuristic match rates, CSS/XPath resolutions, and observed UI framework tags.
 
 ```bash
@@ -528,7 +528,7 @@ bun run cli dataset
 
 ---
 
-### `airlock serve [-p <port>]`
+### `qafind serve [-p <port>]`
 Launches the interactive Web Console, Marketing Portal, and Compliance Report viewer.
 
 ```bash
@@ -540,10 +540,10 @@ Open **`http://localhost:4100`** in your browser to inspect runs, view audits, a
 
 ## 5. CI/CD Workflow Integration
 
-Add AirlockQA to your GitHub Actions workflow (`.github/workflows/airlock.yml`):
+Add QAFind to your GitHub Actions workflow (`.github/workflows/qafind.yml`):
 
 ```yaml
-name: AirlockQA Compliance Gate
+name: QAFind Compliance Gate
 
 on:
   push:
@@ -555,7 +555,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       # Required: runs and audits fail in CI without a signing key.
-      AIRLOCK_SIGNING_KEY: ${{ secrets.AIRLOCK_SIGNING_KEY }}
+      QAFIND_SIGNING_KEY: ${{ secrets.QAFIND_SIGNING_KEY }}
     steps:
       - uses: actions/checkout@v4
 
@@ -574,12 +574,12 @@ jobs:
           bun run build
           bun test
 
-      - name: Execute Airlock Test & Compliance Gate
+      - name: Execute QAFind Test & Compliance Gate
         env:
-          AIRLOCK_API_KEY: ${{ secrets.AIRLOCK_API_KEY }}
+          QAFIND_API_KEY: ${{ secrets.QAFIND_API_KEY }}
         run: |
-          # If AIRLOCK_API_KEY is configured, submit cloud run, else run local
-          if [ -n "$AIRLOCK_API_KEY" ]; then
+          # If QAFIND_API_KEY is configured, submit cloud run, else run local
+          if [ -n "$QAFIND_API_KEY" ]; then
             bun run cli test --cloud
           else
             bun run cli test --local
@@ -627,7 +627,7 @@ docker compose -f container/docker-compose.staging.yml up -d
 
 ## 7. Cloud Quotas & Security Model
 
-When executing against **Airlock Cloud** (`--cloud`). The full API is in [cloud-api.md](cloud-api.md).
+When executing against **QAFind Cloud** (`--cloud`). The full API is in [cloud-api.md](cloud-api.md).
 
 1. **Authentication**: requests send `Authorization: Bearer air_live_...`. Keys are created and revoked in the console; only a hash is stored by the service.
 2. **Quota** (free plan):
@@ -637,4 +637,4 @@ When executing against **Airlock Cloud** (`--cloud`). The full API is in [cloud-
 3. **What is sent**:
    - Only the target URL, suite name, optional workflow, and phantom placeholders with their policy. `real` credentials are never sent, and the service rejects a request that contains one.
    - Targets must be public addresses; the service refuses private, loopback and link-local ones, and every browser request goes through an address-validating proxy.
-4. **Evidence**: each run's evidence is signed with the service's Ed25519 key. `airlock test --cloud` verifies it against the key pinned at `airlock login`; `AIRLOCK_TRUSTED_PUBLIC_KEY` pins it explicitly.
+4. **Evidence**: each run's evidence is signed with the service's Ed25519 key. `qafind test --cloud` verifies it against the key pinned at `qafind login`; `QAFIND_TRUSTED_PUBLIC_KEY` pins it explicitly.

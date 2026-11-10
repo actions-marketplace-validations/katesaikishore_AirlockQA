@@ -28,18 +28,18 @@ const run: QaReportRun = {
 
 describe('QA report markdown', () => {
   test('shows the result, suites, findings with sources, and the screenshot', () => {
-    const md = buildQaReport(run, { sealVerified: true, runUrl: 'https://qbrin.cloud/console#qa/run_qa_123' });
-    expect(md).toContain('# Airlock QA report: acme/app@aaaaaaa');
+    const md = buildQaReport(run, { sealVerified: true, runUrl: 'https://qafind.si/console#qa/run_qa_123' });
+    expect(md).toContain('# QAFind report: acme/app@aaaaaaa');
     expect(md).toContain('**Result:** FAILED (TESTS_FAILED) · **gate:** failed');
     expect(md).toContain('| smoke | PASS |');
     expect(md).toContain('| explore | FAIL |');
     expect(md).toContain('| S1 | HTTP 500 from GET /api/stats');
-    expect(md).toContain('Airlock checker');
+    expect(md).toContain('QAFind checker');
     expect(md).toContain('Your tests (self-reported)');
     expect(md).toContain('## Screenshots');
     expect(md).toContain('![/dashboard](screenshots/screenshot-1.jpg)');
     expect(md).toContain('The sealed result was verified');
-    expect(md).toContain('https://qbrin.cloud/console#qa/run_qa_123');
+    expect(md).toContain('https://qafind.si/console#qa/run_qa_123');
   });
 
   test('escapes pipes and newlines so a finding cannot break the table', () => {

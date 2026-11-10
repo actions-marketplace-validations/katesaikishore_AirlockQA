@@ -29,7 +29,7 @@
         status.textContent = 'Could not join the waitlist right now. Please try again.';
       }
     } catch {
-      status.textContent = 'Could not reach AirlockQA. Check your connection and try again.';
+      status.textContent = 'Could not reach QAFind. Check your connection and try again.';
     } finally {
       button.disabled = false;
     }

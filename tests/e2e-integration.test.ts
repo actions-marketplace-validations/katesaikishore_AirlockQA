@@ -4,14 +4,14 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { chromium, type Browser } from 'playwright-core';
 import { startDemoServer } from '../examples/demo-store/server.js';
-import { AirlockRunner } from '../src/runner/airlock-runner.js';
+import { QAFindRunner } from '../src/runner/qafind-runner.js';
 import { AttestationEngine } from '../src/compliance/attestation.js';
-import { airlockLocator } from '../src/runner/locator.js';
+import { qafindLocator } from '../src/runner/locator.js';
 import type { ForkVariation } from '../src/types/index.js';
 
 setDefaultTimeout(60_000);
 
-describe('End-to-End AirlockQA Integration Test', () => {
+describe('End-to-End QAFind Integration Test', () => {
   let demoServer: http.Server;
   let browser: Browser;
   const macChromePath = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
@@ -22,10 +22,10 @@ describe('End-to-End AirlockQA Integration Test', () => {
   const baseUrl = `http://127.0.0.1:${DEMO_PORT}`;
 
   beforeAll(async () => {
-    // AIRLOCK_SIGNING_KEY takes priority over compliance.signingKey; pin this test's key so the
+    // QAFIND_SIGNING_KEY takes priority over compliance.signingKey; pin this test's key so the
     // bundle verifies with it even when CI exports a different key.
-    previousSigningKey = process.env.AIRLOCK_SIGNING_KEY;
-    process.env.AIRLOCK_SIGNING_KEY = 'e2e-test-hmac-master-key-32-chars!';
+    previousSigningKey = process.env.QAFIND_SIGNING_KEY;
+    process.env.QAFIND_SIGNING_KEY = 'e2e-test-hmac-master-key-32-chars!';
     // The demo store accepts whatever real key the runner substitutes; match this test's config.
     process.env.STRIPE_SECRET_KEY = 'sk_test_live_sample_51M001AcmeProductionSecretKey9900';
     demoServer = await startDemoServer(DEMO_PORT);
@@ -36,8 +36,8 @@ describe('End-to-End AirlockQA Integration Test', () => {
   });
 
   afterAll(async () => {
-    if (previousSigningKey === undefined) delete process.env.AIRLOCK_SIGNING_KEY;
-    else process.env.AIRLOCK_SIGNING_KEY = previousSigningKey;
+    if (previousSigningKey === undefined) delete process.env.QAFIND_SIGNING_KEY;
+    else process.env.QAFIND_SIGNING_KEY = previousSigningKey;
     if (browser) await browser.close();
     if (demoServer) {
       await new Promise<void>((resolve) => demoServer.close(() => resolve()));
@@ -45,7 +45,7 @@ describe('End-to-End AirlockQA Integration Test', () => {
   });
 
   it('executes full end-to-end security and testing workflow on live application', async () => {
-    const runner = new AirlockRunner({
+    const runner = new QAFindRunner({
       baseUrl,
       secrets: {
         STRIPE_SECRET_KEY: {
@@ -71,7 +71,7 @@ describe('End-to-End AirlockQA Integration Test', () => {
       },
       compliance: {
         signingKey: 'e2e-test-hmac-master-key-32-chars!',
-        outputDir: './.airlock/e2e-compliance',
+        outputDir: './.qafind/e2e-compliance',
         generateHtmlReport: true,
       },
     });
@@ -89,15 +89,15 @@ describe('End-to-End AirlockQA Integration Test', () => {
 
     // Step 1: Login
     runner.step('FILL', 'input[name="email"]');
-    const emailInput = await airlockLocator(page, { css: 'input[name="email"]' });
+    const emailInput = await qafindLocator(page, { css: 'input[name="email"]' });
     await emailInput.fill('admin@acme.com');
 
     runner.step('FILL', 'input[name="password"]');
-    const pwdInput = await airlockLocator(page, { css: 'input[name="password"]' });
+    const pwdInput = await qafindLocator(page, { css: 'input[name="password"]' });
     await pwdInput.fill('password123');
 
     runner.step('CLICK', 'button#login-btn');
-    const loginBtn = await airlockLocator(page, { testId: 'login-btn', role: 'button', name: 'Log In to Sandbox' });
+    const loginBtn = await qafindLocator(page, { testId: 'login-btn', role: 'button', name: 'Log In to Sandbox' });
     await loginBtn.click();
     await page.waitForTimeout(200);
 
@@ -108,7 +108,7 @@ describe('End-to-End AirlockQA Integration Test', () => {
 
     // Step 2: Add Pro plan
     runner.step('CLICK', '[data-testid="add-pro-plan"]');
-    const addBtn = await airlockLocator(page, { testId: 'add-pro-plan' });
+    const addBtn = await qafindLocator(page, { testId: 'add-pro-plan' });
     await addBtn.click();
     await page.waitForTimeout(100);
 
@@ -117,16 +117,16 @@ describe('End-to-End AirlockQA Integration Test', () => {
 
     // Step 3: Apply Coupon
     runner.step('FILL', '[data-testid="coupon-input"]');
-    const couponInput = await airlockLocator(page, { testId: 'coupon-input' });
-    await couponInput.fill('AIRLOCK20');
+    const couponInput = await qafindLocator(page, { testId: 'coupon-input' });
+    await couponInput.fill('QAFIND20');
 
     runner.step('CLICK', '[data-testid="apply-coupon-btn"]');
-    const applyBtn = await airlockLocator(page, { testId: 'apply-coupon-btn' });
+    const applyBtn = await qafindLocator(page, { testId: 'apply-coupon-btn' });
     await applyBtn.click();
     await page.waitForTimeout(200);
 
     // Assert discount was applied in DOM
-    const totalElem = await airlockLocator(page, { testId: 'cart-total' });
+    const totalElem = await qafindLocator(page, { testId: 'cart-total' });
     const totalText = await totalElem.textContent();
     expect(totalText).toBe('$40.00');
 
@@ -136,7 +136,7 @@ describe('End-to-End AirlockQA Integration Test', () => {
     // Checkout button sends phantom token 'ph_sec_stripe_test_8f2a1c'.
     // The Gateway intercepts it, swaps it to real 'sk_test_live_sample...', and succeeds!
     runner.step('CLICK', '[data-testid="checkout-btn"]');
-    const checkoutBtn = await airlockLocator(page, { testId: 'checkout-btn' });
+    const checkoutBtn = await qafindLocator(page, { testId: 'checkout-btn' });
     await checkoutBtn.click();
     await page.waitForTimeout(400);
 
@@ -198,19 +198,19 @@ describe('End-to-End AirlockQA Integration Test', () => {
     expect(verification.valid).toBe(true);
 
     // Verify HTML compliance report generated
-    const htmlReportPath = path.join('./.airlock/e2e-compliance', 'compliance-report.html');
+    const htmlReportPath = path.join('./.qafind/e2e-compliance', 'compliance-report.html');
     expect(fs.existsSync(htmlReportPath)).toBe(true);
     const htmlContent = fs.readFileSync(htmlReportPath, 'utf8');
     expect(htmlContent).toContain(bundle.merkleRoot);
     expect(htmlContent).toContain('not a compliance assessment');
 
     await context.close();
-    fs.rmSync('./.airlock/e2e-compliance', { recursive: true, force: true });
+    fs.rmSync('./.qafind/e2e-compliance', { recursive: true, force: true });
   }, 60000);
 
   it('verifies surgical locator self-healing on refactored UI', async () => {
     // Navigate with ?breaking=true where the button was refactored from #checkout-btn to .btn-refactored-v2
-    const runner = new AirlockRunner({
+    const runner = new QAFindRunner({
       baseUrl,
       secrets: {
         STRIPE_SECRET_KEY: {
@@ -238,8 +238,8 @@ describe('End-to-End AirlockQA Integration Test', () => {
     await page.waitForTimeout(200);
 
     // The old selector was '#checkout-btn'. But the new UI has '<button class="btn-refactored-v2" aria-label="Complete Checkout">Proceed to Payment</button>'
-    // airlockLocator with selfHealer should heal this selector using semantic and accessible name similarity!
-    const healedLocator = await airlockLocator(
+    // qafindLocator with selfHealer should heal this selector using semantic and accessible name similarity!
+    const healedLocator = await qafindLocator(
       page,
       {
         css: '#checkout-btn',

@@ -4,7 +4,7 @@ import { isActive } from './lib';
 import type { Me, RunSummary, UsageInfo } from './types';
 
 export type Mode = 'live' | 'sample';
-export const DEMO_SESSION_KEY = 'airlock-demo-session';
+export const DEMO_SESSION_KEY = 'qafind-demo-session';
 
 export interface AppContextValue {
   mode: Mode;

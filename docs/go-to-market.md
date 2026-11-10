@@ -1,11 +1,11 @@
-# AirlockQA go-to-market: open source first, cloud second
+# QAFind go-to-market: open source first, cloud second
 
 This is the working plan for the CodeRabbit-style motion: the open-source tool earns trust and distribution, the hosted
 service earns revenue. It is deliberately explicit about what not to do.
 
 ## The one-line position
 
-**AirlockQA runs the app, not just the test suite.** It drives the running UI and the repository's own CLI tests, keeps
+**QAFind runs the app, not just the test suite.** It drives the running UI and the repository's own CLI tests, keeps
 the failure screenshots and a signed run result, and puts the verdict where a team already works: a pull request.
 
 ## What we do not do
@@ -15,17 +15,17 @@ the failure screenshots and a signed run result, and puts the verdict where a te
   minimal reproduction and ask before opening a PR. Create PRs only in repositories we own or where a maintainer asked.
 - **No "we tested your app" claims without the report.** Every public claim links to the run, the commit and the
   screenshots.
-- **No AI-generated verdicts dressed as facts.** Findings say who saw them: Airlock's checker (first-party) or the
+- **No AI-generated verdicts dressed as facts.** Findings say who saw them: QAFind's checker (first-party) or the
   repository's own tests (self-reported).
 
 ## The CodeRabbit analogy, made concrete
 
 CodeRabbit is installed on a repository, runs on every pull request, and comments where the team already reviews. Its
-open-source presence is the funnel; the hosted app is the product. AirlockQA follows the same shape:
+open-source presence is the funnel; the hosted app is the product. QAFind follows the same shape:
 
 | Layer | What it is | Why it converts |
 | :--- | :--- | :--- |
-| Open-source CLI | `airlock qa` runs smoke, unit, e2e, a11y, security, load and Airlock's own browser checker | A developer can prove it works before creating an account |
+| Open-source CLI | `qafind` runs smoke, unit, e2e, a11y, security, load and QAFind's own browser checker | A developer can prove it works before creating an account |
 | Reusable GitHub Action | Runs QA on a PR and uploads the report and screenshots | The first "it ran on my repo" moment |
 | GitHub App (next) | Installed once, runs on every PR, posts a check and a comment | Removes the workflow copy/paste; the CodeRabbit motion |
 | Hosted cloud | Builds/starts the app in an isolated sandbox, runs the suites, stores the signed evidence | No CI minutes, no local browser, no infrastructure |
@@ -33,10 +33,10 @@ open-source presence is the funnel; the hosted app is the product. AirlockQA fol
 
 ## The funnel
 
-1. **Content that is also a product demo.** Publish a weekly "Airlock QA Index": 3–5 popular open-source web apps, one
+1. **Content that is also a product demo.** Publish a weekly "QAFind Index": 3–5 popular open-source web apps, one
    screenshot per real finding, the commit tested, and the exact command to reproduce. Link the repository and the
    report. This is the marketing flywheel; it is not a PR to those repositories.
-2. **Free local CLI.** `bunx airlockqa` (once published) or the GitHub clone. No account needed. The CLI writes the same
+2. **Free local CLI.** `bunx qafind` (once published) or the GitHub clone. No account needed. The CLI writes the same
    report and evidence locally.
 3. **Free hosted run for public repositories.** One click from the report page: "Run this on your repo". The free plan
    is the same 100 workflow runs and 5 QA runs per day that already exist; no new billing needed to start.
@@ -46,7 +46,7 @@ open-source presence is the funnel; the hosted app is the product. AirlockQA fol
 
 ## The first three campaigns
 
-1. **"What unit tests miss" series.** Take one popular app per week, run the Airlock checker, publish the first-party
+1. **"What unit tests miss" series.** Take one popular app per week, run the QAFind checker, publish the first-party
    findings with screenshots. The fixture app is the control (it has known seeded bugs); real apps are the story.
 2. **"Add QA to your PR in 5 minutes" workshop.** A public repo template with the Action, a recorded run, and the
    report. The CTA is the hosted run, not a sales call.
@@ -56,9 +56,9 @@ open-source presence is the funnel; the hosted app is the product. AirlockQA fol
 ## What must be true before calling it GA
 
 - [x] Failure screenshots stored with the run and downloadable from the API.
-- [x] `airlock qa report` writes a Markdown report and can open a PR in a repository we own.
+- [x] `qafind report` writes a Markdown report and can open a PR in a repository we own.
 - [x] GitHub Action template runs on a pull request, uploads the report/screenshots and comments with the report.
-- [x] Reusable composite action: `katesaikishore/AirlockQA@v1`; callers only add a secret and a four-line workflow.
+- [x] Reusable composite action: `katesaikishore/QAFind@v2`; callers only add a secret and a four-line workflow.
 - [ ] GitHub Marketplace listing for the action.
 - [ ] GitHub App: webhook, check run, comment, installation token, private repositories.
 - [ ] Private repositories and a secrets/env mechanism for builds.

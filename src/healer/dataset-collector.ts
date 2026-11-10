@@ -7,7 +7,7 @@ import { logger } from '../utils/logger.js';
 export class DatasetCollector {
   private datasetFilePath: string;
 
-  constructor(datasetDir = './.airlock/dataset') {
+  constructor(datasetDir = './.qafind/dataset') {
     ensureDir(datasetDir);
     this.datasetFilePath = path.join(datasetDir, 'mutations.jsonl');
   }

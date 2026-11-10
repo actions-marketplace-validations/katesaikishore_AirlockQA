@@ -17,7 +17,7 @@ let tempRoot;
 let origin;
 
 beforeAll(async () => {
-  tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'airlock-console-layout-'));
+  tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'qafind-console-layout-'));
   browser = await chromium.launch({ executablePath, headless: true, args: ['--no-sandbox', '--disable-dev-shm-usage'] });
 });
 
@@ -48,7 +48,7 @@ async function openConsole(width, height, hash = '#explorer') {
   await page.route('**/api/**', (route) =>
     route.fulfill({ status: 401, contentType: 'application/json', body: JSON.stringify({ code: 'UNAUTHENTICATED', message: 'Sign in first.' }) })
   );
-  await page.addInitScript(() => window.sessionStorage.setItem('airlock-demo-session', 'preview'));
+  await page.addInitScript(() => window.sessionStorage.setItem('qafind-demo-session', 'preview'));
   await page.goto(origin + '/console' + hash);
   await page.waitForSelector('#sample-banner:not([hidden])');
   // Let the view's entrance animation finish so measurements are settled. Only that one: some pages have looping

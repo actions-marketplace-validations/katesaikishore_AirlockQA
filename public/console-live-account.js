@@ -7,7 +7,7 @@ import {
   announce, clear, codeBlock, confirmDialog, copyButton, describeError, errorBox, formatDateTime, formatNumber, h, statusPill,
 } from "./console-dom.js";
 
-const API_BASE = "https://api.qbrin.cloud";
+const API_BASE = "https://api.qafind.si";
 
 // ---------------------------------------------------------------------------
 // Local-CLI feature panels
@@ -18,60 +18,60 @@ const LOCAL_FEATURES = {
     title: "Tests",
     what: "Test specs live in your repository and run on your machine with Playwright. The hosted service does not run spec code: it runs declarative workflows, which you start from the Runs page.",
     commands: [
-      ["Run your specs locally", "airlock test"],
-      ["Run a workflow on Airlock Cloud", "airlock test --cloud --workflow workflow.json"],
+      ["Run your specs locally", "qafind test"],
+      ["Run a workflow on QAFind Cloud", "qafind test --cloud --workflow workflow.json"],
     ],
   },
   recorder: {
     title: "Recorder",
     what: "The recorder opens a real browser window and saves your clicks, typing and key presses as a trace. Compile the trace into a Playwright spec afterwards.",
     commands: [
-      ["Record a trace", "airlock explore https://staging.example.com"],
-      ["Compile a trace into a spec", "airlock compile <tracePath>"],
+      ["Record a trace", "qafind explore https://staging.example.com"],
+      ["Compile a trace into a spec", "qafind compile <tracePath>"],
     ],
   },
   healing: {
     title: "Self-healing",
     what: "When a locator stops matching, the local runner can look for a safer one and log what it changed. Healing happens inside your local test run, not in hosted runs.",
     commands: [
-      ["Run specs with healing on", "airlock test"],
-      ["Inspect logged locator patches", "airlock dataset"],
+      ["Run specs with healing on", "qafind test"],
+      ["Inspect logged locator patches", "qafind dataset"],
     ],
   },
   checkpoints: {
     title: "Checkpoints",
     what: "A checkpoint saves browser state part-way through a local run. Forking restores it into parallel browser contexts and tries one input value in each.",
     commands: [
-      ["Fork a checkpoint", "airlock fork <checkpointName> --values \"SAVE10,SAVE20\" --input \"#coupon\" --action \"#apply\""],
+      ["Fork a checkpoint", "qafind fork <checkpointName> --values \"SAVE10,SAVE20\" --input \"#coupon\" --action \"#apply\""],
     ],
   },
   policy: {
     title: "Request policy",
     what: "The request policy decides which hosts, methods and paths a test may reach. Hosted runs apply the allowed hosts, methods and blocked paths you send as phantomConfig; the full policy files are managed locally.",
     commands: [
-      ["Create configuration and sample policies", "airlock init"],
-      ["Run a workflow locally with the policy", "airlock run"],
+      ["Create configuration and sample policies", "qafind init"],
+      ["Run a workflow locally with the policy", "qafind run"],
     ],
   },
   timewarp: {
     title: "Time warp",
     what: "Time warp moves the browser's clock forward so you can test expiry, trials and scheduled behaviour without waiting. It works in the local browser.",
-    commands: [["Fast-forward the virtual clock", "airlock warp \"+14 days\""]],
+    commands: [["Fast-forward the virtual clock", "qafind warp \"+14 days\""]],
   },
   fixtures: {
     title: "Fixtures",
     what: "Fixtures pin recorded API responses so a test does not change when a real service does. They are part of the local runner. The hosted service has no fixture store.",
-    commands: [["Run specs locally", "airlock test"]],
+    commands: [["Run specs locally", "qafind test"]],
   },
   chaos: {
     title: "Chaos report",
     what: "The chaos check triggers one mutation, such as a checkout click, and reports whether the request carries an idempotency key. It runs against a URL from your machine.",
-    commands: [["Check a mutation", "airlock chaos https://staging.example.com --action \"#pay\""]],
+    commands: [["Check a mutation", "qafind chaos https://staging.example.com --action \"#pay\""]],
   },
   capsules: {
     title: "Bug capsules",
     what: "A bug capsule is a saved browser state. Teleporting a capsule writes a Playwright spec that reproduces the bug.",
-    commands: [["Write a repro spec from a capsule", "airlock teleport <capsulePath> --out repro.spec.ts"]],
+    commands: [["Write a repro spec from a capsule", "qafind teleport <capsulePath> --out repro.spec.ts"]],
   },
 };
 
@@ -89,7 +89,7 @@ function buildLocalPanel(main, key, feature, shared) {
       h("div", { class: "lv-stack" }, feature.commands.map(function (entry) {
         return h("div", {}, h("p", { class: "lv-small lv-muted", text: entry[0] }), codeBlock(entry[1], "Copy", shared.ctx.toast));
       })),
-      h("p", { class: "lv-muted lv-small" }, "To use Airlock Cloud instead, ", shared.link("#runs/new", "start a cloud run"), ".")));
+      h("p", { class: "lv-muted lv-small" }, "To use QAFind Cloud instead, ", shared.link("#runs/new", "start a cloud run"), ".")));
   shared.views[key] = { main: main, show: function () {} };
 }
 
@@ -129,9 +129,9 @@ function buildEvidence(main, shared) {
         h("pre", { class: "lv-code", id: "evidence-public-key", tabindex: "0" }, h("code", { text: pem })),
         copyButton("Copy public key", function () { return pem; }, ctx.toast)),
       h("p", { class: "lv-small lv-muted", text: "Check a bundle on your machine. Pin the public key above so the check does not trust the bundle's own key:" }),
-      codeBlock("AIRLOCK_TRUSTED_PUBLIC_KEY=... airlock audit <bundle.json>", "Copy", ctx.toast),
+      codeBlock("QAFIND_TRUSTED_PUBLIC_KEY=... qafind audit <bundle.json>", "Copy", ctx.toast),
       h("div", { class: "lv-actions" },
-        copyButton("Copy command with this key", function () { return "AIRLOCK_TRUSTED_PUBLIC_KEY='" + pem.trim() + "' airlock audit <bundle.json>"; }, ctx.toast)),
+        copyButton("Copy command with this key", function () { return "QAFIND_TRUSTED_PUBLIC_KEY='" + pem.trim() + "' qafind audit <bundle.json>"; }, ctx.toast)),
       h("p", { class: "lv-small lv-muted", text: "A valid bundle shows the recorded ledger was not changed after signing. It does not show that the target application is secure and is not a compliance assessment." }));
   }
 
@@ -229,29 +229,29 @@ function buildEvidence(main, shared) {
 // ---------------------------------------------------------------------------
 
 const GITHUB_ACTIONS = [
-  "name: Airlock browser tests",
+  "name: QAFind browser tests",
   "on: [push, pull_request]",
   "jobs:",
-  "  airlock:",
+  "  qafind:",
   "    runs-on: ubuntu-latest",
   "    steps:",
   "      - uses: actions/checkout@v4",
   "      - uses: actions/setup-node@v4",
   "        with:",
   "          node-version: 20",
-  "      - run: npx airlock test --cloud",
+  "      - run: npx qafind test --cloud",
   "        env:",
-  "          AIRLOCK_API_KEY: ${{ secrets.AIRLOCK_API_KEY }}",
+  "          QAFIND_API_KEY: ${{ secrets.QAFIND_API_KEY }}",
 ].join("\n");
 
 const CURL_EXAMPLE = [
   "curl -X POST " + API_BASE + "/v1/runs \\",
-  "  -H \"Authorization: Bearer $AIRLOCK_API_KEY\" \\",
+  "  -H \"Authorization: Bearer $QAFIND_API_KEY\" \\",
   "  -H \"Content-Type: application/json\" \\",
   "  -d '{\"suiteName\":\"checkout\",\"targetUrl\":\"https://staging.example.com\"}'",
 ].join("\n");
 
-const CURL_STATUS = "curl -H \"Authorization: Bearer $AIRLOCK_API_KEY\" " + API_BASE + "/v1/runs/<runId>";
+const CURL_STATUS = "curl -H \"Authorization: Bearer $QAFIND_API_KEY\" " + API_BASE + "/v1/runs/<runId>";
 
 function buildIntegrations(main, shared) {
   const { ctx, call } = shared;
@@ -274,7 +274,7 @@ function buildIntegrations(main, shared) {
     shared.card("Usage and limits", h("div", {}, usageHost, limitsHost)),
     shared.card("API keys", h("div", {}, form, createResult, tokenHost, keysHost)),
     shared.card("GitHub Actions", h("div", {},
-      h("p", { class: "lv-muted", text: "Store a key as a repository secret named AIRLOCK_API_KEY (Settings, Secrets and variables, Actions), then add this workflow." }),
+      h("p", { class: "lv-muted", text: "Store a key as a repository secret named QAFIND_API_KEY (Settings, Secrets and variables, Actions), then add this workflow." }),
       codeBlock(GITHUB_ACTIONS, "Copy workflow", ctx.toast))),
     shared.card("curl", h("div", {},
       h("p", { class: "lv-muted", text: "Submit a run and read its result with any HTTP client." }),
@@ -282,13 +282,13 @@ function buildIntegrations(main, shared) {
       codeBlock(CURL_STATUS, "Copy", ctx.toast))),
     shared.card("CLI", h("ul", { class: "lv-cli-list" },
       [
-        ["airlock login", "Save an API key on this machine"],
-        ["airlock whoami", "Show which key and plan this machine uses"],
-        ["airlock usage", "Show today's run usage and limits"],
-        ["airlock test --cloud [spec] [--workflow file]", "Start a hosted run"],
-        ["airlock runs [runId]", "List recent runs, or show one run with its steps"],
-        ["airlock audit <bundle>", "Verify a signed evidence bundle"],
-        ["airlock logout", "Remove the saved key from this machine"],
+        ["qafind login", "Save an API key on this machine"],
+        ["qafind whoami", "Show which key and plan this machine uses"],
+        ["qafind usage", "Show today's run usage and limits"],
+        ["qafind test --cloud [spec] [--workflow file]", "Start a hosted run"],
+        ["qafind runs [runId]", "List recent runs, or show one run with its steps"],
+        ["qafind audit <bundle>", "Verify a signed evidence bundle"],
+        ["qafind logout", "Remove the saved key from this machine"],
       ].map(function (entry) { return h("li", {}, h("code", { text: entry[0] }), h("span", { class: "lv-muted", text: " " + entry[1] })); }))));
 
   function renderLimits() {
@@ -375,7 +375,7 @@ function buildIntegrations(main, shared) {
     const token = created.token;
     const panel = h("section", { class: "lv-alert lv-alert-warn lv-token", id: "new-key-panel", tabindex: "-1", role: "region", "aria-label": "New API key" },
       h("strong", { text: "Copy this key now. You will not see it again." }),
-      h("p", { class: "lv-small", text: "Key \"" + created.key.name + "\" was created. Store it as AIRLOCK_API_KEY in your CI secrets, or paste it into airlock login." }),
+      h("p", { class: "lv-small", text: "Key \"" + created.key.name + "\" was created. Store it as QAFIND_API_KEY in your CI secrets, or paste it into qafind login." }),
       h("div", { class: "lv-token-row" },
         h("code", { class: "lv-token-value", id: "new-key-token", text: token }),
         copyButton("Copy key", function () { return token; }, ctx.toast)),

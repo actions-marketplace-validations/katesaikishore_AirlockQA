@@ -30,6 +30,6 @@
     "dist",
     "examples",
     "tests",
-    ".airlock"
+    ".qafind"
   ]
 }

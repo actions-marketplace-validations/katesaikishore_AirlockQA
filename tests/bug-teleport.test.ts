@@ -75,7 +75,7 @@ describe('Browser-state capsule prototype', () => {
   it('provides client-side 3KB telemetry injection snippet', () => {
     const snippet = CapsuleManager.getClientSnippet();
 
-    expect(snippet).toContain('__AIRLOCK_CAPSULE_INSTALLED__');
+    expect(snippet).toContain('__QAFIND_CAPSULE_INSTALLED__');
     expect(snippet).toContain('dom_click');
     expect(snippet).toContain('uncaught_error');
   });

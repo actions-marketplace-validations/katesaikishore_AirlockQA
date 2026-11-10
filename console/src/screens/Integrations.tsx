@@ -5,41 +5,41 @@ import { Card, CodeBlock, CopyButton, ErrorBox, Loading, PageHeader, RetryBlock,
 import type { ApiKeyInfo } from '../types';
 import { UsageCard } from './UsageCard';
 
-const API_BASE = 'https://api.qbrin.cloud';
+const API_BASE = 'https://api.qafind.si';
 
 const GITHUB_ACTIONS = [
-  'name: Airlock browser tests',
+  'name: QAFind browser tests',
   'on: [push, pull_request]',
   'jobs:',
-  '  airlock:',
+  '  qafind:',
   '    runs-on: ubuntu-latest',
   '    steps:',
   '      - uses: actions/checkout@v4',
   '      - uses: actions/setup-node@v4',
   '        with:',
   '          node-version: 20',
-  '      - run: npx airlock test --cloud',
+  '      - run: npx qafind test --cloud',
   '        env:',
-  '          AIRLOCK_API_KEY: ${{ secrets.AIRLOCK_API_KEY }}',
+  '          QAFIND_API_KEY: ${{ secrets.QAFIND_API_KEY }}',
 ].join('\n');
 
 const CURL_EXAMPLE = [
   'curl -X POST ' + API_BASE + '/v1/runs \\',
-  '  -H "Authorization: Bearer $AIRLOCK_API_KEY" \\',
+  '  -H "Authorization: Bearer $QAFIND_API_KEY" \\',
   '  -H "Content-Type: application/json" \\',
   '  -d \'{"suiteName":"checkout","targetUrl":"https://staging.example.com"}\'',
 ].join('\n');
 
-const CURL_STATUS = 'curl -H "Authorization: Bearer $AIRLOCK_API_KEY" ' + API_BASE + '/v1/runs/<runId>';
+const CURL_STATUS = 'curl -H "Authorization: Bearer $QAFIND_API_KEY" ' + API_BASE + '/v1/runs/<runId>';
 
 const CLI_COMMANDS: Array<[string, string]> = [
-  ['airlock login', 'Save an API key on this machine'],
-  ['airlock whoami', 'Show which key and plan this machine uses'],
-  ['airlock usage', "Show today's run usage and limits"],
-  ['airlock test --cloud [spec] [--workflow file]', 'Start a hosted run'],
-  ['airlock runs [runId]', 'List recent runs, or show one run with its steps'],
-  ['airlock audit <bundle>', 'Verify a signed evidence bundle'],
-  ['airlock logout', 'Remove the saved key from this machine'],
+  ['qafind login', 'Save an API key on this machine'],
+  ['qafind whoami', 'Show which key and plan this machine uses'],
+  ['qafind usage', "Show today's run usage and limits"],
+  ['qafind test --cloud [spec] [--workflow file]', 'Start a hosted run'],
+  ['qafind runs [runId]', 'List recent runs, or show one run with its steps'],
+  ['qafind audit <bundle>', 'Verify a signed evidence bundle'],
+  ['qafind logout', 'Remove the saved key from this machine'],
 ];
 
 interface CreatedKey { key: ApiKeyInfo; token: string }
@@ -64,7 +64,7 @@ function TokenPanel({ created, onDismiss }: { created: CreatedKey; onDismiss: ()
   return (
     <section className="lv-alert lv-alert-warn lv-token" id="new-key-panel" tabIndex={-1} role="region" aria-label="New API key" ref={ref}>
       <strong>Copy this key now. You will not see it again.</strong>
-      <p className="lv-small">{'Key "' + created.key.name + '" was created. Store it as AIRLOCK_API_KEY in your CI secrets, or paste it into airlock login.'}</p>
+      <p className="lv-small">{'Key "' + created.key.name + '" was created. Store it as QAFIND_API_KEY in your CI secrets, or paste it into qafind login.'}</p>
       <div className="lv-token-row">
         <code className="lv-token-value" id="new-key-token">{created.token}</code>
         <CopyButton label="Copy key" getText={() => created.token} />
@@ -218,7 +218,7 @@ export default function Integrations(_props: { param: string }) {
       </Card>
       <Card title="GitHub Actions">
         <div>
-          <p className="lv-muted">Store a key as a repository secret named AIRLOCK_API_KEY (Settings, Secrets and variables, Actions), then add this workflow.</p>
+          <p className="lv-muted">Store a key as a repository secret named QAFIND_API_KEY (Settings, Secrets and variables, Actions), then add this workflow.</p>
           <CodeBlock text={GITHUB_ACTIONS} label="Copy workflow" />
         </div>
       </Card>

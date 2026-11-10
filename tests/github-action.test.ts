@@ -4,9 +4,9 @@ import * as yaml from 'js-yaml';
 
 const action = yaml.load(readFileSync('action.yml', 'utf8')) as any;
 
-describe('Airlock QA GitHub Action', () => {
+describe('QAFind GitHub Action', () => {
   test('is a composite action with the documented inputs and outputs', () => {
-    expect(action.name).toBe('Airlock QA');
+    expect(action.name).toBe('QAFind CI');
     expect(action.runs.using).toBe('composite');
     expect(Object.keys(action.inputs)).toEqual(['api-key', 'suites', 'gate', 'report-dir', 'comment']);
     expect(action.inputs['api-key'].required).toBe(true);

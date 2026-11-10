@@ -3,7 +3,7 @@ import * as crypto from 'node:crypto';
 import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
-import { AirlockLedger } from '../src/compliance/ledger.js';
+import { QAFindLedger } from '../src/compliance/ledger.js';
 import { MerkleTree } from '../src/compliance/merkle-tree.js';
 import { AttestationEngine, resolveSigningKey, DEV_SIGNING_KEY } from '../src/compliance/attestation.js';
 import { HtmlReporter } from '../src/compliance/html-reporter.js';
@@ -24,8 +24,8 @@ function baseOptions(signingKey = KEY) {
   };
 }
 
-function sampleLedger(): AirlockLedger {
-  const ledger = new AirlockLedger();
+function sampleLedger(): QAFindLedger {
+  const ledger = new QAFindLedger();
   ledger.append('ACTION_DISPATCH', { action: 'goto', meta: { url: 'https://a.test/x', tags: ['a', { k: 1 }] } });
   ledger.append('EGRESS_BLOCKED', { request: { host: 'evil.test', headers: { auth: 'ph_1' } } });
   return ledger;
@@ -60,7 +60,7 @@ describe('Ledger: nested payload fields are hashed', () => {
     expect(ledger.verifyChain().valid).toBe(false);
     expect(ledger.verifyChain().tamperedIndex).toBe(1);
     // Root over block hashes is unchanged only because block hashes are stored; recomputation must flag it.
-    expect(AirlockLedger.verifyBlocks(blocks).valid).toBe(false);
+    expect(QAFindLedger.verifyBlocks(blocks).valid).toBe(false);
     expect(rootBefore).toHaveLength(64);
   });
 
@@ -140,7 +140,7 @@ describe('Attestation v2: signature covers the whole bundle', () => {
     for (let i = 0; i < bundle.ledgerBlocks.length; i++) {
       const blk = bundle.ledgerBlocks[i];
       if (i > 0) blk.previousHash = bundle.ledgerBlocks[i - 1].blockHash;
-      blk.blockHash = AirlockLedger.computeBlockHash(blk);
+      blk.blockHash = QAFindLedger.computeBlockHash(blk);
     }
     bundle.merkleRoot = new MerkleTree(bundle.ledgerBlocks.map((b: any) => b.blockHash)).getRoot();
     const result = AttestationEngine.verifyBundle(bundle, KEY);
@@ -208,14 +208,14 @@ describe('Signing key resolution', () => {
     expect(r.isDevKey).toBe(false);
   });
 
-  it('prefers AIRLOCK_SIGNING_KEY from the environment', () => {
-    const r = resolveSigningKey('cfg-key-aaaaaaaaaaaaaaaaaaaaaa', { AIRLOCK_SIGNING_KEY: 'env-key-bbbbbbbbbbbbbbbbbbbbb' });
+  it('prefers QAFIND_SIGNING_KEY from the environment', () => {
+    const r = resolveSigningKey('cfg-key-aaaaaaaaaaaaaaaaaaaaaa', { QAFIND_SIGNING_KEY: 'env-key-bbbbbbbbbbbbbbbbbbbbb' });
     expect(r.key).toBe('env-key-bbbbbbbbbbbbbbbbbbbbb');
   });
 
   it('fails in CI when no key is configured, including the schema placeholder', () => {
     expect(() => resolveSigningKey(undefined, { CI: 'true' })).toThrow(/signing key/i);
-    expect(() => resolveSigningKey('airlock-dev-signing-key-32-chars-long!', { CI: '1' })).toThrow(/signing key/i);
+    expect(() => resolveSigningKey('qafind-dev-signing-key-32-chars-long!', { CI: '1' })).toThrow(/signing key/i);
   });
 
   it('falls back to a labelled dev key locally', () => {
@@ -233,32 +233,32 @@ describe('Signing key resolution', () => {
 
   it('no hardcoded fallback signing strings remain in the runner or the audit command', () => {
     const root = path.resolve(import.meta.dir, '..');
-    const runner = fs.readFileSync(path.join(root, 'src/runner/airlock-runner.ts'), 'utf8');
-    const cli = fs.readFileSync(path.join(root, 'bin/airlock.ts'), 'utf8');
+    const runner = fs.readFileSync(path.join(root, 'src/runner/qafind-runner.ts'), 'utf8');
+    const cli = fs.readFileSync(path.join(root, 'bin/qafind.ts'), 'utf8');
     const auditStart = cli.indexOf(".command('audit");
     const audit = cli.slice(auditStart, cli.indexOf('// COMMAND:', auditStart));
     expect(auditStart).toBeGreaterThan(0);
     for (const src of [runner, audit]) {
-      expect(src).not.toContain('airlock-default-signing-key');
-      expect(src).not.toContain('airlock-hmac-master-key-32-chars-long!');
+      expect(src).not.toContain('qafind-default-signing-key');
+      expect(src).not.toContain('qafind-hmac-master-key-32-chars-long!');
       expect(src).not.toContain('COMPLIANT');
       expect(src).not.toContain('VERIFIED');
     }
   });
 
   it('treats the sample/schema placeholder keys as unset', () => {
-    for (const placeholder of ['airlock-hmac-master-key-32-chars-long!', 'airlock-dev-signing-key-32-chars-long!']) {
+    for (const placeholder of ['qafind-hmac-master-key-32-chars-long!', 'qafind-dev-signing-key-32-chars-long!']) {
       expect(resolveSigningKey(placeholder, {}).isDevKey).toBe(true);
     }
   });
 });
 
 describe('HtmlReporter escaping', () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'airlock-html-'));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'qafind-html-'));
   afterEach(() => {});
 
   it('escapes request paths, hosts, reasons, tokens and ledger payloads', () => {
-    const ledger = new AirlockLedger();
+    const ledger = new QAFindLedger();
     ledger.append('EGRESS_BLOCKED', { note: '<img src=x onerror=alert(1)>' });
     const bundle = AttestationEngine.generateBundle(ledger, { ...baseOptions(), runId: 'run_<b>x</b>' });
     const req: InterceptedRequest = {
@@ -290,25 +290,25 @@ describe('HtmlReporter escaping', () => {
 
 export type { ComplianceProofBundle };
 
-describe('AirlockLedger.fromBlocks', () => {
+describe('QAFindLedger.fromBlocks', () => {
   it('rebuilds a ledger from valid blocks and keeps the Merkle root', () => {
-    const original = new AirlockLedger();
+    const original = new QAFindLedger();
     original.append('ACTION_DISPATCH', { action: 'goto', target: 'https://example.com' });
     original.append('PROXY_INTERCEPT', { url: 'https://example.com/', method: 'GET', verdict: 'ALLOWED' });
-    const rebuilt = AirlockLedger.fromBlocks(original.getBlocks());
+    const rebuilt = QAFindLedger.fromBlocks(original.getBlocks());
     expect(rebuilt.getMerkleRoot()).toBe(original.getMerkleRoot());
     expect(rebuilt.verifyChain().valid).toBe(true);
   });
 
   it('rejects blocks whose payload was changed', () => {
-    const original = new AirlockLedger();
+    const original = new QAFindLedger();
     original.append('ACTION_DISPATCH', { action: 'goto', target: 'https://example.com' });
     const blocks = JSON.parse(JSON.stringify(original.getBlocks()));
     blocks[1].payload.target = 'https://evil.example';
-    expect(() => AirlockLedger.fromBlocks(blocks)).toThrow(/Cannot rebuild ledger/);
+    expect(() => QAFindLedger.fromBlocks(blocks)).toThrow(/Cannot rebuild ledger/);
   });
 
   it('rejects an empty block list', () => {
-    expect(() => AirlockLedger.fromBlocks([])).toThrow(/Cannot rebuild ledger/);
+    expect(() => QAFindLedger.fromBlocks([])).toThrow(/Cannot rebuild ledger/);
   });
 });

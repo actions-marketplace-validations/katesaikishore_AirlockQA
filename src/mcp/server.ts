@@ -1,0 +1,114 @@
+/**
+ * QAFind public MCP server (stdio JSON-RPC 2.0).
+ *
+ * Exposes the proof/attach surface only:
+ *   qafind_evidence_verify — verify a signed run-evidence bundle
+ *   qafind_flake           — analyze QAFind reporter manifests
+ *
+ * No shell execution, no cloud credentials, no investigator/private code. Paths must stay inside the
+ * current working directory (or an explicit absolute path supplied by the caller) and are read-only.
+ */
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import * as readline from 'node:readline';
+import { AttestationEngine } from '../compliance/attestation.js';
+import { analyzeFlakiness, renderFlakeMarkdown } from '../flake/index.js';
+import { readRunReports } from '../testing/qafind-report.js';
+import { verifySignedVerdict } from '../verified-merge/index.js';
+import type { ComplianceProofBundle } from '../types/index.js';
+
+export const PROTOCOL_VERSION = '2025-06-18';
+export const SERVER_NAME = 'qafind';
+export const SERVER_VERSION = '1.1.0';
+const MAX_BUNDLE_BYTES = 25 * 1024 * 1024;
+
+interface ToolDefinition { name: string; description: string; inputSchema: { type: 'object'; properties: Record<string, unknown>; required?: string[] } }
+
+export const TOOLS: ToolDefinition[] = [
+  {
+    name: 'qafind_evidence_verify',
+    description: 'Verify a signed QAFind run-evidence bundle (Merkle root, hash chain, signature). Set QAFIND_SIGNING_KEY for HMAC bundles or QAFIND_TRUSTED_PUBLIC_KEY to pin Ed25519.',
+    inputSchema: { type: 'object', properties: { bundlePath: { type: 'string', description: 'Path to an attestation-*.json bundle.' } }, required: ['bundlePath'] },
+  },
+  {
+    name: 'qafind_verify',
+    description: 'Verify a signed QAFind Verified Merge verdict offline: payload hash, signature and whether a reproduced regression blocks the merge.',
+    inputSchema: { type: 'object', properties: { verdictPath: { type: 'string', description: 'Path to the signed verified-merge verdict JSON.' }, publicKeyPem: { type: 'string', description: 'Ed25519 public key PEM. HMAC verdicts use QAFIND_SIGNING_KEY.' } }, required: ['verdictPath'] },
+  },
+  {
+    name: 'qafind_flake',
+    description: 'Analyze QAFind reporter manifests and return flake counts, causes and Markdown. Use after `qafind attach` and a Playwright run with the QAFind reporter.',
+    inputSchema: { type: 'object', properties: { reportsPath: { type: 'string', description: 'Directory or file of QAFind run manifests. Default .qafind/reports.' }, markdown: { type: 'boolean', description: 'Include the Markdown summary.' } } },
+  },
+];
+
+function textResult(value: unknown) { return { content: [{ type: 'text', text: JSON.stringify(value, null, 2) }] }; }
+function toolError(message: string) { return { content: [{ type: 'text', text: JSON.stringify({ error: message }) }], isError: true }; }
+
+function safePath(input: string): string {
+  const resolved = path.resolve(process.cwd(), input);
+  const root = process.cwd();
+  if (!resolved.startsWith(root + path.sep) && resolved !== root) throw new Error('path must stay inside the working directory');
+  return resolved;
+}
+
+function callTool(name: string, args: Record<string, unknown>) {
+  if (name === 'qafind_evidence_verify') {
+    const bundlePath = safePath(String(args.bundlePath || ''));
+    if (!fs.existsSync(bundlePath)) throw new Error(`bundle not found: ${bundlePath}`);
+    if (fs.statSync(bundlePath).size > MAX_BUNDLE_BYTES) throw new Error('bundle is too large');
+    const bundle = JSON.parse(fs.readFileSync(bundlePath, 'utf8')) as ComplianceProofBundle;
+    const trustedPublicKey = process.env.QAFIND_TRUSTED_PUBLIC_KEY?.trim() || undefined;
+    const key = process.env.QAFIND_SIGNING_KEY?.trim() || undefined;
+    const result = AttestationEngine.verifyBundle(bundle, { key, trustedPublicKey });
+    return textResult({ valid: result.valid, reason: result.reason, runId: bundle.runId, merkleRoot: bundle.merkleRoot, signingAlgorithm: bundle.signingAlgorithm, insecureDevKey: bundle.insecureDevKey === true, warnings: result.warnings });
+  }
+  if (name === 'qafind_verify') {
+    const verdictPath = safePath(String(args.verdictPath || ''));
+    if (!fs.existsSync(verdictPath)) throw new Error(`verdict not found: ${verdictPath}`);
+    const verdict = JSON.parse(fs.readFileSync(verdictPath, 'utf8'));
+    const publicKeyPem = typeof args.publicKeyPem === 'string' && args.publicKeyPem.trim() ? args.publicKeyPem.trim() : undefined;
+    const result = verifySignedVerdict(verdict, { publicKeyPem });
+    return textResult({ valid: result.valid, reason: result.reason, blockMerge: result.blockMerge, summary: result.summary });
+  }
+  if (name === 'qafind_flake') {
+    const target = args.reportsPath ? safePath(String(args.reportsPath)) : path.resolve(process.cwd(), '.qafind/reports');
+    if (!fs.existsSync(target)) return toolError(`reports not found: ${target}`);
+    const reports = readRunReports(target);
+    const analysis = analyzeFlakiness(reports);
+    return textResult({ reports: analysis.reports, totalTests: analysis.totalTests, flakyTests: analysis.flakyTests, totals: analysis.totals, warnings: analysis.warnings, ...(args.markdown ? { markdown: renderFlakeMarkdown(analysis) } : {}) });
+  }
+  throw new Error(`unknown tool: ${name}`);
+}
+
+function reply(id: unknown, result: unknown) { process.stdout.write(JSON.stringify({ jsonrpc: '2.0', id, result }) + '\n'); }
+function errorReply(id: unknown, code: number, message: string) { process.stdout.write(JSON.stringify({ jsonrpc: '2.0', id, error: { code, message } }) + '\n'); }
+
+export function handleMessage(message: any): void {
+  if (!message || typeof message !== 'object') return errorReply(null, -32600, 'Invalid Request');
+  const id = message.id;
+  const hasId = Object.prototype.hasOwnProperty.call(message, 'id');
+  if (message.method === 'initialize') return hasId ? reply(id, { protocolVersion: PROTOCOL_VERSION, capabilities: { tools: {} }, serverInfo: { name: SERVER_NAME, version: SERVER_VERSION } }) : undefined;
+  if (message.method === 'tools/list') return hasId ? reply(id, { tools: TOOLS }) : undefined;
+  if (message.method === 'tools/call') {
+    if (!hasId) return;
+    const name = String(message.params?.name || '');
+    try { return reply(id, callTool(name, message.params?.arguments || {})); }
+    catch (error) { return errorReply(id, -32603, (error as Error).message); }
+  }
+  if (message.method === 'ping') return hasId ? reply(id, {}) : undefined;
+  if (message.method?.startsWith('notifications/')) return undefined;
+  return errorReply(id ?? null, -32601, 'Method not found');
+}
+
+export function startMcpServer(): void {
+  const rl = readline.createInterface({ input: process.stdin, terminal: false });
+  rl.on('line', (line) => {
+    const trimmed = line.trim();
+    if (!trimmed) return;
+    try { handleMessage(JSON.parse(trimmed)); }
+    catch (error) { errorReply(null, -32700, `Parse error: ${(error as Error).message}`); }
+  });
+}
+
+if (import.meta.main) startMcpServer();

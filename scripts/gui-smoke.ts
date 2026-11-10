@@ -10,7 +10,7 @@
  *   3. demo      the local demo store's login, coupon and checkout forms
  *
  *   bun scripts/gui-smoke.ts                                   all three, fully local (what CI runs)
- *   BASE_URL=https://staging.qbrin.cloud bun scripts/gui-smoke.ts   journey 1 against a deployment
+ *   BASE_URL=https://staging.qafind.si bun scripts/gui-smoke.ts   journey 1 against a deployment
  *   GUI_SMOKE_ONLY=site,demo bun scripts/gui-smoke.ts          a subset
  *
  * Every page gets an axe audit; any violation fails the run. Screenshots, the evidence export, the recording and a
@@ -279,7 +279,7 @@ async function appConsoleJourney(browser: Browser, consoleUrl: string): Promise<
   page.on('pageerror', (e) => pageErrors.push(e.message));
   try {
     await page.goto(`${BASE_URL}/login`, { waitUntil: 'load' });
-    await page.evaluate(() => window.sessionStorage.setItem('airlock-demo-session', 'preview'));
+    await page.evaluate(() => window.sessionStorage.setItem('qafind-demo-session', 'preview'));
     await page.goto(consoleUrl, { waitUntil: 'load' });
     const sections = await consoleSections(page, pageErrors, 'app');
     await consoleAtPhoneWidth(page, sections, 'app');
@@ -293,7 +293,7 @@ async function appConsoleJourney(browser: Browser, consoleUrl: string): Promise<
 // ---------------------------------------------------------------------------------------------------------------
 async function captureJourney(browser: Browser): Promise<void> {
   const { startDashboardServer } = await import('../src/dashboard/server.ts');
-  const server = startDashboardServer({ compliance: { outputDir: './.airlock/compliance' } } as never, 0, OUT_DIR);
+  const server = startDashboardServer({ compliance: { outputDir: './.qafind/compliance' } } as never, 0, OUT_DIR);
   await once(server, 'listening');
   const origin = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
   const { context, page } = await newPage(browser, { motion: true });
@@ -307,9 +307,9 @@ async function captureJourney(browser: Browser): Promise<void> {
     await page.locator('#record-motion').click();
     await page.waitForTimeout(6800);
     const status = (await page.locator('#motion-status').textContent()) ?? '';
-    const expected = `Video saved: ${path.join(OUT_DIR, 'airlockqa-motion-preview.webm')}`;
+    const expected = `Video saved: ${path.join(OUT_DIR, 'qafind-motion-preview.webm')}`;
     if (!status.includes(expected)) fail(`local dashboard did not save the canvas clip: ${status.trim()}`);
-    const data = fs.readFileSync(path.join(OUT_DIR, 'airlockqa-motion-preview.webm'));
+    const data = fs.readFileSync(path.join(OUT_DIR, 'qafind-motion-preview.webm'));
     if (data.subarray(0, 4).toString('hex') !== '1a45dfa3') fail('recording is not a WebM file');
     if (data.length <= 4096) fail('recording is empty or too small');
     pass('local dashboard saved a valid five-second Three.js WebM preview');
@@ -354,7 +354,7 @@ async function demoJourney(browser: Browser): Promise<void> {
     await page.locator('[data-testid="apply-coupon-btn"]').click();
     await expectText(page, '#coupon-status', 'Invalid or expired coupon code');
     await expectText(page, '#cart-total', '$50.00');
-    await page.locator('[data-testid="coupon-input"]').fill('AIRLOCK20');
+    await page.locator('[data-testid="coupon-input"]').fill('QAFIND20');
     await page.locator('[data-testid="apply-coupon-btn"]').click();
     await expectText(page, '#coupon-status', '20% discount applied');
     await expectText(page, '#cart-total', '$40.00');
@@ -379,7 +379,7 @@ async function main(): Promise<number> {
     if (ONLY.has('site')) {
       if (!BASE_URL) {
         const { startDashboardServer } = await import('../src/dashboard/server.ts');
-        local = startDashboardServer({ compliance: { outputDir: './.airlock/compliance' } } as never, 0, OUT_DIR);
+        local = startDashboardServer({ compliance: { outputDir: './.qafind/compliance' } } as never, 0, OUT_DIR);
         await once(local, 'listening');
         BASE_URL = `http://127.0.0.1:${(local.address() as AddressInfo).port}`;
       }

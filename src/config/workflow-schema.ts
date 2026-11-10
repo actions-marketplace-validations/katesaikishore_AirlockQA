@@ -3,7 +3,7 @@ import * as path from 'node:path';
 import { z } from 'zod';
 
 /**
- * Optional `workflow` section of airlock.config.json, run by `airlock run`.
+ * Optional `workflow` section of qafind.config.json, run by `qafind run`.
  *
  * String values may reference environment variables as `${env:NAME}` so credentials never
  * have to be written into the config file.
@@ -66,7 +66,7 @@ export const WorkflowSchema = z.object({
 export type WorkflowStep = z.infer<typeof WorkflowStepSchema>;
 export type Workflow = z.infer<typeof WorkflowSchema>;
 
-const CONFIG_CANDIDATES = ['airlock.config.json', '.airlock/config.json', 'airlock.json'];
+const CONFIG_CANDIDATES = ['qafind.config.json', '.qafind/config.json', 'qafind.json'];
 
 /** Parse a workflow object, reporting schema errors with their path. */
 export function parseWorkflow(raw: unknown, source = 'workflow'): Workflow {
@@ -82,7 +82,7 @@ export function parseWorkflow(raw: unknown, source = 'workflow'): Workflow {
 
 /**
  * Load a workflow from a standalone JSON file (either `{ workflow: {...} }` or the workflow
- * object itself) or, when no file is given, from the `workflow` key of the Airlock config.
+ * object itself) or, when no file is given, from the `workflow` key of the QAFind config.
  * Returns null when no workflow is defined.
  */
 export function loadWorkflow(filePath?: string, cwd: string = process.cwd()): Workflow | null {

@@ -1,9 +1,9 @@
-name: airlockqa-staging
+name: qafind-staging
 
 services:
   web:
     image: nginx:stable-alpine
-    container_name: airlockqa-staging-web
+    container_name: qafind-staging-web
     restart: unless-stopped
     ports:
       - "127.0.0.1:4310:80"

@@ -1,4 +1,4 @@
-name: AirlockQA Browser QA and Run Evidence
+name: QAFind Browser QA and Run Evidence
 
 on:
   push:
@@ -11,7 +11,7 @@ on:
       - 'qa-reports/**'
 
 jobs:
-  airlock-qa:
+  qafind:
     name: Browser QA and Signed Run Evidence
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -53,7 +53,7 @@ jobs:
 
       - name: Start demo store
         run: |
-          bun ./examples/demo-store/server.ts > /tmp/airlockqa-demo-store.log 2>&1 &
+          bun ./examples/demo-store/server.ts > /tmp/qafind-demo-store.log 2>&1 &
           for attempt in $(seq 1 30); do
             if curl -fsS http://127.0.0.1:3900/ >/dev/null; then
               echo "Demo store is up"
@@ -62,36 +62,36 @@ jobs:
             sleep 1
           done
           echo "::error::Demo store did not start on http://127.0.0.1:3900 within 30s"
-          cat /tmp/airlockqa-demo-store.log
+          cat /tmp/qafind-demo-store.log
           exit 1
 
       - name: Provide evidence signing key
         env:
-          REPO_SIGNING_KEY: ${{ secrets.AIRLOCK_SIGNING_KEY }}
+          REPO_SIGNING_KEY: ${{ secrets.QAFIND_SIGNING_KEY }}
         run: |
           # Use the repository secret when it is set; otherwise sign with a throwaway key for this job only.
           key="${REPO_SIGNING_KEY:-$(openssl rand -hex 32)}"
           echo "::add-mask::$key"
-          echo "AIRLOCK_SIGNING_KEY=$key" >> "$GITHUB_ENV"
+          echo "QAFIND_SIGNING_KEY=$key" >> "$GITHUB_ENV"
 
       - name: Run automated tests
         # One process per test file: browsers started by several files in one process interfere on small runners.
         run: bash scripts/test-isolated.sh
 
       - name: Run CLI against demo store
-        run: bun ./bin/airlock.ts run --url http://127.0.0.1:3900
+        run: bun ./bin/qafind.ts run --url http://127.0.0.1:3900
 
       - name: Verify signed run evidence
-        run: bun ./bin/airlock.ts audit ./.airlock/compliance/latest-attestation.json
+        run: bun ./bin/qafind.ts audit ./.qafind/compliance/latest-attestation.json
 
       - name: Upload run evidence artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: airlockqa-run-evidence
+          name: qafind-run-evidence
           path: |
-            .airlock/compliance/
-            .airlock/dataset/
+            .qafind/compliance/
+            .qafind/dataset/
             artifacts/gui-qa/pr/
           retention-days: 30
           if-no-files-found: warn

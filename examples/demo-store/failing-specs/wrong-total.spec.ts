@@ -1,6 +1,6 @@
 // Deliberately failing spec used by tests/cli-test-local.test.ts to check that
-// `airlock test --local` exits non-zero when a test fails.
-import { test, expect } from '../../../src/testing/airlock-test.js';
+// `qafind test --local` exits non-zero when a test fails.
+import { test, expect } from '../../../src/testing/qafind-test.js';
 
 test('expects a cart total the store never shows', async ({ page }) => {
   await page.goto('/');

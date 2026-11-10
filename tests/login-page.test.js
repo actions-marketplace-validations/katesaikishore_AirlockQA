@@ -21,7 +21,7 @@ describe('Login and create-account page', () => {
   let tempRoot;
 
   beforeAll(async () => {
-    tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'airlock-login-page-'));
+    tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'qafind-login-page-'));
     // Same flags as tests/console-live.test.js, which runs reliably on the Linux CI runner.
     browser = await chromium.launch({ executablePath: chromePath, headless: true, args: ['--no-sandbox', '--disable-dev-shm-usage'] });
   });
@@ -96,13 +96,13 @@ describe('Login and create-account page', () => {
       },
     });
     try {
-      expect(await page.textContent('#si-title')).toBe('Sign in to Airlock Cloud');
+      expect(await page.textContent('#si-title')).toBe('Sign in to QAFind Cloud');
       expect(await page.isVisible('#auth-name')).toBe(false);
       await fillAndSubmit(page, { email: 'maya@example.com', password: 'a-long-enough-password' });
       await page.waitForURL(origin + '/console');
       const login = apiCalls.find((call) => call.key === 'POST /v1/auth/login');
       expect(login.body).toEqual({ email: 'maya@example.com', password: 'a-long-enough-password' });
-      expect(login.headers['x-airlock-csrf']).toBe('1');
+      expect(login.headers['x-qafind-csrf']).toBe('1');
       expect(state.signedIn).toBe(true);
     } finally {
       await context.close();
@@ -141,7 +141,7 @@ describe('Login and create-account page', () => {
       expect(await page.textContent('#auth-submit')).toBe('Create account');
       // Switching back and forth works and updates the URL.
       await page.click('#mode-signin');
-      expect(await page.textContent('#si-title')).toBe('Sign in to Airlock Cloud');
+      expect(await page.textContent('#si-title')).toBe('Sign in to QAFind Cloud');
       expect(await page.isVisible('#signup-note')).toBe(false);
       expect(new URL(page.url()).searchParams.get('mode')).toBeNull();
       await page.click('#switch-mode');
@@ -211,12 +211,12 @@ describe('Login and create-account page', () => {
         ['too common', 'auth-password'],
         ['Too many attempts', null],
         ['paused', null],
-        ['Cannot reach Airlock Cloud', null],
+        ['Cannot reach QAFind Cloud', null],
       ];
       for (const [text, focusId] of expectations) {
         // A network outage is simulated inside the page: asking Chromium to abort the request crashed the
         // browser under bun test on Linux CI, and the page's own handling of a rejected fetch is what matters.
-        if (text === 'Cannot reach Airlock Cloud') {
+        if (text === 'Cannot reach QAFind Cloud') {
           await page.evaluate(() => { window.fetch = () => Promise.reject(new TypeError('Failed to fetch')); });
         }
         await page.click('#auth-submit');
@@ -327,7 +327,7 @@ describe('Login and create-account page', () => {
       expect(await page.textContent('#demo-login')).toContain('Explore the sample workspace');
       await page.click('#demo-login');
       await page.waitForURL(origin + '/console');
-      expect(await page.evaluate(() => window.sessionStorage.getItem('airlock-demo-session'))).toBe('preview');
+      expect(await page.evaluate(() => window.sessionStorage.getItem('qafind-demo-session'))).toBe('preview');
     } finally {
       await context.close();
     }

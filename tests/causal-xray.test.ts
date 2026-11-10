@@ -44,7 +44,7 @@ describe('Browser trace diagnostics prototype', () => {
     expect(caughtError).not.toBeNull();
     expect(caughtError.message).toContain('Payment processing timed out');
     expect(caughtError.xrayBundle).toBeDefined();
-    expect(caughtError.xrayBundle.formattedTerminalBox).toContain('AIRLOCK BROWSER TRACE DIAGNOSTICS');
+    expect(caughtError.xrayBundle.formattedTerminalBox).toContain('QAFIND BROWSER TRACE DIAGNOSTICS');
     expect(caughtError.xrayBundle.formattedTerminalBox).toContain('Failed Step:');
   });
 
@@ -64,7 +64,7 @@ describe('Browser trace diagnostics prototype', () => {
       },
     });
 
-    expect(box).toContain('AIRLOCK BROWSER TRACE DIAGNOSTICS');
+    expect(box).toContain('QAFIND BROWSER TRACE DIAGNOSTICS');
     expect(box).toContain('src/controllers/checkout.ts:88');
     expect(box).toContain('chargeCustomerCard');
     expect(box).toContain('Card declined: Insufficient funds');

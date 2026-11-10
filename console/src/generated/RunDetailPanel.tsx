@@ -816,7 +816,7 @@ Posted to pull request #128
 <path d="M16 48V31.5C16 22.94 22.94 16 31.5 16h1C41.06 16 48 22.94 48 31.5V48" fill="none" stroke="#F7FBF8" strokeWidth="5" strokeLinecap="round">
 </path>
 </svg>
-airlockqa bot
+qafind bot
 </div>
 <p style={{"margin": "8px 0px 0px"}}>
 ✕{" "}

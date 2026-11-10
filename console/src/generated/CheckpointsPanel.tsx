@@ -45,7 +45,7 @@ Your server’s data, background jobs, or process and VM memory. Branches share 
 Saved checkpoints
 </h2>
 <span style={{"font": "500 13px \"JetBrains Mono\", monospace", "color": "rgb(90, 105, 97)"}}>
-.airlock/checkpoints
+.qafind/checkpoints
 </span>
 </div>
 <div style={{"marginTop": "12px", "display": "grid", "gridTemplateColumns": "repeat(auto-fit, minmax(min(250px, 100%), 1fr))", "gap": "12px"}}>
@@ -413,7 +413,7 @@ Run at the same time
 <span style={{"color": "rgb(127, 214, 174)"}}>
 $
 </span>
-{" "}npx airlock fork{" "}
+{" "}npx qafind fork{" "}
 <span className="sc-interp">
 cart_ready
 </span>

@@ -1,5 +1,5 @@
 /**
- * Airlock Cloud API contract, shared by the API server, the run worker, the CLI and the tests.
+ * QAFind Cloud API contract, shared by the API server, the run worker, the CLI and the tests.
  * Human-readable description: docs/cloud-api.md. If the two disagree, this file wins.
  */
 import { z } from 'zod';
@@ -8,8 +8,8 @@ import { WorkflowSchema } from '../../src/config/workflow-schema.js';
 export const API_VERSION = 'v1';
 export const KEY_PREFIX = 'air_live_';
 /** Header that cookie-authenticated, state-changing requests must send. */
-export const CSRF_HEADER = 'x-airlock-csrf';
-export const SESSION_COOKIE = 'airlock_session';
+export const CSRF_HEADER = 'x-qafind-csrf';
+export const SESSION_COOKIE = 'qafind_session';
 
 /** Default plan limits. The server may override them from environment variables. */
 export const PLAN_LIMITS = {

@@ -36,8 +36,8 @@ export const EgressPolicyConfigSchema = z.object({
   logPayloads: z.boolean().default(true),
 });
 
-export const AirlockConfigSchema = z.object({
-  projectName: z.string().default('AirlockQA Project'),
+export const QAFindConfigSchema = z.object({
+  projectName: z.string().default('QAFind Project'),
   baseUrl: z.string().default('http://localhost:3000'),
   browser: z.object({
     headless: z.boolean().default(true),
@@ -81,28 +81,28 @@ export const AirlockConfigSchema = z.object({
   healer: z.object({
     autoHeal: z.boolean().default(true),
     confidenceThreshold: z.number().default(0.8),
-    datasetDir: z.string().default('./.airlock/dataset'),
+    datasetDir: z.string().default('./.qafind/dataset'),
     saveMutations: z.boolean().default(true),
   }).default({
     autoHeal: true,
     confidenceThreshold: 0.8,
-    datasetDir: './.airlock/dataset',
+    datasetDir: './.qafind/dataset',
     saveMutations: true,
   }),
   forker: z.object({
-    checkpointsDir: z.string().default('./.airlock/checkpoints'),
+    checkpointsDir: z.string().default('./.qafind/checkpoints'),
     maxParallelForks: z.number().default(10),
   }).default({
-    checkpointsDir: './.airlock/checkpoints',
+    checkpointsDir: './.qafind/checkpoints',
     maxParallelForks: 10,
   }),
   compliance: z.object({
     // No default: a signing key must be supplied explicitly (config or environment).
     signingKey: z.string().min(1).optional(),
-    outputDir: z.string().default('./.airlock/compliance'),
+    outputDir: z.string().default('./.qafind/compliance'),
     generateHtmlReport: z.boolean().default(true),
   }).default({
-    outputDir: './.airlock/compliance',
+    outputDir: './.qafind/compliance',
     generateHtmlReport: true,
   }),
 });

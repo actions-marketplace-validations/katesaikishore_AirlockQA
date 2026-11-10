@@ -1,5 +1,5 @@
 /**
- * Browser client for the Airlock Cloud API (docs/cloud-api.md).
+ * Browser client for the QAFind Cloud API (docs/cloud-api.md).
  * Same-origin by default: nginx serves the API under /api on the console's own host, so the
  * session cookie is first-party and the strict Content-Security-Policy (connect-src 'self') holds.
  */
@@ -17,12 +17,12 @@ export class ApiError extends Error {
 }
 
 function apiBase() {
-  return typeof window !== "undefined" && window.AIRLOCK_API_BASE ? window.AIRLOCK_API_BASE : "/api";
+  return typeof window !== "undefined" && window.QAFIND_API_BASE ? window.QAFIND_API_BASE : "/api";
 }
 
 async function request(method, path, body, options) {
   const fetchImpl = (options && options.fetch) || fetch;
-  const headers = { Accept: "application/json", "X-Airlock-Csrf": "1" };
+  const headers = { Accept: "application/json", "X-QAFind-Csrf": "1" };
   const init = { method: method, headers: headers, credentials: "same-origin" };
   if (body !== undefined) {
     headers["Content-Type"] = "application/json";
@@ -32,7 +32,7 @@ async function request(method, path, body, options) {
   try {
     response = await fetchImpl(apiBase() + path, init);
   } catch (cause) {
-    throw new ApiError(0, { code: "INTERNAL", message: "Cannot reach Airlock Cloud. Check your connection and try again." });
+    throw new ApiError(0, { code: "INTERNAL", message: "Cannot reach QAFind Cloud. Check your connection and try again." });
   }
   if (response.status === 204) return null;
   let payload = null;

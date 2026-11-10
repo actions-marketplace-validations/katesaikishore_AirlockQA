@@ -48,9 +48,9 @@ function SigningKey() {
         <CopyButton label="Copy public key" getText={() => pem} />
       </div>
       <p className="lv-small lv-muted">Check a bundle on your machine. Pin the public key above so the check does not trust the bundle&apos;s own key:</p>
-      <CodeBlock text="AIRLOCK_TRUSTED_PUBLIC_KEY=... airlock audit <bundle.json>" />
+      <CodeBlock text="QAFIND_TRUSTED_PUBLIC_KEY=... qafind audit <bundle.json>" />
       <div className="lv-actions">
-        <CopyButton label="Copy command with this key" getText={() => "AIRLOCK_TRUSTED_PUBLIC_KEY='" + pem.trim() + "' airlock audit <bundle.json>"} />
+        <CopyButton label="Copy command with this key" getText={() => "QAFIND_TRUSTED_PUBLIC_KEY='" + pem.trim() + "' qafind audit <bundle.json>"} />
       </div>
       <p className="lv-small lv-muted">A valid bundle shows the recorded ledger was not changed after signing. It does not show that the target application is secure and is not a compliance assessment.</p>
     </div>

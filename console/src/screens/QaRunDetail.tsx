@@ -18,7 +18,7 @@ const SEAL_COPY: Record<SealCheck['state'], { title: string; body: string; tone:
   },
   unavailable: {
     title: 'Not verified in this browser',
-    body: 'This browser cannot check Ed25519 signatures. The algorithm, signature and key id are shown for a manual check. Verify the seal with the airlock CLI.',
+    body: 'This browser cannot check Ed25519 signatures. The algorithm, signature and key id are shown for a manual check. Verify the seal with the qafind CLI.',
     tone: 'qa-seal-unverified',
   },
   unsupported: {
@@ -108,7 +108,7 @@ function FindingsCard({ findings }: { findings: QaFinding[] | undefined }) {
             </table>
           </div>
           <p className="lv-muted lv-small">
-            {firstParty} seen by Airlock&rsquo;s checker, which visited and clicked through the running app from its own
+            {firstParty} seen by QAFind&rsquo;s checker, which visited and clicked through the running app from its own
             container; {list.length - firstParty} from your app&rsquo;s own test output (self-reported). A failing test that no
             rule names is listed as failing_test.
           </p>

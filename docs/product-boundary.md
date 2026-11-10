@@ -2,7 +2,7 @@
 
 This is the explicit decision behind the console labels and the README status table.
 
-## Hosted Airlock Cloud
+## Hosted QAFind Cloud
 
 These run in the service, in a fresh browser context, and produce a signed result:
 
@@ -20,19 +20,19 @@ These run in the service, in a fresh browser context, and produce a signed resul
 
 These remain on the machine. The hosted console labels them **Local** or **Preview**:
 
-- `airlock test` and hand-written specs (the cloud does not run spec code)
-- `airlock explore` / `compile` recorder and trace compiler
+- `qafind test` and hand-written specs (the cloud does not run spec code)
+- `qafind explore` / `compile` recorder and trace compiler
 - self-healing locator runs
-- `airlock fork` and cross-run checkpoint files
+- `qafind fork` and cross-run checkpoint files
 - the full request-policy files and editor
 - the local fixture catalog
-- the `airlock warp` command (the workflow step is the supported cloud path)
-- the `airlock chaos` command (the workflow step is the supported cloud path)
-- bug capsules and `airlock teleport`
+- the `qafind warp` command (the workflow step is the supported cloud path)
+- the `qafind chaos` command (the workflow step is the supported cloud path)
+- bug capsules and `qafind teleport`
 
 ## Local-to-cloud sync
 
-`airlock sync` uploads traces, checkpoints, healing logs, fixtures and capsules as **client-encrypted** blobs. The
+`qafind sync` uploads traces, checkpoints, healing logs, fixtures and capsules as **client-encrypted** blobs. The
 service stores ciphertext and metadata, cannot decrypt it, and never executes it. This is backup/transfer, not
 cross-run state.
 
@@ -45,4 +45,4 @@ cross-run state.
 - A server-side fixture store or arbitrary spec execution.
 - Compliance certification; the SOC 2 fields are `NOT_ASSESSED`.
 
-If a capability is not listed under "Hosted Airlock Cloud", it is not a cloud feature today.
+If a capability is not listed under "Hosted QAFind Cloud", it is not a cloud feature today.

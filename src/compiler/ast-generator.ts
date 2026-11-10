@@ -30,21 +30,21 @@ export class AstGenerator {
 
     // Strategy 1: Data Test ID (highest stability)
     if (fp.dataTestId) {
-      return `airlockLocator(page, { testId: ${lit(fp.dataTestId)}, css: ${lit(fp.css)}, text: ${lit(fp.textContent || '')} })`;
+      return `qafindLocator(page, { testId: ${lit(fp.dataTestId)}, css: ${lit(fp.css)}, text: ${lit(fp.textContent || '')} })`;
     }
 
     // Strategy 2: ARIA Role + Name (accessible & semantically stable)
     if (fp.ariaRole && fp.ariaName) {
-      return `airlockLocator(page, { role: ${lit(fp.ariaRole)}, name: ${lit(fp.ariaName)}, css: ${lit(fp.css)} })`;
+      return `qafindLocator(page, { role: ${lit(fp.ariaRole)}, name: ${lit(fp.ariaName)}, css: ${lit(fp.css)} })`;
     }
 
     // Strategy 3: Text match for buttons and links
     if ((fp.tagName === 'button' || fp.tagName === 'a') && fp.textContent) {
-      return `airlockLocator(page, { text: ${lit(fp.textContent.substring(0, 40))}, tag: ${lit(fp.tagName)}, css: ${lit(fp.css)} })`;
+      return `qafindLocator(page, { text: ${lit(fp.textContent.substring(0, 40))}, tag: ${lit(fp.tagName)}, css: ${lit(fp.css)} })`;
     }
 
     // Strategy 4: Fallback to CSS
-    return `airlockLocator(page, { css: ${lit(fp.css)} })`;
+    return `qafindLocator(page, { css: ${lit(fp.css)} })`;
   }
 
   /**
@@ -102,7 +102,7 @@ export class AstGenerator {
       }
       case 'checkpoint': {
         const name = step.checkpointName || `checkpoint_step_${idx}`;
-        lines.push(`  await airlock.checkpoint(${lit(name)}, page);`);
+        lines.push(`  await qafind.checkpoint(${lit(name)}, page);`);
         break;
       }
       default:
@@ -117,7 +117,7 @@ export class AstGenerator {
    * Compile full trace into complete Playwright spec file
    */
   compileToSpec(trace: ExecutionTrace, options: CompilationOptions = {}): string {
-    const title = options.suiteTitle || trace.suiteName || 'Airlock Test';
+    const title = options.suiteTitle || trace.suiteName || 'QAFind Test';
     const timeout = options.defaultTimeoutMs || 10000;
 
     const stepLines: string[] = [];
@@ -133,19 +133,19 @@ export class AstGenerator {
  */
 
 import { test, expect } from '@playwright/test';
-import { AirlockRunner, airlockLocator } from 'airlockqa';
+import { QAFindRunner, qafindLocator } from 'qafind';
 
 test.describe(${lit(title)}, () => {
-  let airlock: AirlockRunner;
+  let qafind: QAFindRunner;
 
   test.beforeEach(async ({ page, context }) => {
-    airlock = new AirlockRunner();
-    await airlock.initialize(context, page);
+    qafind = new QAFindRunner();
+    await qafind.initialize(context, page);
   });
 
   test.afterEach(async () => {
-    const proof = await airlock.finalize();
-    console.log('Airlock Merkle Root:', proof.merkleRoot);
+    const proof = await qafind.finalize();
+    console.log('QAFind Merkle Root:', proof.merkleRoot);
   });
 
   test(${lit(`deterministic run for ${title}`)}, async ({ page }) => {

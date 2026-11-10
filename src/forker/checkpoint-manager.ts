@@ -9,7 +9,7 @@ import { logger } from '../utils/logger.js';
 
 /** On-disk envelope for a checkpoint encrypted with AES-256-GCM. */
 export interface EncryptedCheckpointFile {
-  airlockEncryptedCheckpoint: 1;
+  qafindEncryptedCheckpoint: 1;
   algorithm: 'aes-256-gcm';
   kdf: 'scrypt';
   salt: string;
@@ -20,7 +20,7 @@ export interface EncryptedCheckpointFile {
 
 export interface CheckpointManagerOptions {
   /**
-   * Passphrase for encrypting checkpoints at rest. Defaults to AIRLOCK_CHECKPOINT_KEY.
+   * Passphrase for encrypting checkpoints at rest. Defaults to QAFIND_CHECKPOINT_KEY.
    * Pass null to disable encryption explicitly.
    */
   encryptionKey?: string | null;
@@ -28,7 +28,7 @@ export interface CheckpointManagerOptions {
 
 export function isEncryptedCheckpointFile(value: unknown): value is EncryptedCheckpointFile {
   return typeof value === 'object' && value !== null
-    && (value as EncryptedCheckpointFile).airlockEncryptedCheckpoint === 1;
+    && (value as EncryptedCheckpointFile).qafindEncryptedCheckpoint === 1;
 }
 
 function deriveKey(passphrase: string, salt: Buffer): Buffer {
@@ -41,7 +41,7 @@ export function encryptCheckpoint(snapshot: CheckpointSnapshot, passphrase: stri
   const cipher = createCipheriv('aes-256-gcm', deriveKey(passphrase, salt), iv);
   const ciphertext = Buffer.concat([cipher.update(JSON.stringify(snapshot), 'utf8'), cipher.final()]);
   return {
-    airlockEncryptedCheckpoint: 1,
+    qafindEncryptedCheckpoint: 1,
     algorithm: 'aes-256-gcm',
     kdf: 'scrypt',
     salt: salt.toString('base64'),
@@ -71,10 +71,10 @@ export class CheckpointManager {
   private encryptionKey: string | null;
   private warnedPlaintext = false;
 
-  constructor(checkpointsDir = './.airlock/checkpoints', options: CheckpointManagerOptions = {}) {
+  constructor(checkpointsDir = './.qafind/checkpoints', options: CheckpointManagerOptions = {}) {
     this.checkpointsDir = checkpointsDir;
     this.encryptionKey = options.encryptionKey === undefined
-      ? process.env.AIRLOCK_CHECKPOINT_KEY || null
+      ? process.env.QAFIND_CHECKPOINT_KEY || null
       : options.encryptionKey || null;
     ensureDir(checkpointsDir);
     try {
@@ -108,7 +108,7 @@ export class CheckpointManager {
       payload = encryptCheckpoint(snapshot, this.encryptionKey);
     } else if (!this.warnedPlaintext) {
       this.warnedPlaintext = true;
-      logger.warn('Saving checkpoints unencrypted (they contain cookies, storage and page HTML). Set AIRLOCK_CHECKPOINT_KEY to encrypt them at rest.');
+      logger.warn('Saving checkpoints unencrypted (they contain cookies, storage and page HTML). Set QAFIND_CHECKPOINT_KEY to encrypt them at rest.');
     }
     ensureDir(path.dirname(filePath));
     fs.writeFileSync(filePath, JSON.stringify(payload, null, 2), { encoding: 'utf8', mode: 0o600 });
@@ -123,7 +123,7 @@ export class CheckpointManager {
     const raw = JSON.parse(fs.readFileSync(this.filePathFor(name), 'utf8')) as unknown;
     if (isEncryptedCheckpointFile(raw)) {
       if (!this.encryptionKey) {
-        throw new Error(`Checkpoint '${name}' is encrypted; set AIRLOCK_CHECKPOINT_KEY to read it`);
+        throw new Error(`Checkpoint '${name}' is encrypted; set QAFIND_CHECKPOINT_KEY to read it`);
       }
       return decryptCheckpoint(raw, this.encryptionKey);
     }
@@ -239,7 +239,7 @@ export class CheckpointManager {
       if (!origin.localStorage?.length || origin.origin === targetOrigin) continue;
       const seedPage = await context.newPage();
       try {
-        await seedPage.route('**/*', (route) => route.fulfill({ status: 200, contentType: 'text/html', body: '<!doctype html><title>airlock</title>' }));
+        await seedPage.route('**/*', (route) => route.fulfill({ status: 200, contentType: 'text/html', body: '<!doctype html><title>qafind</title>' }));
         await seedPage.goto(origin.origin, { waitUntil: 'domcontentloaded' });
         await seedPage.evaluate((items) => {
           for (const item of items) localStorage.setItem(item.name, item.value);

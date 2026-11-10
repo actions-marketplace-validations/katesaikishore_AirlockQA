@@ -4,7 +4,7 @@ import * as path from 'node:path';
 import { createRequire } from 'node:module';
 
 export const REPO_ROOT = path.resolve(import.meta.dir, '..');
-export const CLI = path.join(REPO_ROOT, 'bin', 'airlock.ts');
+export const CLI = path.join(REPO_ROOT, 'bin', 'qafind.ts');
 
 const macChromePath = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 export const chromePath = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH ||
@@ -24,13 +24,13 @@ export interface CliResult {
   output: string;
 }
 
-/** Run the Airlock CLI with Bun and capture its combined output. */
+/** Run the QAFind CLI with Bun and capture its combined output. */
 export function runCli(args: string[], options: { cwd?: string; env?: Record<string, string | undefined> } = {}): Promise<CliResult> {
   // A fixed test-only signing key, so CLI runs sign evidence even when CI=true refuses the dev key.
   const env: Record<string, string | undefined> = {
     ...process.env,
     NO_COLOR: '1',
-    AIRLOCK_SIGNING_KEY: process.env.AIRLOCK_SIGNING_KEY || 'airlock-cli-tests-only-signing-key-0001',
+    QAFIND_SIGNING_KEY: process.env.QAFIND_SIGNING_KEY || 'qafind-cli-tests-only-signing-key-0001',
     ...options.env,
   };
   for (const [key, value] of Object.entries(env)) if (value === undefined) delete env[key];

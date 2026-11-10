@@ -1,7 +1,7 @@
 import * as path from 'node:path';
 import type { Browser, BrowserContext, Page } from 'playwright-core';
 import type {
-  AirlockConfig,
+  QAFindConfig,
   ComplianceProofBundle,
   ForkExecutionResult,
   ForkVariation,
@@ -13,8 +13,8 @@ import type {
   StateCapsule,
 } from '../types/index.js';
 import { loadConfig } from '../config/loader.js';
-import { AirlockGateway } from '../proxy/gateway.js';
-import { AirlockLedger } from '../compliance/ledger.js';
+import { QAFindGateway } from '../proxy/gateway.js';
+import { QAFindLedger } from '../compliance/ledger.js';
 import { CheckpointManager } from '../forker/checkpoint-manager.js';
 import { StateForker, type ForkWorkerFunction } from '../forker/state-forker.js';
 import { SelfHealer } from '../healer/self-healer.js';
@@ -29,10 +29,10 @@ import { CausalXRay } from '../telemetry/causal-xray.js';
 import { CapsuleManager } from '../teleport/capsule.js';
 import { logger } from '../utils/logger.js';
 
-export class AirlockRunner {
-  private config: AirlockConfig;
-  private gateway: AirlockGateway;
-  private ledger: AirlockLedger;
+export class QAFindRunner {
+  private config: QAFindConfig;
+  private gateway: QAFindGateway;
+  private ledger: QAFindLedger;
   private checkpointManager: CheckpointManager;
   private stateForker: StateForker;
   private selfHealer: SelfHealer;
@@ -51,7 +51,7 @@ export class AirlockRunner {
   private mutationsBlockedCount = 0;
   private recordedNetworkRequests: InterceptedRequest[] = [];
 
-  constructor(customConfig?: Partial<AirlockConfig>) {
+  constructor(customConfig?: Partial<QAFindConfig>) {
     // A complete config (e.g. one the caller already got from loadConfig()) is used as-is.
     // Only a partial config is layered over the config loaded from disk/defaults.
     const isFullConfig = !!customConfig
@@ -60,10 +60,10 @@ export class AirlockRunner {
       && customConfig.secrets !== undefined
       && customConfig.policy !== undefined;
     this.config = isFullConfig
-      ? (customConfig as AirlockConfig)
+      ? (customConfig as QAFindConfig)
       : { ...loadConfig(), ...customConfig };
-    this.gateway = new AirlockGateway(this.config);
-    this.ledger = new AirlockLedger();
+    this.gateway = new QAFindGateway(this.config);
+    this.ledger = new QAFindLedger();
     this.checkpointManager = new CheckpointManager(this.config.forker?.checkpointsDir);
     this.stateForker = new StateForker(this.checkpointManager);
     this.selfHealer = new SelfHealer(
@@ -108,15 +108,15 @@ export class AirlockRunner {
     });
   }
 
-  getConfig(): AirlockConfig {
+  getConfig(): QAFindConfig {
     return this.config;
   }
 
-  getGateway(): AirlockGateway {
+  getGateway(): QAFindGateway {
     return this.gateway;
   }
 
-  getLedger(): AirlockLedger {
+  getLedger(): QAFindLedger {
     return this.ledger;
   }
 

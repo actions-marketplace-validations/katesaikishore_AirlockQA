@@ -1,13 +1,13 @@
-# Airlock Cloud API (v1)
+# QAFind Cloud API (v1)
 
-The hosted service behind `https://api.qbrin.cloud` (also reachable as `https://qbrin.cloud/api`).
+The hosted service behind `https://api.qafind.si` (also reachable as `https://qafind.si/api`).
 The machine-readable contract is [`cloud/shared/contract.ts`](../cloud/shared/contract.ts); this page explains it.
 
 ## What the service does
 
 - Accounts: email and password sign-up, one workspace per account.
 - API keys for CLI and CI use. A token is shown once; only its SHA-256 hash is stored.
-- Hosted browser runs. A run executes a **declarative workflow** (the same `workflow` steps that `airlock run` reads) in an isolated headless browser, with the Airlock request policy attached, and returns signed evidence.
+- Hosted browser runs. A run executes a **declarative workflow** (the same `workflow` steps that `qafind run` reads) in an isolated headless browser, with the QAFind request policy attached, and returns signed evidence.
 - A free plan with a daily run quota per workspace.
 
 What it deliberately does **not** do: run arbitrary spec code, hold your application secrets (there is no vault), sign in with GitHub or SSO, or post to pull requests.
@@ -15,9 +15,9 @@ What it deliberately does **not** do: run arbitrary spec code, hold your applica
 ## Conventions
 
 - JSON in and out. Errors are `{ "code": "...", "message": "...", ... }` with a matching HTTP status. Codes are listed in the contract.
-- Authentication is either `Authorization: Bearer air_live_...` (API key) or the `airlock_session` cookie (HttpOnly, Secure, SameSite=Lax). Cookie-authenticated requests that change state must send `X-Airlock-Csrf: 1`.
+- Authentication is either `Authorization: Bearer air_live_...` (API key) or the `qafind_session` cookie (HttpOnly, Secure, SameSite=Lax). Cookie-authenticated requests that change state must send `X-QAFind-Csrf: 1`.
 - Account, key and workspace routes require a session. Run, usage and evidence routes accept either.
-- Paths below are relative to the API base (`/v1/...`). Behind `qbrin.cloud/api` the `/api` prefix is stripped by nginx.
+- Paths below are relative to the API base (`/v1/...`). Behind `qafind.si/api` the `/api` prefix is stripped by nginx.
 
 ## Quota
 
@@ -56,7 +56,7 @@ Other free-plan limits: 1 concurrent run, 50 workflow steps, 90 seconds per run,
 
 Email addresses are **not verified** yet (there is no mail service). Sign-ups are rate-limited per client address (IPv6 clients are grouped by /64) and capped per day. Failed logins are limited per client address (10 per 15 minutes), per email and address pair (5 per 15 minutes) and per email overall (30 per 15 minutes); successful logins are not counted.
 
-The server uses `X-Forwarded-For` for client addresses only when `AIRLOCK_TRUST_PROXY` is set (the deployment sets it behind nginx, which must overwrite the header). By default it is off.
+The server uses `X-Forwarded-For` for client addresses only when `QAFIND_TRUST_PROXY` is set (the deployment sets it behind nginx, which must overwrite the header). By default it is off.
 
 ### Keys (session)
 
@@ -106,7 +106,7 @@ Rules:
 ### QA runs (key or session)
 
 A QA run builds and starts a public GitHub repository at a pushed commit in the staging sandbox, runs the requested
-suites, and stores findings and failure screenshots. It is what `airlock qa` submits. The request body is strict:
+suites, and stores findings and failure screenshots. It is what `qafind` submits. The request body is strict:
 commands are npm script **names**, never shell commands; `${env:NAME}` and real secrets are refused.
 
 | Method and path | Result |
@@ -139,8 +139,8 @@ commands are npm script **names**, never shell commands; `${env:NAME}` and real 
   not supported.
 - The service installs dependencies with the package manager named by the lockfile, builds, starts the app on `PORT`,
   and runs `smoke` first. `unit`, `integration`, `e2e`, `a11y`, `security`, `load` and `explore` run according to the
-  request. `explore` without a `test:explore` script runs Airlock's own checker.
-- A QA run has its own daily quota (`AIRLOCK_QA_RUNS_PER_DAY`, default 5) and timeout. Only one QA run may be queued or
+  request. `explore` without a `test:explore` script runs QAFind's own checker.
+- A QA run has its own daily quota (`QAFIND_QA_RUNS_PER_DAY`, default 5) and timeout. Only one QA run may be queued or
   running on the shared staging host at a time; concurrent submissions get `429 RATE_LIMITED`.
 - Screenshots are taken by the checker for failing routes (up to six). Their names and SHA-256 are part of the signed
   seal; the bytes are stored under the service data directory and served only to the owning workspace.
@@ -149,7 +149,7 @@ commands are npm script **names**, never shell commands; `${env:NAME}` and real 
 
 ### Synced local artifacts (key or session)
 
-The CLI encrypts traces, checkpoints, healing logs, fixtures and capsules with `AIRLOCK_SYNC_KEY` before upload. The
+The CLI encrypts traces, checkpoints, healing logs, fixtures and capsules with `QAFIND_SYNC_KEY` before upload. The
 service stores only AES-256-GCM ciphertext and metadata; it never receives the passphrase.
 
 | Method and path | Result |
@@ -160,7 +160,7 @@ service stores only AES-256-GCM ciphertext and metadata; it never receives the p
 | `DELETE /v1/sync/artifacts/:id` | `204`; removes the metadata and the ciphertext. |
 
 Limits: 2 MB per artifact, 200 artifacts and 50 MB per workspace. The service cannot decrypt or scan the content; losing
-`AIRLOCK_SYNC_KEY` makes the uploaded artifacts unreadable. These are backups/transfers, not executable fixtures or
+`QAFIND_SYNC_KEY` makes the uploaded artifacts unreadable. These are backups/transfers, not executable fixtures or
 cross-run checkpoints.
 
 ### Pro waitlist (public)
@@ -176,4 +176,4 @@ email is idempotent.
 
 ## Evidence
 
-Each finished run has a bundle in the `2.0.0` evidence format, signed with the service's Ed25519 key. Verify it with `airlock audit` and `AIRLOCK_TRUSTED_PUBLIC_KEY` set to the key from `GET /v1/evidence-key`, or with `POST /v1/evidence/verify`. A bundle shows that the recorded ledger was not changed after signing. It does not show that the target application is secure and it is not a compliance assessment.
+Each finished run has a bundle in the `2.0.0` evidence format, signed with the service's Ed25519 key. Verify it with `qafind audit` and `QAFIND_TRUSTED_PUBLIC_KEY` set to the key from `GET /v1/evidence-key`, or with `POST /v1/evidence/verify`. A bundle shows that the recorded ledger was not changed after signing. It does not show that the target application is secure and it is not a compliance assessment.

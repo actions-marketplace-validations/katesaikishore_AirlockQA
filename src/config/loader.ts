@@ -1,7 +1,7 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import { AirlockConfigSchema } from './schema.js';
-import type { AirlockConfig, PhantomSecretConfig } from '../types/index.js';
+import { QAFindConfigSchema } from './schema.js';
+import type { QAFindConfig, PhantomSecretConfig } from '../types/index.js';
 import { logger } from '../utils/logger.js';
 
 /** Raised when a config file exists but cannot be parsed or validated. */
@@ -13,7 +13,7 @@ export class ConfigError extends Error {
 }
 
 export interface LoadConfigOptions {
-  /** Environment to read `realFromEnv` secrets and AIRLOCK_CHROME_PATH from. Defaults to process.env. */
+  /** Environment to read `realFromEnv` secrets and QAFIND_CHROME_PATH from. Defaults to process.env. */
   env?: NodeJS.ProcessEnv;
 }
 
@@ -21,14 +21,14 @@ export function loadConfig(
   configPath?: string,
   cwd: string = process.cwd(),
   options: LoadConfigOptions = {},
-): AirlockConfig {
+): QAFindConfig {
   const env = options.env ?? process.env;
   const candidatePaths = configPath
     ? [path.resolve(cwd, configPath)]
     : [
-        path.resolve(cwd, 'airlock.config.json'),
-        path.resolve(cwd, '.airlock/config.json'),
-        path.resolve(cwd, 'airlock.json'),
+        path.resolve(cwd, 'qafind.config.json'),
+        path.resolve(cwd, '.qafind/config.json'),
+        path.resolve(cwd, 'qafind.json'),
       ];
 
   if (configPath && !fs.existsSync(candidatePaths[0])) {
@@ -55,7 +55,7 @@ export function loadConfig(
     break;
   }
 
-  const result = AirlockConfigSchema.safeParse(rawConfig);
+  const result = QAFindConfigSchema.safeParse(rawConfig);
   if (!result.success) {
     const issues = result.error.issues
       .map((issue) => `  - ${issue.path.length ? issue.path.join('.') : '(root)'}: ${issue.message}`)
@@ -85,11 +85,11 @@ export function loadConfig(
     secrets[name] = { ...secret, real: real as string };
   }
 
-  // Browser executable: explicit config wins, then AIRLOCK_CHROME_PATH. No platform-specific guessing.
+  // Browser executable: explicit config wins, then QAFIND_CHROME_PATH. No platform-specific guessing.
   const browser = { ...parsed.browser };
-  if (!browser.executablePath && env.AIRLOCK_CHROME_PATH) {
-    browser.executablePath = env.AIRLOCK_CHROME_PATH;
+  if (!browser.executablePath && env.QAFIND_CHROME_PATH) {
+    browser.executablePath = env.QAFIND_CHROME_PATH;
   }
 
-  return { ...parsed, browser, secrets } as AirlockConfig;
+  return { ...parsed, browser, secrets } as QAFindConfig;
 }

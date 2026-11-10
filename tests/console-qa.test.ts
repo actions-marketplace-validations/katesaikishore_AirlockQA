@@ -239,7 +239,7 @@ describe('console qa: explore and finding sources', () => {
 
   test('findingSource names who saw a finding', async () => {
     const { findingSource } = await import('../console/src/qa');
-    expect(findingSource('first_party_observed')).toBe('Airlock checker');
+    expect(findingSource('first_party_observed')).toBe('QAFind checker');
     expect(findingSource('sandbox_self_reported')).toBe('Your tests');
     expect(findingSource(undefined)).toBe('Unknown');
   });

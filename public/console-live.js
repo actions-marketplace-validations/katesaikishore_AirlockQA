@@ -1,5 +1,5 @@
 /**
- * Live mode of the console: the views are backed by the Airlock Cloud API (docs/cloud-api.md).
+ * Live mode of the console: the views are backed by the QAFind Cloud API (docs/cloud-api.md).
  * dashboard.js imports this module only when api.me() returned a signed-in user.
  *
  * Rules kept throughout: API values are rendered with textContent / DOM construction only,
@@ -316,9 +316,9 @@ function onboardingCard() {
     h("p", { class: "lv-sub", text: "Cloud runs open your site in an isolated browser, apply the request policy and return signed evidence. Start one here, or from your terminal:" }),
     h("div", { class: "lv-actions" }, link("#runs/new", "Start a cloud run", "lv-btn lv-btn-primary")),
     h("div", { class: "lv-stack" },
-      codeBlock("airlock login", "Copy", ctx.toast),
-      codeBlock("airlock test --cloud", "Copy", ctx.toast)),
-    h("p", { class: "lv-muted lv-small" }, "Create an API key under ", link("#cicd", "CI/CD & API"), " first, then paste it when ", h("code", { text: "airlock login" }), " asks."));
+      codeBlock("qafind login", "Copy", ctx.toast),
+      codeBlock("qafind test --cloud", "Copy", ctx.toast)),
+    h("p", { class: "lv-muted lv-small" }, "Create an API key under ", link("#cicd", "CI/CD & API"), " first, then paste it when ", h("code", { text: "qafind login" }), " asks."));
 }
 
 function buildOverview(main) {
@@ -590,7 +590,7 @@ function buildRuns(main) {
   select.addEventListener("change", function () { state.status = select.value; loadRuns({}).then(schedulePoll); });
 
   main.append(
-    pageHeader("Runs", "Hosted browser runs on Airlock Cloud. The list refreshes every 3 seconds while a run is queued or running.", [toggle]),
+    pageHeader("Runs", "Hosted browser runs on QAFind Cloud. The list refreshes every 3 seconds while a run is queued or running.", [toggle]),
     startPanel,
     h("div", { class: "lv-toolbar" }, search, select, count),
     results, moreWrap);
@@ -619,8 +619,8 @@ function buildRuns(main) {
         results.append(h("div", { class: "lv-empty", id: "run-empty-state" },
           h("h2", { class: "lv-card-title", text: "No runs yet" }),
           h("p", { class: "lv-muted", text: "Start a cloud run with the button above, or from your terminal:" }),
-          codeBlock("airlock login", "Copy", ctx.toast),
-          codeBlock("airlock test --cloud", "Copy", ctx.toast)));
+          codeBlock("qafind login", "Copy", ctx.toast),
+          codeBlock("qafind test --cloud", "Copy", ctx.toast)));
       } else {
         results.append(h("div", { class: "lv-empty", id: "run-empty-state" }, h("p", { class: "lv-muted", text: state.nextCursor && state.search ? "No loaded runs match. Load more runs to search further." : "No runs match this filter." })));
         if (state.nextCursor) {
@@ -759,7 +759,7 @@ async function downloadEvidence(run, button) {
     const bundle = await call(function () { return ctx.api.runs.evidence(run.id); });
     const blob = new Blob([JSON.stringify(bundle, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
-    const anchor = h("a", { href: url, download: "airlock-evidence-" + run.id + ".json" });
+    const anchor = h("a", { href: url, download: "qafind-evidence-" + run.id + ".json" });
     document.body.append(anchor);
     anchor.click();
     anchor.remove();
@@ -871,7 +871,7 @@ function renderDetail(run, force) {
           metaItem("Algorithm", evidence.signingAlgorithm),
           metaItem("Key id", h("span", { class: "lv-mono lv-wrap", text: evidence.keyId })),
           metaItem("Ledger blocks", String(evidence.blocksCount))),
-        h("p", { class: "lv-muted lv-small" }, "Check it on the ", link("#evidence", "Evidence page"), " or with ", h("code", { text: "airlock audit <bundle.json>" }), "."))
+        h("p", { class: "lv-muted lv-small" }, "Check it on the ", link("#evidence", "Evidence page"), " or with ", h("code", { text: "qafind audit <bundle.json>" }), "."))
       : h("p", { class: "lv-muted", text: isActive(run.status) ? "Evidence is signed when the run finishes." : "This run has no evidence bundle." })));
 
   if (previousStatus && previousStatus !== run.status) {

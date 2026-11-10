@@ -2,7 +2,7 @@ import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
 
-export const DEFAULT_CLOUD_URL = 'https://api.qbrin.cloud';
+export const DEFAULT_CLOUD_URL = 'https://api.qafind.si';
 const KEY_PREFIX = 'air_live_';
 
 export interface StoredCredentials {
@@ -16,11 +16,11 @@ export interface StoredCredentials {
 
 type Env = Record<string, string | undefined>;
 
-/** Directory for the credentials file. `AIRLOCK_CONFIG_DIR` overrides `~/.config/airlock`. */
+/** Directory for the credentials file. `QAFIND_CONFIG_DIR` overrides `~/.config/qafind`. */
 export function configDirectory(env: Env = process.env): string {
-  if (env.AIRLOCK_CONFIG_DIR) return path.resolve(env.AIRLOCK_CONFIG_DIR);
+  if (env.QAFIND_CONFIG_DIR) return path.resolve(env.QAFIND_CONFIG_DIR);
   const base = env.XDG_CONFIG_HOME ? path.resolve(env.XDG_CONFIG_HOME) : path.join(os.homedir(), '.config');
-  return path.join(base, 'airlock');
+  return path.join(base, 'qafind');
 }
 
 export function credentialsPath(env: Env = process.env): string {
@@ -32,7 +32,7 @@ export function loadCredentials(env: Env = process.env): StoredCredentials | nul
   let raw: string;
   try {
     if (fs.lstatSync(file).isSymbolicLink()) {
-      throw new Error(`Credentials file ${file} is a symbolic link; refusing to read it. Remove it and run "airlock login".`);
+      throw new Error(`Credentials file ${file} is a symbolic link; refusing to read it. Remove it and run "qafind login".`);
     }
     raw = fs.readFileSync(file, 'utf8');
   } catch (error) {
@@ -45,7 +45,7 @@ export function loadCredentials(env: Env = process.env): StoredCredentials | nul
   } catch {
     // fall through
   }
-  throw new Error(`Credentials file ${file} is not valid. Run "airlock logout" and sign in again.`);
+  throw new Error(`Credentials file ${file} is not valid. Run "qafind logout" and sign in again.`);
 }
 
 /** Write the credentials atomically with owner-only permissions. Returns the file path. */
@@ -92,8 +92,8 @@ export interface CloudAuth {
 
 /**
  * Work out which Cloud key and endpoint to use.
- * Key: explicit option, then AIRLOCK_API_KEY, then the key saved by `airlock login`.
- * URL: explicit option, then AIRLOCK_CLOUD_URL, then the saved URL (only when the saved key is used,
+ * Key: explicit option, then QAFIND_API_KEY, then the key saved by `qafind login`.
+ * URL: explicit option, then QAFIND_CLOUD_URL, then the saved URL (only when the saved key is used,
  * so a key from the environment is never sent to a host it was not meant for), then the default.
  */
 export function resolveCloudAuth(
@@ -106,8 +106,8 @@ export function resolveCloudAuth(
   if (options.apiKey?.trim()) {
     apiKey = options.apiKey.trim();
     keySource = 'option';
-  } else if (env.AIRLOCK_API_KEY?.trim()) {
-    apiKey = env.AIRLOCK_API_KEY.trim();
+  } else if (env.QAFIND_API_KEY?.trim()) {
+    apiKey = env.QAFIND_API_KEY.trim();
     keySource = 'env';
   } else if (stored?.apiKey) {
     apiKey = stored.apiKey;
@@ -115,13 +115,13 @@ export function resolveCloudAuth(
   } else {
     return null;
   }
-  const requested = options.apiUrl?.trim() || env.AIRLOCK_CLOUD_URL?.trim();
+  const requested = options.apiUrl?.trim() || env.QAFIND_CLOUD_URL?.trim();
   if (keySource === 'stored' && stored && requested && !sameEndpoint(requested, stored.apiUrl)) {
     // The saved key was issued by one deployment. Never send it to another host because an environment
     // variable or a flag says so.
     throw new Error(
       `The saved key belongs to ${stored.apiUrl} and will not be sent to ${requested}. ` +
-        `Run "airlock login --api-url ${requested}" to sign in there, or remove the override.`
+        `Run "qafind login --api-url ${requested}" to sign in there, or remove the override.`
     );
   }
   const apiUrl = requested || (keySource === 'stored' ? stored?.apiUrl : undefined) || DEFAULT_CLOUD_URL;

@@ -6,7 +6,7 @@ import { decryptArtifact, encryptArtifact, localArtifacts, syncKeyFromEnv } from
 
 const dirs: string[] = [];
 function temp(): string {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'airlock-sync-cli-'));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'qafind-sync-cli-'));
   dirs.push(dir);
   return dir;
 }
@@ -23,31 +23,31 @@ describe('local sync: encryption', () => {
 
   test('requires a key of at least 12 characters', () => {
     expect(() => encryptArtifact(Buffer.from('x'), 'short')).toThrow(/at least 12/);
-    expect(() => syncKeyFromEnv({})).toThrow(/AIRLOCK_SYNC_KEY/);
-    expect(syncKeyFromEnv({ AIRLOCK_SYNC_KEY: 'long-enough-key' })).toBe('long-enough-key');
+    expect(() => syncKeyFromEnv({})).toThrow(/QAFIND_SYNC_KEY/);
+    expect(syncKeyFromEnv({ QAFIND_SYNC_KEY: 'long-enough-key' })).toBe('long-enough-key');
   });
 });
 
 describe('local sync: file discovery', () => {
-  test('finds traces, checkpoints, healing files, fixtures and capsules under .airlock', () => {
+  test('finds traces, checkpoints, healing files, fixtures and capsules under .qafind', () => {
     const cwd = temp();
     const write = (relative: string, body = '{}') => {
       const file = path.join(cwd, relative);
       fs.mkdirSync(path.dirname(file), { recursive: true });
       fs.writeFileSync(file, body);
     };
-    write('.airlock/traces/checkout.json');
-    write('.airlock/checkpoints/paid.json');
-    write('.airlock/dataset/healing/2026-11-08.jsonl', '{"healed":true}\n');
-    write('.airlock/shadow/wire-catalog.json');
-    write('.airlock/capsules/cap_1.json');
+    write('.qafind/traces/checkout.json');
+    write('.qafind/checkpoints/paid.json');
+    write('.qafind/dataset/healing/2026-11-08.jsonl', '{"healed":true}\n');
+    write('.qafind/shadow/wire-catalog.json');
+    write('.qafind/capsules/cap_1.json');
     const artifacts = localArtifacts(cwd);
     expect(artifacts.map((a) => `${a.kind}:${a.name}`).sort()).toEqual([
-      'capsule:.airlock/capsules/cap_1.json',
-      'checkpoint:.airlock/checkpoints/paid.json',
-      'fixtures:.airlock/shadow/wire-catalog.json',
-      'healing:.airlock/dataset/healing/2026-11-08.jsonl',
-      'trace:.airlock/traces/checkout.json',
+      'capsule:.qafind/capsules/cap_1.json',
+      'checkpoint:.qafind/checkpoints/paid.json',
+      'fixtures:.qafind/shadow/wire-catalog.json',
+      'healing:.qafind/dataset/healing/2026-11-08.jsonl',
+      'trace:.qafind/traces/checkout.json',
     ]);
     expect(artifacts.find((a) => a.kind === 'healing')?.contentType).toBe('application/x-ndjson');
   });

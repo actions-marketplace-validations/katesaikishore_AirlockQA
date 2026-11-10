@@ -49,7 +49,7 @@ describe('globMatch', () => {
 });
 
 describe('CheckpointManager names', () => {
-  const dir = () => fs.mkdtempSync(path.join(os.tmpdir(), 'airlock-cp-'));
+  const dir = () => fs.mkdtempSync(path.join(os.tmpdir(), 'qafind-cp-'));
 
   it('accepts ordinary names', () => {
     const root = dir();

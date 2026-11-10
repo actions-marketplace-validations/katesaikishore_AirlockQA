@@ -1,7 +1,7 @@
 /**
  * Browser-context fixture prototype. It serves matching saved responses and
  * passes unmatched requests to the next route handler (route.fallback), never
- * fabricating a response and never bypassing the AirlockGateway.
+ * fabricating a response and never bypassing the QAFindGateway.
  */
 
 import type { BrowserContext, Route } from 'playwright-core';
@@ -58,7 +58,7 @@ export class ShadowSynthesizer {
         });
       } else {
         // Never fabricate a response. Record the miss and let the next route handler
-        // (the AirlockGateway) decide, so policy and phantom-token handling still apply.
+        // (the QAFindGateway) decide, so policy and phantom-token handling still apply.
         // Keep the report free of secrets (query strings and fragments are dropped) and bounded in size.
         if (this.missedUrls.length < ShadowSynthesizer.MAX_MISSED) {
           this.missedUrls.push(`${method} ${ShadowSynthesizer.redactUrl(url)}`);

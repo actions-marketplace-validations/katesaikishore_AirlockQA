@@ -38,7 +38,7 @@ export default function App() {
   useEffect(() => { void app.refreshUsage(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    document.title = `${VIEW_TITLES[route.view]} · AirlockQA Console`;
+    document.title = `${VIEW_TITLES[route.view]} · QAFind Console`;
     // Moving to another screen puts keyboard focus on its heading; the first render keeps the browser default.
     if (first.current) { first.current = false; return; }
     // Run detail focuses its own title once the run has loaded, and #runs/new focuses the form's first field.

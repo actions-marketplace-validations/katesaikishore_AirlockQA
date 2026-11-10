@@ -21,7 +21,7 @@ const snapshot: CheckpointSnapshot = {
 };
 
 function tempDir(): string {
-  return fs.mkdtempSync(path.join(os.tmpdir(), 'airlock-cp-'));
+  return fs.mkdtempSync(path.join(os.tmpdir(), 'qafind-cp-'));
 }
 
 describe('checkpoint encryption at rest', () => {
@@ -80,12 +80,12 @@ describe('checkpoint restore', () => {
       manager.save({
         ...snapshot,
         name: 'multi-origin',
-        url: 'http://app.airlock.test/',
+        url: 'http://app.qafind.test/',
         storageState: {
           cookies: [],
           origins: [
-            { origin: 'http://app.airlock.test', localStorage: [{ name: 'a', value: 'app' }] },
-            { origin: 'http://auth.airlock.test', localStorage: [{ name: 'b', value: 'auth' }] },
+            { origin: 'http://app.qafind.test', localStorage: [{ name: 'a', value: 'app' }] },
+            { origin: 'http://auth.qafind.test', localStorage: [{ name: 'b', value: 'auth' }] },
           ],
         },
         sessionStorage: {},
@@ -98,7 +98,7 @@ describe('checkpoint restore', () => {
 
       expect(await page.evaluate(() => localStorage.getItem('a'))).toBe('app');
       const state = await context.storageState();
-      const auth = state.origins.find((o) => o.origin === 'http://auth.airlock.test');
+      const auth = state.origins.find((o) => o.origin === 'http://auth.qafind.test');
       expect(auth?.localStorage).toEqual([{ name: 'b', value: 'auth' }]);
     } finally {
       await browser.close();

@@ -24,7 +24,7 @@ export class ShadowRecorder {
   private catalog: Map<string, WireInteraction> = new Map();
   private catalogPath: string;
 
-  constructor(catalogPath = './.airlock/shadow/wire-catalog.json') {
+  constructor(catalogPath = './.qafind/shadow/wire-catalog.json') {
     this.catalogPath = path.resolve(process.cwd(), catalogPath);
     this.loadCatalog();
   }

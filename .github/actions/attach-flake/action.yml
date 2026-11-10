@@ -1,0 +1,38 @@
+name: QAFind Attach + Flake
+description: Attach the QAFind reporter to an existing Playwright suite, run it, and publish a flake report.
+branding:
+  icon: shield
+  color: blue
+inputs:
+  project-dir:
+    description: Repository directory containing playwright.config.ts
+    required: false
+    default: .
+  reports-path:
+    description: QAFind reporter output directory
+    required: false
+    default: .qafind/reports
+  fail-on-flake:
+    description: Fail the job when flaky tests are found
+    required: false
+    default: "false"
+runs:
+  using: composite
+  steps:
+    - name: Attach reporter
+      shell: bash
+      run: npx --yes qafind@latest attach "${{ inputs.project-dir }}"
+    - name: Run Playwright
+      shell: bash
+      run: npx playwright test
+    - name: Flake report
+      shell: bash
+      env:
+        REPORTS_PATH: ${{ inputs.reports-path }}
+        FAIL_ON_FLAKE: ${{ inputs.fail-on-flake }}
+      run: |
+        if [ "$FAIL_ON_FLAKE" = "true" ]; then
+          npx --yes qafind@latest flake "$REPORTS_PATH" --markdown --fail-on-flake
+        else
+          npx --yes qafind@latest flake "$REPORTS_PATH" --markdown
+        fi

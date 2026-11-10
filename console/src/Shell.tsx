@@ -112,9 +112,9 @@ export function Sidebar({ route }: { route: Route }) {
   return (
     <aside ref={menu.asideRef} data-open={menu.open ? 'true' : undefined} onClick={menu.onAsideClick}>
       <nav className="primary-nav" id="console-nav" aria-label="Console">
-        <a className="nav-brand" href="/" aria-label="AirlockQA home">
+        <a className="nav-brand" href="/" aria-label="QAFind home">
           <BrandMark />
-          <span className="nav-brand-text">Airlock<span>QA</span></span>
+          <span className="nav-brand-text">QAFind<span>QA</span></span>
         </a>
         <button type="button" id="nav-toggle" className="nav-toggle" ref={menu.toggleRef} aria-expanded={menu.open} aria-controls="console-nav" onClick={() => menu.setOpen(!menu.open)}>
           {menu.open ? 'Close' : 'Menu'}
@@ -174,7 +174,7 @@ export function Sidebar({ route }: { route: Route }) {
             <span id="usage-reset" className="usage-reset" hidden={!daily}>{daily ? `Resets at ${formatTime(daily.resetAt)}` : ''}</span>
             <a className="nav-usage-link" href="#cicd" data-nav="integrations">Usage &amp; keys</a>
           </div>
-          <a className="nav-docs" href="https://github.com/katesaikishore/AirlockQA/blob/main/docs/HOW-TO-USE.md" target="_blank" rel="noreferrer">
+          <a className="nav-docs" href="https://github.com/katesaikishore/QAFind/blob/main/docs/HOW-TO-USE.md" target="_blank" rel="noreferrer">
             <Icon d="M5 4.5A1.5 1.5 0 0 1 6.5 3H19v15H6.5A1.5 1.5 0 0 0 5 19.5zM5 19.5A1.5 1.5 0 0 0 6.5 21H19" />
             Docs &amp; guides
           </a>
@@ -244,9 +244,9 @@ export function Topbar({ route }: { route: Route }) {
 export function Footer() {
   return (
     <footer className="app-footer">
-      <span>© 2026 AirlockQA · Isolated browser test operations</span>
+      <span>© 2026 QAFind · Isolated browser test operations</span>
       <span><i /> API endpoint configured · <code>POST /v1/runs</code></span>
-      <a href="https://github.com/katesaikishore/AirlockQA" target="_blank" rel="noreferrer">Documentation ↗</a>
+      <a href="https://github.com/katesaikishore/QAFind" target="_blank" rel="noreferrer">Documentation ↗</a>
     </footer>
   );
 }

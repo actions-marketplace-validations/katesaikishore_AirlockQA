@@ -1,7 +1,7 @@
 import type { BrowserContext, Page } from 'playwright-core';
-import type { AirlockConfig } from '../types/index.js';
+import type { QAFindConfig } from '../types/index.js';
 import { interpolateEnv, type Workflow, type WorkflowStep } from '../config/workflow-schema.js';
-import type { AirlockRunner } from './airlock-runner.js';
+import type { QAFindRunner } from './qafind-runner.js';
 import { logger } from '../utils/logger.js';
 
 export interface WorkflowStepResult {
@@ -23,8 +23,8 @@ export interface WorkflowRunResult {
 export interface WorkflowExecutionOptions {
   page: Page;
   context: BrowserContext;
-  runner: AirlockRunner;
-  config: AirlockConfig;
+  runner: QAFindRunner;
+  config: QAFindConfig;
   baseUrl: string;
   timeoutMs?: number;
   env?: NodeJS.ProcessEnv;

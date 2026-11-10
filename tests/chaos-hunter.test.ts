@@ -107,7 +107,7 @@ describe('Mutation observation prototype', () => {
     const report = await hunter.auditMutation(mockPage, async () => {}, { simulatedBackendIdempotent: true });
     const formatted = ChaosHunter.formatReport(report);
 
-    expect(formatted).toContain('AIRLOCK MUTATION OBSERVATION REPORT');
+    expect(formatted).toContain('QAFIND MUTATION OBSERVATION REPORT');
     expect(formatted).toContain('OBSERVATION ONLY; scenarios not executed');
     expect(formatted).toContain('Target Endpoint:');
     expect(formatted).toContain('Scenario 1: Browser action observation');

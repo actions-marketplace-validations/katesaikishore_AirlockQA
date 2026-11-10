@@ -1,5 +1,5 @@
 {
-  "projectName": "Acme SaaS Airlock QA",
+  "projectName": "Acme SaaS QAFind",
   "baseUrl": "http://127.0.0.1:3900",
   "browser": {
     "headless": true,
@@ -90,15 +90,15 @@
   "healer": {
     "autoHeal": true,
     "confidenceThreshold": 0.8,
-    "datasetDir": "./.airlock/dataset",
+    "datasetDir": "./.qafind/dataset",
     "saveMutations": true
   },
   "forker": {
-    "checkpointsDir": "./.airlock/checkpoints",
+    "checkpointsDir": "./.qafind/checkpoints",
     "maxParallelForks": 5
   },
   "compliance": {
-    "outputDir": "./.airlock/compliance",
+    "outputDir": "./.qafind/compliance",
     "generateHtmlReport": true
   },
   "workflow": {
@@ -136,7 +136,7 @@
       {
         "action": "fill",
         "selector": "[data-testid=\"coupon-input\"]",
-        "value": "AIRLOCK20"
+        "value": "QAFIND20"
       },
       {
         "action": "click",

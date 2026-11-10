@@ -3,10 +3,10 @@ import { canonicalJson, sha256 } from '../utils/crypto.js';
 import { MerkleTree } from './merkle-tree.js';
 import { logger } from '../utils/logger.js';
 
-export class AirlockLedger {
+export class QAFindLedger {
   private blocks: LedgerBlock[] = [];
   static readonly GENESIS_PREVIOUS_HASH = '0000000000000000000000000000000000000000000000000000000000000000';
-  private genesisHash = AirlockLedger.GENESIS_PREVIOUS_HASH;
+  private genesisHash = QAFindLedger.GENESIS_PREVIOUS_HASH;
 
   constructor() {
     this.initGenesis();
@@ -17,7 +17,7 @@ export class AirlockLedger {
       index: 0,
       timestamp: new Date().toISOString(),
       type: 'EXEC_START',
-      payload: { system: 'AirlockQA Cryptographic Ledger Initialized' },
+      payload: { system: 'QAFind Cryptographic Ledger Initialized' },
       previousHash: this.genesisHash,
       blockHash: '',
     };
@@ -43,7 +43,7 @@ export class AirlockLedger {
   }
 
   private computeBlockHash(block: Omit<LedgerBlock, 'blockHash'>): string {
-    return AirlockLedger.computeBlockHash(block);
+    return QAFindLedger.computeBlockHash(block);
   }
 
   append(type: LedgerBlock['type'], payload: Record<string, unknown>): LedgerBlock {
@@ -81,12 +81,12 @@ export class AirlockLedger {
    * The hash chain is verified first; tampered or malformed blocks throw.
    * This lets a trusted service sign evidence without ever holding the browser that produced it.
    */
-  static fromBlocks(blocks: LedgerBlock[]): AirlockLedger {
-    const check = AirlockLedger.verifyBlocks(blocks);
+  static fromBlocks(blocks: LedgerBlock[]): QAFindLedger {
+    const check = QAFindLedger.verifyBlocks(blocks);
     if (!check.valid) {
       throw new Error(`Cannot rebuild ledger: ${check.reason ?? 'hash chain is invalid'}`);
     }
-    const ledger = new AirlockLedger();
+    const ledger = new QAFindLedger();
     ledger.blocks = JSON.parse(JSON.stringify(blocks)) as LedgerBlock[];
     return ledger;
   }
@@ -107,7 +107,7 @@ export class AirlockLedger {
    * Verify the integrity of the entire cryptographic hash chain
    */
   verifyChain(): { valid: boolean; tamperedIndex?: number; reason?: string } {
-    return AirlockLedger.verifyBlocks(this.blocks);
+    return QAFindLedger.verifyBlocks(this.blocks);
   }
 
   /**
@@ -126,7 +126,7 @@ export class AirlockLedger {
 
       // 1. Verify previous hash pointer
       if (i === 0) {
-        if (block.previousHash !== AirlockLedger.GENESIS_PREVIOUS_HASH) {
+        if (block.previousHash !== QAFindLedger.GENESIS_PREVIOUS_HASH) {
           return { valid: false, tamperedIndex: 0, reason: 'Genesis previousHash is corrupted' };
         }
       } else {
@@ -143,7 +143,7 @@ export class AirlockLedger {
       // 2. Verify block hash calculation
       let computedHash: string;
       try {
-        computedHash = AirlockLedger.computeBlockHash(block);
+        computedHash = QAFindLedger.computeBlockHash(block);
       } catch (err) {
         return { valid: false, tamperedIndex: i, reason: `Block ${i} cannot be hashed: ${(err as Error).message}` };
       }

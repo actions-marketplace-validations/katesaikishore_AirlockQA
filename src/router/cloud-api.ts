@@ -36,7 +36,7 @@ export async function cloudRequest<T>(target: ApiTarget, method: string, path: s
     });
   } catch (error) {
     const cause = error instanceof Error ? error.message : String(error);
-    throw new Error(`Cannot reach Airlock Cloud at ${base}: ${cause}`);
+    throw new Error(`Cannot reach QAFind Cloud at ${base}: ${cause}`);
   }
 
   const text = await response.text();
@@ -99,18 +99,18 @@ export async function waitForRun(target: ApiTarget, runId: string, options: Wait
       await sleep(interval);
       continue;
     }
-    if (typeof run.status !== 'string') throw new Error('Airlock Cloud returned a run without a status.');
+    if (typeof run.status !== 'string') throw new Error('QAFind Cloud returned a run without a status.');
     if (run.status !== lastStatus) {
       lastStatus = run.status;
       options.onUpdate?.(run);
     }
     if (TERMINAL_RUN_STATUSES.has(run.status)) return run;
     if (run.status !== 'QUEUED' && run.status !== 'RUNNING') {
-      throw new Error(`Airlock Cloud reported an unknown run status (${run.status.slice(0, 40)}). Check it with "airlock runs ${runId}".`);
+      throw new Error(`QAFind Cloud reported an unknown run status (${run.status.slice(0, 40)}). Check it with "qafind runs ${runId}".`);
     }
     if (Date.now() >= deadline) {
       throw new Error(
-        `Timed out waiting for run ${runId} (last status ${run.status}). It keeps running in the cloud; check it with "airlock runs ${runId}".`
+        `Timed out waiting for run ${runId} (last status ${run.status}). It keeps running in the cloud; check it with "qafind runs ${runId}".`
       );
     }
     await sleep(interval);

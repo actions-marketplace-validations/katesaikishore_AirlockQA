@@ -8,7 +8,7 @@ import { chromePath, runCli } from './cli-helpers.js';
 
 setDefaultTimeout(60_000);
 
-describe('airlock run with a configured workflow', () => {
+describe('qafind run with a configured workflow', () => {
   const PORT = 3923;
   const baseUrl = `http://127.0.0.1:${PORT}`;
   let server: http.Server;
@@ -35,7 +35,7 @@ describe('airlock run with a configured workflow', () => {
 
   function writeConfig(extra: Record<string, unknown>): void {
     fs.writeFileSync(
-      path.join(workDir, 'airlock.config.json'),
+      path.join(workDir, 'qafind.config.json'),
       JSON.stringify({
         baseUrl,
         browser: { headless: true, ...(chromePath ? { executablePath: chromePath } : {}) },
@@ -49,8 +49,8 @@ describe('airlock run with a configured workflow', () => {
         },
         policy: { defaultAction: 'BLOCK', allowedEgressHosts: ['127.0.0.1'], rules: [] },
         compiler: { outputDir: './specs', defaultTimeoutMs: 3000 },
-        forker: { checkpointsDir: './.airlock/checkpoints' },
-        compliance: { outputDir: './.airlock/compliance', generateHtmlReport: false },
+        forker: { checkpointsDir: './.qafind/checkpoints' },
+        compliance: { outputDir: './.qafind/compliance', generateHtmlReport: false },
         ...extra,
       })
     );
@@ -58,7 +58,7 @@ describe('airlock run with a configured workflow', () => {
 
   beforeAll(async () => {
     server = await startDemoServer(PORT);
-    workDir = fs.mkdtempSync(path.join(os.tmpdir(), 'airlock-run-'));
+    workDir = fs.mkdtempSync(path.join(os.tmpdir(), 'qafind-run-'));
   });
 
   afterAll(async () => {
@@ -73,8 +73,8 @@ describe('airlock run with a configured workflow', () => {
     expect(result.output).toContain("Workflow 'vip-checkout' passed: 9/9 steps");
     expect(result.output).not.toContain('qa@example.com');
     expect(result.code).toBe(0);
-    expect(fs.existsSync(path.join(workDir, '.airlock/checkpoints/post_auth.json'))).toBe(true);
-    expect(fs.existsSync(path.join(workDir, '.airlock/compliance/latest-attestation.json'))).toBe(true);
+    expect(fs.existsSync(path.join(workDir, '.qafind/checkpoints/post_auth.json'))).toBe(true);
+    expect(fs.existsSync(path.join(workDir, '.qafind/compliance/latest-attestation.json'))).toBe(true);
   });
 
   it('fails when the refund response is not the expected status', async () => {

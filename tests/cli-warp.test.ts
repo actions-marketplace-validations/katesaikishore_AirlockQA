@@ -3,7 +3,7 @@ import { runCli } from './cli-helpers.js';
 
 setDefaultTimeout(30_000);
 
-describe('airlock warp is honest about what it does', () => {
+describe('qafind warp is honest about what it does', () => {
   it('does not claim to change kernel, V8 or DOM clocks in --help', async () => {
     const res = await runCli(['warp', '--help']);
     expect(res.output).not.toMatch(/kernel/i);

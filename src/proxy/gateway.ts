@@ -3,7 +3,7 @@ import * as https from 'node:https';
 import * as net from 'node:net';
 import * as zlib from 'node:zlib';
 import type { BrowserContext, Request as PlaywrightRequest, Route } from 'playwright-core';
-import type { AirlockConfig, HttpMethod, InterceptedRequest, InterceptedResponse } from '../types/index.js';
+import type { QAFindConfig, HttpMethod, InterceptedRequest, InterceptedResponse } from '../types/index.js';
 import { PhantomEngine } from './phantom-engine.js';
 import { PolicyEngine } from './policy-engine.js';
 import { defaultPortForUrl, matchAnyHost, splitHostPort } from './host-match.js';
@@ -28,7 +28,7 @@ export interface GatewayOptions {
 export const DEFAULT_MAX_BODY_BYTES = 10 * 1024 * 1024;
 
 export const CONNECT_DENIED_REASON =
-  'HTTPS tunnelling cannot be inspected: the Airlock proxy cannot swap phantom tokens, detect real ' +
+  'HTTPS tunnelling cannot be inspected: the QAFind proxy cannot swap phantom tokens, detect real ' +
   'secrets or sanitize responses inside a CONNECT/TLS tunnel, so CONNECT is denied by default.';
 
 const HOP_BY_HOP_HEADERS = new Set([
@@ -122,10 +122,10 @@ function describeBinary(body: Buffer | undefined): string | undefined {
   return `[binary body: ${body.length} bytes, not inspected for substitution]`;
 }
 
-export class AirlockGateway {
+export class QAFindGateway {
   private phantomEngine: PhantomEngine;
   private policyEngine: PolicyEngine;
-  private config: AirlockConfig;
+  private config: QAFindConfig;
   private options: Required<GatewayOptions>;
   private httpServer: http.Server | null = null;
   private openSockets = new Set<net.Socket>();
@@ -134,7 +134,7 @@ export class AirlockGateway {
   private onResponseCallbacks: ResponseInterceptorCallback[] = [];
   private requestCounter = 0;
 
-  constructor(config: AirlockConfig, options: GatewayOptions = {}) {
+  constructor(config: QAFindConfig, options: GatewayOptions = {}) {
     this.config = config;
     this.options = {
       connectAllowHosts: options.connectAllowHosts ?? [],
@@ -252,7 +252,7 @@ export class AirlockGateway {
       interceptedReq.policyReason = verdict.reason;
 
       if (!verdict.allowed) {
-        logger.securityViolation(verdict.reason || 'Blocked by Airlock request policy', {
+        logger.securityViolation(verdict.reason || 'Blocked by QAFind request policy', {
           url: reqUrl,
           method,
           host,
@@ -264,11 +264,11 @@ export class AirlockGateway {
           status: 403,
           contentType: 'application/json',
           body: JSON.stringify({
-            error: 'AIRLOCK_EGRESS_FIREWALL_BLOCKED',
+            error: 'QAFIND_EGRESS_FIREWALL_BLOCKED',
             message: verdict.reason,
             url: reqUrl,
             method,
-            airlockReqId: reqId,
+            qafindReqId: reqId,
           }),
         });
         return;
@@ -338,7 +338,7 @@ export class AirlockGateway {
         });
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : String(err);
-        logger.error(`Airlock gateway failed to deliver response for ${reqUrl}: ${message}`);
+        logger.error(`QAFind gateway failed to deliver response for ${reqUrl}: ${message}`);
         await route.abort('failed').catch(() => undefined);
       } finally {
         await response.dispose().catch(() => undefined);
@@ -362,9 +362,9 @@ export class AirlockGateway {
       const server = http.createServer((clientReq, clientRes) => {
         this.handleProxyRequest(clientReq, clientRes).catch((err: unknown) => {
           const message = err instanceof Error ? err.message : String(err);
-          logger.error(`Airlock proxy error: ${message}`);
+          logger.error(`QAFind proxy error: ${message}`);
           if (!clientRes.headersSent) {
-            this.sendJson(clientRes, 502, { error: 'AIRLOCK_PROXY_ERROR', message });
+            this.sendJson(clientRes, 502, { error: 'QAFIND_PROXY_ERROR', message });
           } else {
             clientRes.destroy();
           }
@@ -386,7 +386,7 @@ export class AirlockGateway {
       server.listen(port, listenHost, () => {
         const address = server.address();
         this.activePort = typeof address === 'object' && address ? address.port : port;
-        logger.info(`Airlock request gateway proxy listening on ${listenHost}:${this.activePort}`);
+        logger.info(`QAFind request gateway proxy listening on ${listenHost}:${this.activePort}`);
         resolve(this.activePort);
       });
     });
@@ -414,9 +414,9 @@ export class AirlockGateway {
     } catch {
       clientReq.resume();
       this.sendJson(clientRes, 400, {
-        error: 'AIRLOCK_PROXY_BAD_REQUEST',
+        error: 'QAFIND_PROXY_BAD_REQUEST',
         message:
-          'The Airlock proxy only accepts absolute-form http:// or https:// request URIs. Configure it as HTTP_PROXY.',
+          'The QAFind proxy only accepts absolute-form http:// or https:// request URIs. Configure it as HTTP_PROXY.',
       });
       return;
     }
@@ -432,7 +432,7 @@ export class AirlockGateway {
       if (a.hostname !== b.hostname || (a.port ?? defaultPort) !== (b.port ?? defaultPort)) {
         clientReq.resume();
         this.sendJson(clientRes, 400, {
-          error: 'AIRLOCK_PROXY_HOST_MISMATCH',
+          error: 'QAFIND_PROXY_HOST_MISMATCH',
           message: `Host header '${hostHeader}' does not match the request URI authority '${host}'`,
         });
         return;
@@ -447,7 +447,7 @@ export class AirlockGateway {
       this.sendJson(
         clientRes,
         413,
-        { error: 'AIRLOCK_PAYLOAD_TOO_LARGE', message: `Request body exceeds ${max} bytes` },
+        { error: 'QAFIND_PAYLOAD_TOO_LARGE', message: `Request body exceeds ${max} bytes` },
         { connection: 'close' }
       );
       return;
@@ -476,7 +476,7 @@ export class AirlockGateway {
       this.sendJson(
         clientRes,
         413,
-        { error: 'AIRLOCK_PAYLOAD_TOO_LARGE', message: `Request body exceeds ${max} bytes` },
+        { error: 'QAFIND_PAYLOAD_TOO_LARGE', message: `Request body exceeds ${max} bytes` },
         { connection: 'close' }
       );
       return;
@@ -506,7 +506,7 @@ export class AirlockGateway {
       logger.securityViolation('Proxied request contained a configured real secret value', { url: target.href, host });
       interceptedReq.policyReason = 'Request contained a configured real secret value';
       this.emitRequest(interceptedReq);
-      this.sendJson(clientRes, 403, { error: 'AIRLOCK_EGRESS_FIREWALL_BLOCKED', reason: interceptedReq.policyReason });
+      this.sendJson(clientRes, 403, { error: 'QAFIND_EGRESS_FIREWALL_BLOCKED', reason: interceptedReq.policyReason });
       return;
     }
 
@@ -518,9 +518,9 @@ export class AirlockGateway {
     interceptedReq.policyReason = verdict.reason;
 
     if (!verdict.allowed) {
-      logger.securityViolation(verdict.reason || 'Blocked by Airlock request policy', { url: target.href, method, host });
+      logger.securityViolation(verdict.reason || 'Blocked by QAFind request policy', { url: target.href, method, host });
       this.emitRequest(interceptedReq);
-      this.sendJson(clientRes, 403, { error: 'AIRLOCK_EGRESS_FIREWALL_BLOCKED', reason: verdict.reason });
+      this.sendJson(clientRes, 403, { error: 'QAFIND_EGRESS_FIREWALL_BLOCKED', reason: verdict.reason });
       return;
     }
 
@@ -549,7 +549,7 @@ export class AirlockGateway {
     );
 
     upstreamReq.on('error', (err) => {
-      logger.warn(`Airlock proxy upstream error for ${target.href}: ${err.message}`);
+      logger.warn(`QAFind proxy upstream error for ${target.href}: ${err.message}`);
       if (!clientRes.headersSent) {
         this.sendJson(clientRes, 502, { error: 'UPSTREAM_GATEWAY_ERROR', message: err.message });
       } else {
@@ -614,9 +614,9 @@ export class AirlockGateway {
       if (total > max) {
         aborted = true;
         upstreamRes.destroy();
-        logger.warn(`Airlock proxy refused to relay ${url}: text response exceeds ${max} bytes and cannot be inspected`);
+        logger.warn(`QAFind proxy refused to relay ${url}: text response exceeds ${max} bytes and cannot be inspected`);
         this.sendJson(clientRes, 502, {
-          error: 'AIRLOCK_RESPONSE_TOO_LARGE',
+          error: 'QAFIND_RESPONSE_TOO_LARGE',
           message: `Upstream text response exceeds ${max} bytes and cannot be inspected`,
         });
         return;
@@ -630,7 +630,7 @@ export class AirlockGateway {
         decoded = decodeContent(Buffer.concat(chunks), headerValue(rawHeaders['content-encoding']));
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : String(err);
-        this.sendJson(clientRes, 502, { error: 'AIRLOCK_RESPONSE_UNREADABLE', message });
+        this.sendJson(clientRes, 502, { error: 'QAFIND_RESPONSE_UNREADABLE', message });
         return;
       }
       const result = this.sanitizeBody(decoded, contentType, { url });
@@ -683,7 +683,7 @@ export class AirlockGateway {
 
     if (!allowed) {
       logger.securityViolation(reason, { target });
-      const body = JSON.stringify({ error: 'AIRLOCK_CONNECT_DENIED', reason });
+      const body = JSON.stringify({ error: 'QAFIND_CONNECT_DENIED', reason });
       clientSocket.end(
         'HTTP/1.1 403 Forbidden\r\n' +
           'Content-Type: application/json\r\n' +
@@ -701,7 +701,7 @@ export class AirlockGateway {
       clientSocket.pipe(upstream);
     });
     upstream.on('error', (err) => {
-      logger.warn(`Airlock CONNECT tunnel to ${target} failed: ${err.message}`);
+      logger.warn(`QAFind CONNECT tunnel to ${target} failed: ${err.message}`);
       if (clientSocket.writable) {
         clientSocket.end('HTTP/1.1 502 Bad Gateway\r\nConnection: close\r\nContent-Length: 0\r\n\r\n');
       }

@@ -11,7 +11,7 @@ export interface CapturedInteraction {
   url: string;
 }
 
-const BINDING_NAME = '__airlockRecord';
+const BINDING_NAME = '__qafindRecord';
 /** Value recorded in place of anything typed into a password field. */
 export const REDACTED_VALUE = '<redacted-password>';
 const REDACTED = REDACTED_VALUE;
@@ -22,8 +22,8 @@ const REDACTED = REDACTED_VALUE;
  * through the exposed binding.
  */
 export const RECORDER_INIT_SCRIPT = `(() => {
-  if (window.top !== window || window.__airlockRecorderInstalled) return;
-  window.__airlockRecorderInstalled = true;
+  if (window.top !== window || window.__qafindRecorderInstalled) return;
+  window.__qafindRecorderInstalled = true;
 
   const send = (payload) => {
     try { window.${BINDING_NAME}(payload); } catch (e) { /* binding not ready */ }
@@ -182,7 +182,7 @@ export const RECORDER_INIT_SCRIPT = `(() => {
     emit('press', target, mods.concat([key]).join('+'));
   }, true);
 
-  window.__airlockFlush = flush;
+  window.__qafindFlush = flush;
   window.addEventListener('pagehide', flush, true);
   document.addEventListener('visibilitychange', flush, true);
 })();`;
@@ -225,7 +225,7 @@ export class InteractionRecorder {
     if (context) {
       await Promise.all(
         context.pages().filter((p) => !p.isClosed()).map((p) =>
-          p.evaluate(() => (window as unknown as { __airlockFlush?: () => void }).__airlockFlush?.()).catch(() => {})
+          p.evaluate(() => (window as unknown as { __qafindFlush?: () => void }).__qafindFlush?.()).catch(() => {})
         )
       );
       // Give the binding calls triggered by the flush a moment to arrive.

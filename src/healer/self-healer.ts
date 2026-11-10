@@ -16,7 +16,7 @@ export class SelfHealer {
   private datasetCollector: DatasetCollector;
   private confidenceThreshold: number;
 
-  constructor(confidenceThreshold = 0.8, datasetDir = './.airlock/dataset') {
+  constructor(confidenceThreshold = 0.8, datasetDir = './.qafind/dataset') {
     this.confidenceThreshold = confidenceThreshold;
     this.datasetCollector = new DatasetCollector(datasetDir);
   }

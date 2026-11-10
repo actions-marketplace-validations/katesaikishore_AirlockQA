@@ -73,7 +73,7 @@ Run check again
 </span>
 </button>
 <code style={{"padding": "8px 10px", "borderRadius": "8px", "background": "rgb(241, 244, 240)", "font": "500 13px \"JetBrains Mono\", monospace"}}>
-npx airlock chaos http://localhost:3000
+npx qafind chaos http://localhost:3000
 </code>
 </div>
 <div aria-hidden="true" style={{"position": "relative", "marginTop": "18px", "display": "flex", "flexWrap": "wrap", "alignItems": "center", "gap": "18px", "padding": "16px", "borderRadius": "14px", "background": "rgb(247, 248, 245)"}}>

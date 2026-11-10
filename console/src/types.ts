@@ -1,4 +1,4 @@
-// Shapes of the Airlock Cloud API. Type-only imports: nothing from the server contract (or zod) is bundled.
+// Shapes of the QAFind Cloud API. Type-only imports: nothing from the server contract (or zod) is bundled.
 export type {
   ApiKeyInfo,
   ErrorBody,

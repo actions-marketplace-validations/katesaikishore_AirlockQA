@@ -30,7 +30,7 @@ export class ExecutionTargetRouter {
     target: 'LOCAL' | 'CLOUD_API';
     result: unknown;
   }> {
-    const apiKey = options.apiKey || process.env.AIRLOCK_API_KEY;
+    const apiKey = options.apiKey || process.env.QAFIND_API_KEY;
     const forceLocal = options.local || false;
     const forceCloud = options.cloud || false;
 
@@ -45,7 +45,7 @@ export class ExecutionTargetRouter {
       logger.moat(
         1,
         'Execution Target: Local Playwright Test',
-        'Running spec files with the Airlock gateway attached through the airlockTest fixture.'
+        'Running spec files with the QAFind gateway attached through the qafindTest fixture.'
       );
 
       const config = loadConfig();
@@ -65,7 +65,7 @@ export class ExecutionTargetRouter {
     } else {
       logger.moat(
         2,
-        'Execution Target: Airlock Cloud',
+        'Execution Target: QAFind Cloud',
         'Submitting a hosted run. Workflows run in an isolated browser; real credentials are never sent.'
       );
       const { runHostedTest } = await import('./cloud-commands.js');
@@ -84,10 +84,10 @@ export class ExecutionTargetRouter {
   }
 
   /**
-   * Parse airlock.yaml or airlock.config.json configuration file
+   * Parse qafind.yaml or qafind.config.json configuration file
    */
   static loadYamlPolicy(filePath?: string): Record<string, unknown> | null {
-    const candidates = filePath ? [filePath] : ['airlock.yaml', 'airlock.yml', 'airlock.config.json'];
+    const candidates = filePath ? [filePath] : ['qafind.yaml', 'qafind.yml', 'qafind.config.json'];
     for (const c of candidates) {
       const fullPath = path.resolve(process.cwd(), c);
       if (fs.existsSync(fullPath)) {

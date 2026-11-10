@@ -1,0 +1,38 @@
+# Copy into .github/workflows/verified-merge.yml in a customer repository.
+# The customer's CI runs the specs; QAFind stores the signed verdict and posts the required check/comment.
+name: QAFind Verified Merge
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+
+jobs:
+  verified-merge:
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install project and Playwright
+        run: |
+          bun install --frozen-lockfile
+          bunx playwright install --with-deps chromium
+
+      - name: Verify affected specs
+        run: bun bin/qafind.ts verify-merge --run --upload
+        env:
+          QAFIND_API_KEY: ${{ secrets.QAFIND_API_KEY }}
+          QAFIND_SIGNING_KEY: ${{ secrets.QAFIND_SIGNING_KEY }}
+          QAFIND_CLOUD_URL: https://api.qafind.si
+          # The CLI falls back to git HEAD when these are absent; explicit PR SHAs make the report exact.
+          GITHUB_SHA: ${{ github.event.pull_request.head.sha }}
+          GITHUB_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          GITHUB_REPOSITORY: ${{ github.repository }}

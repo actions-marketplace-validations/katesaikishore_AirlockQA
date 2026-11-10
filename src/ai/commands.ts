@@ -27,16 +27,16 @@ export async function aiDoctorCommand(opts: { probe?: boolean; json?: boolean })
     console.log(JSON.stringify(rows, null, 2));
     return;
   }
-  console.log(pc.bold('Local agents Airlock can use instead of an API key:'));
+  console.log(pc.bold('Local agents QAFind can use instead of an API key:'));
   for (const r of rows) {
     const state = r.state === 'ready' ? pc.green('ready') : r.state === 'missing' ? pc.dim('not installed') : r.state ? pc.yellow(r.state) : pc.cyan('installed');
     console.log(`  ${r.label.padEnd(12)} ${state}${r.path ? pc.dim(`  ${r.path}`) : ''}${r.ms ? pc.dim(`  ${(r.ms / 1000).toFixed(1)} s`) : ''}`);
     if (r.detail) console.log(pc.dim(`               ${r.detail}`));
     if (r.state === 'auth') console.log(pc.dim(`               fix: ${FIX_HINT[r.agent]}`));
   }
-  if (!opts.probe) console.log(pc.dim('\nRun "airlock ai doctor --probe" to check that each one answers (sends a one-word prompt).'));
+  if (!opts.probe) console.log(pc.dim('\nRun "qafind ai doctor --probe" to check that each one answers (sends a one-word prompt).'));
   const pick = preferredAgent();
-  console.log(pc.dim(`Agent used: ${pick === 'auto' ? 'auto (first that answers: ' + AGENT_IDS.map((a) => AGENT_LABELS[a]).join(', ') + ')' : AGENT_LABELS[pick]}. Set AIRLOCK_AGENT or pass --agent to choose.`));
+  console.log(pc.dim(`Agent used: ${pick === 'auto' ? 'auto (first that answers: ' + AGENT_IDS.map((a) => AGENT_LABELS[a]).join(', ') + ')' : AGENT_LABELS[pick]}. Set QAFIND_AGENT or pass --agent to choose.`));
 }
 
 export async function aiAskCommand(question: string, opts: { agent?: string; model?: string }): Promise<void> {
@@ -47,7 +47,7 @@ export async function aiAskCommand(question: string, opts: { agent?: string; mod
 
 export async function aiExplainCommand(runId: string, opts: { agent?: string; model?: string; apiUrl?: string; showPrompt?: boolean }): Promise<void> {
   const auth = resolveCloudAuth({ apiUrl: opts.apiUrl });
-  if (!auth) throw new Error('Not signed in. Run "airlock login" (or set AIRLOCK_API_KEY) to read QA runs.');
+  if (!auth) throw new Error('Not signed in. Run "qafind login" (or set QAFIND_API_KEY) to read QA runs.');
   const target = { apiUrl: auth.apiUrl, apiKey: auth.apiKey };
   let id = runId;
   if (runId === 'latest' || runId === 'last') {
@@ -65,5 +65,5 @@ export async function aiExplainCommand(runId: string, opts: { agent?: string; mo
   console.error(pc.dim(`QA run ${run.id}: ${run.status}${run.phase ? ` (${run.phase})` : ''}. Asking a local agent...`));
   const answer = await ask(prompt, { agent: parseAgentOption(opts.agent), model: opts.model });
   console.log(answer.text);
-  console.error(pc.dim(`\nAI suggestion from ${AGENT_LABELS[answer.agent]} (${(answer.ms / 1000).toFixed(1)} s), not verified by Airlock.`));
+  console.error(pc.dim(`\nAI suggestion from ${AGENT_LABELS[answer.agent]} (${(answer.ms / 1000).toFixed(1)} s), not verified by QAFind.`));
 }

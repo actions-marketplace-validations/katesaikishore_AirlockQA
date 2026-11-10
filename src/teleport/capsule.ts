@@ -73,8 +73,8 @@ export class CapsuleManager {
    */
   static getClientSnippet(): string {
     return `(() => {
-      if (window.__AIRLOCK_CAPSULE_INSTALLED__) return;
-      window.__AIRLOCK_CAPSULE_INSTALLED__ = true;
+      if (window.__QAFIND_CAPSULE_INSTALLED__) return;
+      window.__QAFIND_CAPSULE_INSTALLED__ = true;
       const buffer = [];
       const MAX_EVENTS = 60;
       
@@ -115,7 +115,7 @@ export class CapsuleManager {
         });
       });
 
-      window.__AIRLOCK_GET_BUFFER__ = () => buffer;
+      window.__QAFIND_GET_BUFFER__ = () => buffer;
     })();`;
   }
 
@@ -166,7 +166,7 @@ export class CapsuleManager {
   /**
    * Save state capsule to disk
    */
-  static saveCapsule(capsule: StateCapsule, destPath = `./.airlock/capsules/${capsule.capsuleId}.json`): string {
+  static saveCapsule(capsule: StateCapsule, destPath = `./.qafind/capsules/${capsule.capsuleId}.json`): string {
     const fullPath = path.resolve(process.cwd(), destPath);
     const dir = path.dirname(fullPath);
     if (!fs.existsSync(dir)) {
@@ -249,7 +249,7 @@ export class CapsuleManager {
       // keep '/'
     }
     return `import { test, expect } from '@playwright/test';
-import { CapsuleManager } from 'airlockqa';
+import { CapsuleManager } from 'qafind';
 
 /**
  * Auto-Synthesized Bug Reproduction Spec

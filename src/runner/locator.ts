@@ -15,7 +15,7 @@ export interface ResilientLocatorConfig {
 /**
  * Multi-tier resilient locator with auto-healing fallback
  */
-export async function airlockLocator(
+export async function qafindLocator(
   page: Page,
   config: ResilientLocatorConfig,
   healer?: SelfHealer

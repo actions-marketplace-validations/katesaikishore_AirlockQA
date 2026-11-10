@@ -1,5 +1,5 @@
 /**
- * AirlockQA Core Types
+ * QAFind Core Types
  * Type contracts for browser testing, request policy, checkpoints, and evidence prototypes.
  */
 
@@ -440,10 +440,10 @@ export interface StateCapsule {
 }
 
 // ==========================================
-// TOP-LEVEL AIRLOCK CONFIGURATION
+// TOP-LEVEL QAFIND CONFIGURATION
 // ==========================================
 
-export interface AirlockConfig {
+export interface QAFindConfig {
   projectName: string;
   baseUrl: string;
   browser?: {

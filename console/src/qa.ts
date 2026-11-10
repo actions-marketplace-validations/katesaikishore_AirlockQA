@@ -15,7 +15,7 @@ export const QA_SCRIPT_NAMES = [
 ] as const;
 /**
  * Suites that run only when the request names a script for them (scripts['test:<suite>']). explore is not here: without
- * a script it runs Airlock's own checker.
+ * a script it runs QAFind's own checker.
  */
 export const QA_SCRIPTED_SUITES = ['a11y', 'security', 'load'] as const;
 const HEALTH_PATH_RE = /^\/[A-Za-z0-9._~/-]{0,200}$/;
@@ -213,9 +213,9 @@ export function shortRepo(url: string): string {
 }
 
 /** A reason line without the long rules Playwright draws after a test title ("──────"). */
-/** Who saw a finding: Airlock's checker (first-party) or the app's own tests (self-reported). */
+/** Who saw a finding: QAFind's checker (first-party) or the app's own tests (self-reported). */
 export function findingSource(origin: string | null | undefined): string {
-  if (origin === 'first_party_observed') return 'Airlock checker';
+  if (origin === 'first_party_observed') return 'QAFind checker';
   if (origin === 'sandbox_self_reported') return 'Your tests';
   return 'Unknown';
 }

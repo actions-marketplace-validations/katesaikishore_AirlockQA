@@ -44,7 +44,7 @@ describe('local agent: command lines are headless and read-only', () => {
   it('cuts very long prompts and says so', () => {
     const p = clampPrompt('x'.repeat(MAX_PROMPT_CHARS + 10));
     expect(p.length).toBeLessThan(MAX_PROMPT_CHARS + NO_TOOLS_PREAMBLE.length + 50);
-    expect(p).toContain('[input truncated by Airlock]');
+    expect(p).toContain('[input truncated by QAFind]');
   });
 });
 
@@ -107,9 +107,9 @@ describe('local agent: choosing an agent', () => {
   it('a timeout is reported as such', async () => {
     await expect(ask('q', { agent: 'agy', find: findAll, run: async () => ({ stdout: '', stderr: '', exitCode: null, timedOut: true }) })).rejects.toThrow(/no answer within/);
   });
-  it('AIRLOCK_AGENT picks the agent; unknown values mean auto', () => {
-    expect(preferredAgent({ AIRLOCK_AGENT: 'AGY' })).toBe('agy');
-    expect(preferredAgent({ AIRLOCK_AGENT: 'gpt' })).toBe('auto');
+  it('QAFIND_AGENT picks the agent; unknown values mean auto', () => {
+    expect(preferredAgent({ QAFIND_AGENT: 'AGY' })).toBe('agy');
+    expect(preferredAgent({ QAFIND_AGENT: 'gpt' })).toBe('auto');
     expect(preferredAgent({})).toBe('auto');
   });
   it('doctor probes each installed agent and reports its state', async () => {

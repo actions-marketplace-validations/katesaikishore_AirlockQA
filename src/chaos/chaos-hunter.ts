@@ -161,7 +161,7 @@ export class ChaosHunter {
     const divider = '─'.repeat(72);
     const lines: string[] = [
       `┌${divider}┐`,
-      `│ AIRLOCK MUTATION OBSERVATION REPORT                                     │`,
+      `│ QAFIND MUTATION OBSERVATION REPORT                                     │`,
       `├${divider}┤`,
       `│ Target Endpoint: ${(report.targetEndpoint || 'No matching request observed').padEnd(53).substring(0, 53)} │`,
       `│ Status:          ${(report.status === 'RISK_INDICATED' ? '⚠ RISK INDICATED (NOT REPLAYED)' : report.status === 'OBSERVED' ? 'ℹ OBSERVED (SCENARIOS NOT RUN)' : 'ℹ SIMULATED (NO FAULTS APPLIED)').padEnd(53)} │`,

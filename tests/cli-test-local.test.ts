@@ -5,11 +5,11 @@ import { hasPlaywrightTest, runCli } from './cli-helpers.js';
 
 setDefaultTimeout(120_000);
 
-// `airlock test --local` runs specs with @playwright/test, a peer dependency of airlockqa.
+// `qafind test --local` runs specs with @playwright/test, a peer dependency of qafind.
 const canRun = hasPlaywrightTest();
-if (!canRun) console.warn('Skipping `airlock test --local` tests: @playwright/test is not installed.');
+if (!canRun) console.warn('Skipping `qafind test --local` tests: @playwright/test is not installed.');
 
-describe.skipIf(!canRun)('airlock test --local', () => {
+describe.skipIf(!canRun)('qafind test --local', () => {
   const PORT = 3921;
   const url = `http://127.0.0.1:${PORT}`;
   let server: http.Server;
@@ -26,7 +26,7 @@ describe.skipIf(!canRun)('airlock test --local', () => {
     const result = await runCli(['test', '--local', 'examples/demo-store/specs/cart.spec.ts', '--url', url]);
     expect(result.output).toContain('2 passed');
     expect(result.output).toContain('Local test run passed (2 passed, 0 failed');
-    // The gateway is attached by the airlockTest fixture: the refund request is blocked.
+    // The gateway is attached by the qafindTest fixture: the refund request is blocked.
     expect(result.output).toContain("blocked path '/api/admin/refund'");
     expect(result.code).toBe(0);
   });
