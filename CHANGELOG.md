@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.2.2
+
+- Marketplace badge colour is now blue to match the Airlock QA brand.
+
 ## 1.2.1
 
 - `airlock --version` reads the package version instead of the stale 1.0.0 literal.

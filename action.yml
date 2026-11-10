@@ -3,7 +3,7 @@ description: Run Airlock QA against a pull-request commit and upload a signed re
 author: AirlockQA
 branding:
   icon: shield
-  color: green
+  color: blue
 
 inputs:
   api-key:
