@@ -1,4 +1,4 @@
-name: QAFind
+name: QAFind CI
 description: Run QAFind against a pull-request commit and upload a signed report with failure screenshots.
 author: QAFind
 branding:
