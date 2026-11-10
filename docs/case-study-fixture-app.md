@@ -50,7 +50,7 @@ useful result too: it is evidence that the checker completed rather than a claim
 qafind --repo https://github.com/owner/repo --sha <commit> --suites smoke,explore --wait
 
 # Hosted, from GitHub Actions
-# Copy actions template or use katesaikishore/QAFind@v1
+# Copy actions template or use katesaikishore/QAFind@v2
 ```
 
 The fixture app is intentionally vulnerable and slow. Do not deploy it as a template for production.

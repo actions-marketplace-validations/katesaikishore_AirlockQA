@@ -300,7 +300,7 @@ Install a browser with `bunx playwright install chromium`. The CLI uses `QAFIND_
 - [QA on GitHub](docs/qa-github.md): the pull-request workflow, the report command and its limits.
 - [Go-to-market](docs/go-to-market.md): the open-source-to-cloud plan and the guardrails for public reports.
 - [Encrypted local sync](docs/local-sync.md): what `qafind sync` uploads, how the key works and its limits.
-- [GitHub Action](docs/github-action.md): run QAFind on a pull request with `katesaikishore/QAFind@v1`.
+- [GitHub Action](docs/github-action.md): run QAFind on a pull request with `katesaikishore/QAFind@v2`.
 - [Case study](docs/case-study-fixture-app.md): the signed fixture-app run with 11 findings and 5 screenshots.
 - [QA Index](docs/qa-index/2026-11.md): the November 2026 public check of five real OSS apps, including the MoneyMatter issue.
 - [Product boundary](docs/product-boundary.md): exactly what runs in the hosted service and what stays local.

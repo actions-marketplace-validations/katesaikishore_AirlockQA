@@ -23,7 +23,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: katesaikishore/QAFind@v1
+      - uses: katesaikishore/QAFind@v2
         with:
           api-key: ${{ secrets.QAFIND_API_KEY }}
           suites: smoke,explore
@@ -61,7 +61,7 @@ Outputs: `run-id` (the QAFind run id) and `report-path` (the report directory).
 Use the moving major tag:
 
 ```yaml
-- uses: katesaikishore/QAFind@v1
+- uses: katesaikishore/QAFind@v2
 ```
 
 Pin a full release tag if you need an immutable action. The action follows the same MIT license as the rest of the

@@ -58,7 +58,7 @@ open-source presence is the funnel; the hosted app is the product. QAFind follow
 - [x] Failure screenshots stored with the run and downloadable from the API.
 - [x] `qafind report` writes a Markdown report and can open a PR in a repository we own.
 - [x] GitHub Action template runs on a pull request, uploads the report/screenshots and comments with the report.
-- [x] Reusable composite action: `katesaikishore/QAFind@v1`; callers only add a secret and a four-line workflow.
+- [x] Reusable composite action: `katesaikishore/QAFind@v2`; callers only add a secret and a four-line workflow.
 - [ ] GitHub Marketplace listing for the action.
 - [ ] GitHub App: webhook, check run, comment, installation token, private repositories.
 - [ ] Private repositories and a secrets/env mechanism for builds.
