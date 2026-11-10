@@ -176,7 +176,7 @@ describe('qafind cloud commands', () => {
   it('login rejects a malformed key and a key the service refuses, saving nothing', async () => {
     const malformed = await cli(['login', '--key', 'not-a-key']);
     expect(malformed.code).toBe(1);
-    expect(malformed.output).toContain('does not look like an QAFind API key');
+    expect(malformed.output).toContain('does not look like a QAFind API key');
 
     const refused = await cli(['login', '--key', REVOKED_KEY]);
     expect(refused.code).toBe(1);

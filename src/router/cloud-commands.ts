@@ -94,7 +94,7 @@ export async function loginCommand(options: { key?: string; apiUrl?: string } = 
   let key = options.key?.trim() || process.env.QAFIND_API_KEY?.trim();
   if (!key) key = await readSecret('QAFind API key (input is hidden): ');
   if (!key || !looksLikeApiKey(key)) {
-    throw new Error('That does not look like an QAFind API key (they start with "air_live_"). Create one in the console under CI/CD & API.');
+    throw new Error('That does not look like a QAFind API key (they start with "air_live_"). Create one in the console under CI/CD & API.');
   }
 
   const target: ApiTarget = { apiUrl, apiKey: key };

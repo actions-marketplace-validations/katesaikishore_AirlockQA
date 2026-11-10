@@ -347,7 +347,7 @@ export interface VerifySignedVerdictResult {
 export function verifySignedVerdict(signed: unknown, options: { signingKey?: string; publicKeyPem?: string; env?: Record<string, string | undefined> } = {}): VerifySignedVerdictResult {
   try {
     const value = signed as Partial<SignedVerdict>;
-    if (!value || value.version !== VERIFIED_MERGE_VERSION || value.kind !== VERIFIED_MERGE_KIND) return { valid: false, reason: 'not an QAFind Verified Merge verdict', blockMerge: false, summary: null, verdict: null };
+    if (!value || value.version !== VERIFIED_MERGE_VERSION || value.kind !== VERIFIED_MERGE_KIND) return { valid: false, reason: 'not a QAFind Verified Merge verdict', blockMerge: false, summary: null, verdict: null };
     if (!value.payload || !value.signature) return { valid: false, reason: 'verdict payload or signature is missing', blockMerge: false, summary: null, verdict: null };
     const bytes = canonicalJson(value.payload);
     if (sha256(bytes) !== value.payloadSha256) return { valid: false, reason: 'payload hash does not match', blockMerge: false, summary: null, verdict: null };

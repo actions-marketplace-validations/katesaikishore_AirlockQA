@@ -117,7 +117,7 @@ export function analyzeFlakiness(reports: QAFindRunReport[], options: FlakeOptio
   const analyzed: QAFindRunReport[] = [];
   for (const report of reports) {
     if (!report || typeof report !== 'object' || Array.isArray(report)) {
-      warnings.push('Ignoring a report that is not an QAFindRunReport object.');
+      warnings.push('Ignoring a report that is not a QAFindRunReport object.');
       continue;
     }
     const runId = typeof report.runId === 'string' ? report.runId : '';

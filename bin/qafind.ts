@@ -33,7 +33,7 @@ const program = new Command();
 
 program
   .name('qafind')
-  .description('QAFind: Zero-Trust, Self-Compiling, Time-Traveling AI QA Engine')
+  .description('QAFind: make the Playwright suite you already run trustworthy')
   .version(packageVersion);
 
 // ==========================================
@@ -715,7 +715,7 @@ function cloudAction(handler: () => Promise<void> | void): () => Promise<void> {
 
 program
   .command('login')
-  .description('Save an QAFind Cloud API key on this machine (create one in the console under CI/CD & API)')
+  .description('Save a QAFind Cloud API key on this machine (create one in the console under CI/CD & API)')
   .option('--key <key>', 'API key (prefer the hidden prompt or QAFIND_API_KEY; command-line values land in shell history)')
   .option('--api-url <url>', 'QAFind Cloud API base URL (default: QAFIND_CLOUD_URL or https://api.qafind.si)')
   .action((opts) => cloudAction(async () => (await import('../src/router/cloud-commands.js')).loginCommand({ key: opts.key, apiUrl: opts.apiUrl }))());

@@ -8,7 +8,7 @@ Playwright suite keeps its specs, config and CI. Two commands make its signal tr
 - `qafind flake` aggregates the reporter manifests across runs and reports per-test instability,
   probable cause, owner and quarantine recommendation.
 
-Nothing in this path needs an QAFind Cloud account. It is local, MIT licensed, and reads only files
+Nothing in this path needs a QAFind Cloud account. It is local, MIT licensed, and reads only files
 under the project.
 
 ## Attach in about ten minutes

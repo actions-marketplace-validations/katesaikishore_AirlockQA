@@ -1,34 +1,58 @@
 # QAFind
 
 [![CI](https://github.com/katesaikishore/QAFind/actions/workflows/qafind-ci.yml/badge.svg)](https://github.com/katesaikishore/QAFind/actions/workflows/qafind-ci.yml)
+[![npm](https://img.shields.io/npm/v/qafind.svg)](https://www.npmjs.com/package/qafind)
+[![GitHub Marketplace](https://img.shields.io/badge/Marketplace-QAFind%20CI-blue?logo=github)](https://github.com/marketplace/actions/qafind-ci)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-QAFind is a local-first command-line tool for browser testing. It records a browser session, compiles it into a Playwright test, runs tests with a request policy that keeps real credentials out of the test browser, and writes a signed evidence bundle for each run. A bundle can be verified later when its signing key is kept and available (see [Evidence, signing and audit](#evidence-signing-and-audit)).
+**Make the Playwright suite you already run trustworthy.** QAFind runs the specs a pull request affects, reruns failures, blocks a merge only on reproduced regressions, and writes signed evidence for every run.
 
-It runs on your machine or in CI. The optional hosted service, QAFind Cloud at [qafind.si](https://qafind.si), runs workflows for you and is operated separately; its server code is not part of this repository.
+- **Local-first CLI** (`qafind`): attach to an existing Playwright suite, find flaky tests, record and compile new specs, and run them behind a request policy that keeps real credentials out of the browser.
+- **GitHub Action** ([QAFind CI](https://github.com/marketplace/actions/qafind-ci)): run QAFind on every pull request.
+- **Hosted service** ([qafind.si](https://qafind.si)): optional. Runs workflows and pull-request reviews for you; its server code is not in this repository.
+
+> **Formerly Airlock QA.** Version 2.0.0 renamed everything: the CLI is `qafind` (the `airlock` command is gone), the npm package is `qafind`, the Action is `katesaikishore/QAFind@v2`, and variables are `QAFIND_*`. See the [changelog](CHANGELOG.md#200).
 
 ## Install
 
-From npm:
-
 ```bash
-npm install -g qafind@1.2.1
+npm install -g qafind
 qafind --help
-qafind verify-merge --help
 ```
 
-Or from the GitHub release:
-
-```bash
-npm install -g https://github.com/katesaikishore/QAFind/releases/download/v1.2.0/qafind-1.2.0.tgz
-```
-
-Or run from a checkout:
+Or run from a checkout (needs [Bun](https://bun.sh) 1.3+ and Node.js 20+):
 
 ```bash
 git clone https://github.com/katesaikishore/QAFind.git
 cd QAFind && bun install && bun bin/qafind.ts --help
 ```
+
+## Use it on pull requests
+
+Add a `QAFIND_API_KEY` repository secret (create a key in the [console](https://qafind.si/console) under CI/CD & API), then:
+
+```yaml
+# .github/workflows/qafind.yml
+name: QAFind
+on:
+  pull_request:
+permissions:
+  contents: read
+  pull-requests: write
+jobs:
+  qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: katesaikishore/QAFind@v2
+        with:
+          api-key: ${{ secrets.QAFIND_API_KEY }}
+```
+
+All inputs are described in [docs/github-action.md](docs/github-action.md).
 
 
 ## Status at a glance
@@ -122,7 +146,7 @@ bun ./bin/qafind.ts run --url http://127.0.0.1:3900  # writes .qafind/compliance
 bun ./bin/qafind.ts audit                            # verifies the bundle
 ```
 
-Use the CLI from the repository with `bun ./bin/qafind.ts <command>` or `bun run cli <command>`. An npm package is not yet published; the installation steps above are the supported path.
+With the npm package installed, run `qafind <command>`. From a checkout, use `bun ./bin/qafind.ts <command>` or `bun run cli <command>`.
 
 ## Typical workflow
 
@@ -133,11 +157,11 @@ bun run cli compile .qafind/traces/checkout-trace.json --out tests/checkout.spec
 bun run cli test --local tests/checkout.spec.ts --url http://localhost:3000
 ```
 
-Compiled specs import from `qafind`, which resolves only where the package is installed. The package is not yet published, so inside this repository point that import at `src/index.ts` before running a compiled spec.
+Compiled specs import from `qafind`, so install the package in the project under test (`npm install -D qafind`). Inside this repository, point that import at `src/index.ts` instead.
 
 ## CLI reference
 
-The examples in this README use `qafind` for brevity. From a clone, substitute `bun ./bin/qafind.ts <command>` or `bun run cli <command>`, which the quick start and typical workflow use.
+The examples use the installed `qafind` command. From a clone, substitute `bun ./bin/qafind.ts <command>` or `bun run cli <command>`.
 
 | Command | Purpose |
 | :--- | :--- |
@@ -149,7 +173,7 @@ The examples in this README use `qafind` for brevity. From a clone, substitute `
 | `qafind fork <checkpoint>` | Restore a checkpoint into parallel contexts, one input per variation. `-v, --variations`, `--values`, `-i, --input`, `-a, --action`, `--expect-selector`, `--expect-text`, `-w, --workers`. |
 | `qafind audit [bundle]` | Verify a bundle's hash chain, Merkle root and signature. Exits 1 on failure. |
 | `qafind sync` | Encrypt and upload local traces, checkpoints, healing logs, fixtures and capsules. `--kind`, `--dry-run`, `--json`; `sync list`; `sync download <id> --out <file>`. |
-| `qafind login` | Save an QAFind Cloud API key in an owner-only file. The key is read from a hidden prompt, `QAFIND_API_KEY` or standard input. `--api-url`. |
+| `qafind login` | Save a QAFind Cloud API key in an owner-only file. The key is read from a hidden prompt, `QAFIND_API_KEY` or standard input. `--api-url`. |
 | `qafind logout` | Remove the saved key from this machine. |
 | `qafind whoami` | Show which key, endpoint and plan this machine uses. |
 | `qafind usage` | Show today's hosted-run usage and limits. `--json`. |
@@ -298,7 +322,6 @@ Install a browser with `bunx playwright install chromium`. The CLI uses `QAFIND_
 - [Cloud client and service boundary](docs/cloud-api-auth-and-quota.md): what this repository contains and what it does not.
 - [QA test plan](docs/qa-test-plan.md): the flows covered by the GUI suite.
 - [QA on GitHub](docs/qa-github.md): the pull-request workflow, the report command and its limits.
-- [Go-to-market](docs/go-to-market.md): the open-source-to-cloud plan and the guardrails for public reports.
 - [Encrypted local sync](docs/local-sync.md): what `qafind sync` uploads, how the key works and its limits.
 - [GitHub Action](docs/github-action.md): run QAFind on a pull request with `katesaikishore/QAFind@v2`.
 - [Case study](docs/case-study-fixture-app.md): the signed fixture-app run with 11 findings and 5 screenshots.
